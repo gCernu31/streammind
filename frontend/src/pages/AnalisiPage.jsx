@@ -1,0 +1,371 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import axios from 'axios';
+
+const PURPLE = '#8B5CF6';
+
+// ─── Renderer Markdown semplice ───────────────────────────────────────────────
+function formatBold(text) {
+  if (!text) return null;
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((p, i) =>
+    p.startsWith('**') && p.endsWith('**')
+      ? <strong key={i} style={{ color: '#f0f0f0', fontWeight: 600 }}>{p.slice(2, -2)}</strong>
+      : p
+  );
+}
+
+function AnalysisContent({ text }) {
+  return (
+    <div style={{ fontSize: '14px', lineHeight: '1.8', color: '#a0a0a0' }}>
+      {text.split('\n').map((line, i) => {
+        if (line.startsWith('### '))
+          return (
+            <h3 key={i} style={{ color: PURPLE, fontWeight: 700, fontSize: '14px', margin: '22px 0 8px' }}>
+              {formatBold(line.slice(4))}
+            </h3>
+          );
+        if (line.startsWith('## '))
+          return (
+            <h2 key={i} style={{ color: '#f0f0f0', fontWeight: 700, fontSize: '16px', margin: '28px 0 10px' }}>
+              {formatBold(line.slice(3))}
+            </h2>
+          );
+        if (line === '---')
+          return <hr key={i} style={{ border: 'none', borderTop: '1px solid #262626', margin: '24px 0' }} />;
+        if (line.startsWith('- ') || line.startsWith('* '))
+          return (
+            <div key={i} style={{ display: 'flex', gap: '8px', margin: '5px 0' }}>
+              <span style={{ color: PURPLE, flexShrink: 0, marginTop: '1px' }}>•</span>
+              <span>{formatBold(line.slice(2))}</span>
+            </div>
+          );
+        if (!line.trim()) return <div key={i} style={{ height: '6px' }} />;
+        return <p key={i} style={{ margin: '3px 0' }}>{formatBold(line)}</p>;
+      })}
+    </div>
+  );
+}
+
+// ─── Dati form ────────────────────────────────────────────────────────────────
+const EMPTY_FORM = {
+  email: '',
+  twitch_username: '',
+  avg_viewers: '',
+  hours_per_month: '',
+  total_followers: '',
+  monthly_follower_growth: '',
+  current_subs: '',
+  main_games: '',
+  stream_schedule: '',
+  social_links: '',
+};
+
+const NUM_FIELDS = [
+  { key: 'avg_viewers',            label: 'Spettatori medi per live',  placeholder: 'Es. 50' },
+  { key: 'hours_per_month',        label: 'Ore stremate al mese',       placeholder: 'Es. 40' },
+  { key: 'total_followers',        label: 'Follower totali',            placeholder: 'Es. 500' },
+  { key: 'monthly_follower_growth',label: 'Crescita follower mensile',  placeholder: 'Es. 30' },
+  { key: 'current_subs',           label: 'Sub attuali',               placeholder: 'Es. 10' },
+];
+
+const TEXT_FIELDS = [
+  { key: 'main_games',      label: 'Giochi principali', placeholder: 'Es. Valorant, Minecraft, GTA V' },
+  { key: 'stream_schedule', label: 'Orari delle live',  placeholder: 'Es. Venerdì e Sabato dalle 21:00' },
+  { key: 'social_links',    label: 'Social / Link',     placeholder: 'Es. Instagram @gcernu, Discord discord.gg/gcernu' },
+];
+
+// ─── Stile input ──────────────────────────────────────────────────────────────
+const INPUT_STYLE = {
+  width: '100%',
+  padding: '10px 14px',
+  borderRadius: '8px',
+  border: '1px solid #2a2a2a',
+  backgroundColor: '#0d0d0d',
+  color: '#f0f0f0',
+  fontSize: '14px',
+  outline: 'none',
+  transition: 'border-color 0.15s',
+};
+
+function FocusInput({ type = 'text', value, onChange, placeholder, required, min }) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      required={required}
+      min={min}
+      style={INPUT_STYLE}
+      onFocus={e => (e.target.style.borderColor = PURPLE)}
+      onBlur={e => (e.target.style.borderColor = '#2a2a2a')}
+    />
+  );
+}
+
+// ─── Pagina principale ────────────────────────────────────────────────────────
+export default function AnalisiPage() {
+  const [form, setForm]       = useState(EMPTY_FORM);
+  const [analysis, setAnalysis] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState(null);
+
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.email.trim()) {
+      setError("L'email è obbligatoria.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setAnalysis(null);
+    try {
+      const r = await axios.post('/api/analytics/analyze', form, { timeout: 35_000 });
+      setAnalysis(r.data.analysis);
+    } catch (err) {
+      setError(err.response?.data?.error ?? "Errore durante l'analisi. Riprova.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setAnalysis(null);
+    setForm(EMPTY_FORM);
+    setError(null);
+  };
+
+  return (
+    <div className="min-h-screen font-sans" style={{ backgroundColor: '#0d0d0d', color: '#f0f0f0' }}>
+
+      {/* ── Header ── */}
+      <header
+        className="sticky top-0 z-40 border-b"
+        style={{ backgroundColor: 'rgba(13,13,13,0.95)', backdropFilter: 'blur(12px)', borderColor: '#1e1e1e' }}
+      >
+        <div className="max-w-3xl mx-auto px-6 h-14 flex items-center justify-between">
+          <Link
+            to="/"
+            className="flex items-center gap-2 text-sm font-semibold transition-colors"
+            style={{ color: '#6b6b6b' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#f0f0f0')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#6b6b6b')}
+          >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-4 h-4">
+              <path d="M10 3L4 8l6 5" />
+            </svg>
+            StreamMind
+          </Link>
+          <Link
+            to="/login"
+            className="text-xs font-bold px-4 py-2 rounded-lg text-white transition-colors duration-150"
+            style={{ backgroundColor: PURPLE }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#7C3AED')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = PURPLE)}
+          >
+            Inizia gratis
+          </Link>
+        </div>
+      </header>
+
+      <div className="max-w-3xl mx-auto px-6 py-12">
+
+        {/* ── Hero (visibile solo prima dell'analisi) ── */}
+        {!analysis && !loading && (
+          <div className="text-center mb-10">
+            <div
+              className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border mb-6"
+              style={{ borderColor: 'rgba(139,92,246,0.4)', backgroundColor: 'rgba(139,92,246,0.08)', color: PURPLE }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: PURPLE }} />
+              Powered by Gemini AI &nbsp;·&nbsp; Completamente gratuito
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight mb-4">
+              Analisi gratuita del tuo<br />
+              <span style={{ color: PURPLE }}>canale Twitch</span>
+            </h1>
+            <p className="text-base max-w-xl mx-auto" style={{ color: '#a0a0a0' }}>
+              Inserisci i dati del tuo canale e StreamMind genera un'analisi strategica personalizzata —
+              punti di forza, aree di crescita, giochi consigliati e un piano d'azione in 90 giorni.
+            </p>
+          </div>
+        )}
+
+        {/* ── Form ── */}
+        {!analysis && !loading && (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div
+              className="rounded-2xl border p-6 sm:p-8 space-y-5"
+              style={{ backgroundColor: '#111', borderColor: '#222' }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#4a4a4a' }}>
+                Dati canale
+              </p>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Email <span style={{ color: PURPLE }}>*</span>
+                </label>
+                <p className="text-xs mb-2" style={{ color: '#6b6b6b' }}>
+                  Riceverai l'analisi anche via email.
+                </p>
+                <FocusInput
+                  type="email"
+                  value={form.email}
+                  onChange={e => set('email', e.target.value)}
+                  placeholder="la-tua@email.com"
+                  required
+                />
+              </div>
+
+              {/* Username Twitch */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Username Twitch</label>
+                <FocusInput
+                  value={form.twitch_username}
+                  onChange={e => set('twitch_username', e.target.value)}
+                  placeholder="gcernu"
+                />
+              </div>
+
+              {/* Campi numerici */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {NUM_FIELDS.map(f => (
+                  <div key={f.key}>
+                    <label className="block text-sm font-medium mb-1">{f.label}</label>
+                    <FocusInput
+                      type="number"
+                      min="0"
+                      value={form[f.key]}
+                      onChange={e => set(f.key, e.target.value)}
+                      placeholder={f.placeholder}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Campi testo */}
+              {TEXT_FIELDS.map(f => (
+                <div key={f.key}>
+                  <label className="block text-sm font-medium mb-1">{f.label}</label>
+                  <FocusInput
+                    value={form[f.key]}
+                    onChange={e => set(f.key, e.target.value)}
+                    placeholder={f.placeholder}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Errore */}
+            {error && (
+              <p
+                className="text-sm px-4 py-3 rounded-lg border"
+                style={{ color: '#f87171', backgroundColor: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.2)' }}
+              >
+                {error}
+              </p>
+            )}
+
+            {/* Submit */}
+            <button
+              type="submit"
+              className="w-full py-4 rounded-xl font-bold text-base text-white transition-all duration-150"
+              style={{ backgroundColor: PURPLE, boxShadow: '0 0 24px rgba(139,92,246,0.3)' }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#7C3AED')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = PURPLE)}
+            >
+              Analizza il mio canale →
+            </button>
+
+            <p className="text-center text-xs" style={{ color: '#4a4a4a' }}>
+              Analisi generata da Gemini AI &nbsp;·&nbsp; Max 3 analisi ogni 24 ore
+            </p>
+          </form>
+        )}
+
+        {/* ── Loading ── */}
+        {loading && (
+          <div className="py-20 flex flex-col items-center gap-5">
+            <div
+              className="w-14 h-14 rounded-full border-2 animate-spin"
+              style={{ borderColor: '#262626', borderTopColor: PURPLE }}
+            />
+            <div className="text-center">
+              <p className="font-semibold mb-1">StreamMind sta analizzando il tuo canale…</p>
+              <p className="text-sm" style={{ color: '#6b6b6b' }}>
+                Gemini AI sta elaborando i dati — circa 15-30 secondi
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Risultato analisi ── */}
+        {analysis && (
+          <div className="space-y-6">
+            {/* Intestazione risultato */}
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-extrabold mb-1">La tua analisi è pronta!</h1>
+                <p className="text-sm" style={{ color: '#6b6b6b' }}>
+                  Generata da Gemini AI
+                  {form.twitch_username ? ` per @${form.twitch_username}` : ''}
+                </p>
+              </div>
+              <button
+                onClick={resetForm}
+                className="shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
+                style={{ borderColor: '#2a2a2a', color: '#6b6b6b', backgroundColor: '#111' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#383838'; e.currentTarget.style.color = '#f0f0f0'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2a2a'; e.currentTarget.style.color = '#6b6b6b'; }}
+              >
+                Nuova analisi
+              </button>
+            </div>
+
+            {/* Contenuto analisi */}
+            <div
+              className="rounded-2xl border p-6 sm:p-8"
+              style={{ backgroundColor: '#111', borderColor: '#222' }}
+            >
+              <AnalysisContent text={analysis} />
+            </div>
+
+            {/* CTA StreamMind */}
+            <div
+              className="rounded-2xl p-8 text-center border"
+              style={{
+                background: 'linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(139,92,246,0.04) 100%)',
+                borderColor: 'rgba(139,92,246,0.25)',
+              }}
+            >
+              <p className="text-lg font-bold mb-2">Vuoi realizzare questi obiettivi?</p>
+              <p className="text-sm mb-6" style={{ color: '#6b6b6b' }}>
+                StreamMind è il bot AI che ti aiuta attivamente ogni sera sul tuo canale Twitch.
+              </p>
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-2 font-bold text-white px-8 py-3.5 rounded-xl text-sm transition-all duration-150"
+                style={{ backgroundColor: PURPLE, boxShadow: '0 0 24px rgba(139,92,246,0.35)' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#7C3AED')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = PURPLE)}
+              >
+                Inizia gratis con StreamMind
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+              </Link>
+              <p className="mt-4 text-xs" style={{ color: '#4a4a4a' }}>
+                Gratis · Nessuna carta di credito · Cancelli quando vuoi
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

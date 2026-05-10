@@ -1,0 +1,115 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import LandingPage from './pages/LandingPage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import DashboardPage from './pages/DashboardPage.jsx';
+import ConfigPage from './pages/ConfigPage.jsx';
+import MemoryPage from './pages/MemoryPage.jsx';
+import SubscriptionPage from './pages/SubscriptionPage.jsx';
+import AnalisiPage from './pages/AnalisiPage.jsx';
+import Layout from './components/Layout.jsx';
+
+function useAuth() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Legge token da URL dopo callback OAuth oppure da localStorage
+    const params = new URLSearchParams(window.location.search);
+    const tokenFromUrl = params.get('token');
+    if (tokenFromUrl) {
+      localStorage.setItem('streammind_token', tokenFromUrl);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    const token = localStorage.getItem('streammind_token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Decodifica JWT lato client (solo per UI, la validazione è nel backend)
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp * 1000 < Date.now()) {
+        localStorage.removeItem('streammind_token');
+      } else {
+        setUser(payload);
+      }
+    } catch {
+      localStorage.removeItem('streammind_token');
+    }
+    setLoading(false);
+  }, []);
+
+  const logout = () => {
+    localStorage.removeItem('streammind_token');
+    setUser(null);
+  };
+
+  return { user, loading, logout };
+}
+
+function ProtectedRoute({ user, loading, children }) {
+  if (loading) return <div className="min-h-screen bg-hally-bg flex items-center justify-center"><span className="text-hally-text-muted">Caricamento...</span></div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
+
+export default function App() {
+  const auth = useAuth();
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/analisi" element={<AnalisiPage />} />
+
+        {/* Rotte protette con Layout (sidebar + navbar) */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute user={auth.user} loading={auth.loading}>
+              <Layout user={auth.user} onLogout={auth.logout}>
+                <DashboardPage user={auth.user} />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/config"
+          element={
+            <ProtectedRoute user={auth.user} loading={auth.loading}>
+              <Layout user={auth.user} onLogout={auth.logout}>
+                <ConfigPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/memory"
+          element={
+            <ProtectedRoute user={auth.user} loading={auth.loading}>
+              <Layout user={auth.user} onLogout={auth.logout}>
+                <MemoryPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/subscription"
+          element={
+            <ProtectedRoute user={auth.user} loading={auth.loading}>
+              <Layout user={auth.user} onLogout={auth.logout}>
+                <SubscriptionPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}

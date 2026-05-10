@@ -1,0 +1,12 @@
+**/node_modules
+**/.env
+**/.DS_Store
+**/*.log
+
+frontend/dist
+frontend/.vite
+
+.git
+.gitignore
+*.md
+railway.toml

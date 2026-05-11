@@ -103,6 +103,24 @@ function buildEmailHtml(analysis, username) {
 </html>`;
 }
 
+// ── GET /api/analytics/debug — temporaneo, rimuovere dopo il test ────────────
+analyticsRoutes.get('/debug', async (req, res) => {
+  try {
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (!geminiKey) return res.json({ error: 'GEMINI_API_KEY non impostata' });
+
+    const r = await axios.post(
+      `${AI_ENDPOINT}?key=${geminiKey}`,
+      { contents: [{ parts: [{ text: 'Di solo "ok"' }] }] },
+      { timeout: 15_000 }
+    );
+    const text = r.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    res.json({ ok: true, model_response: text, key_prefix: geminiKey.slice(0, 8) + '...' });
+  } catch (err) {
+    res.json({ ok: false, error: err.message, status: err.response?.status, data: err.response?.data });
+  }
+});
+
 // ── POST /api/analytics/analyze — pubblico, no auth ───────────────────────────
 analyticsRoutes.post('/analyze', async (req, res) => {
   const { email, ...formData } = req.body;

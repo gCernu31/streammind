@@ -117,6 +117,17 @@ export default function Sidebar({ user, onLogout }) {
           <IconGuide />
           Guida
         </a>
+
+        {/* Torna al sito */}
+        <a
+          href="/"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover transition-all duration-150"
+        >
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
+            <path d="M2 8h12M2 8l4-4M2 8l4 4"/>
+          </svg>
+          Torna al sito
+        </a>
       </nav>
 
       {/* User info + logout */}

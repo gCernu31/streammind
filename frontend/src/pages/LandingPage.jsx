@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import AccountMenu from '../components/AccountMenu.jsx';
 
 // ---------------------------------------------------------------------------
 // Logo cervello + onda (SVG inline, lilla)
@@ -246,10 +247,12 @@ function TwitchChatMockup() {
 const DEMO_KEY = 'streammindai_demo_count';
 const DEMO_MAX = 3;
 
-function DemoChat() {
-  const isLoggedIn = !!localStorage.getItem('streammindai_token');
+function DemoChat({ user }) {
+  const [unlocked, setUnlocked] = useState(!!user);
 
-  const [unlocked, setUnlocked] = useState(isLoggedIn);
+  useEffect(() => {
+    if (user) setUnlocked(true);
+  }, [user]);
   const [messages, setMessages] = useState([
     { from: 'bot', text: 'Ciao! Sono Hally 🎃 l\'IA demo di StreaMindAI. Scrivimi qualcosa e ti mostro cosa posso fare!' },
   ]);
@@ -492,7 +495,7 @@ function DemoChat() {
 // Header
 // ---------------------------------------------------------------------------
 
-function Header() {
+function Header({ user, loading, onLogout }) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -524,19 +527,8 @@ function Header() {
           <Link to="/analisi" className="hover:text-white transition-colors" style={{ color: PURPLE }}>Analisi Gratis</Link>
         </nav>
 
-        {/* CTA */}
-        <Link
-          to="/login"
-          className="flex items-center gap-2 text-sm font-semibold text-white px-5 py-2 rounded-lg transition-all duration-150"
-          style={{ backgroundColor: PURPLE }}
-          onMouseEnter={e => e.currentTarget.style.backgroundColor = PURPLE_H}
-          onMouseLeave={e => e.currentTarget.style.backgroundColor = PURPLE}
-        >
-          Inizia Gratis
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-          </svg>
-        </Link>
+        {/* Account */}
+        <AccountMenu user={user} loading={loading} onLogout={onLogout} />
       </div>
     </header>
   );
@@ -546,10 +538,10 @@ function Header() {
 // Landing Page
 // ---------------------------------------------------------------------------
 
-export default function LandingPage() {
+export default function LandingPage({ user, loading, onLogout }) {
   return (
     <div className="min-h-screen font-sans" style={{ backgroundColor: '#0d0d0d', color: '#f0f0f0' }}>
-      <Header />
+      <Header user={user} loading={loading} onLogout={onLogout} />
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section className="relative pt-32 pb-20 px-6 overflow-hidden">
@@ -663,7 +655,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── DEMO CHAT ────────────────────────────────────────────────────── */}
-      <DemoChat />
+      <DemoChat user={user} />
 
       {/* ── COME FUNZIONA ────────────────────────────────────────────────── */}
       <section id="how" className="py-24 px-6" style={{ backgroundColor: '#0a0a0a' }}>

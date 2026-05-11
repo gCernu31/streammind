@@ -62,9 +62,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<LandingPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/analisi" element={<AnalisiPage />} />
+        <Route path="/analisi" element={<AnalisiPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
 
         {/* Rotte protette con Layout (sidebar + navbar) */}
         <Route

@@ -10,11 +10,14 @@ export const authRoutes = Router();
 // GET /api/auth/twitch — redirect a Twitch per il login OAuth
 // ---------------------------------------------------------------------------
 authRoutes.get('/twitch', (req, res) => {
+  const raw = req.query.redirect_to || '/dashboard';
+  const redirectTo = raw.startsWith('/') ? raw : '/dashboard';
   const params = new URLSearchParams({
     client_id:     process.env.TWITCH_CLIENT_ID,
     redirect_uri:  process.env.TWITCH_REDIRECT_URI,
     response_type: 'code',
     scope:         'user:read:email',
+    state:         redirectTo,
   });
   res.redirect(`https://id.twitch.tv/oauth2/authorize?${params}`);
 });
@@ -23,7 +26,8 @@ authRoutes.get('/twitch', (req, res) => {
 // GET /api/auth/twitch/callback — callback OAuth: crea/aggiorna streamer nel DB
 // ---------------------------------------------------------------------------
 authRoutes.get('/twitch/callback', async (req, res) => {
-  const { code, error } = req.query;
+  const { code, error, state } = req.query;
+  const redirectTo = (state && state.startsWith('/')) ? state : '/dashboard';
 
   if (error) {
     return res.redirect(`${process.env.FRONTEND_URL}/login?error=${error}`);
@@ -102,7 +106,7 @@ authRoutes.get('/twitch/callback', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard?token=${sessionToken}`);
+    res.redirect(`${process.env.FRONTEND_URL}${redirectTo}?token=${sessionToken}`);
   } catch (err) {
     console.error('Errore OAuth Twitch:', err.message);
     res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);

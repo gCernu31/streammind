@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import AccountMenu from '../components/AccountMenu.jsx';
 
 const PURPLE = '#8B5CF6';
 
@@ -105,7 +106,7 @@ function FocusInput({ type = 'text', value, onChange, placeholder, required, min
 }
 
 // ─── Pagina principale ────────────────────────────────────────────────────────
-export default function AnalisiPage() {
+export default function AnalisiPage({ user, loading: authLoading, onLogout }) {
   const [form, setForm]       = useState(EMPTY_FORM);
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -159,15 +160,7 @@ export default function AnalisiPage() {
             </svg>
             StreaMindAI
           </Link>
-          <Link
-            to="/login"
-            className="text-xs font-bold px-4 py-2 rounded-lg text-white transition-colors duration-150"
-            style={{ backgroundColor: PURPLE }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#7C3AED')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = PURPLE)}
-          >
-            Inizia gratis
-          </Link>
+          <AccountMenu user={user} loading={authLoading} onLogout={onLogout} />
         </div>
       </header>
 

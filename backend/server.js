@@ -12,6 +12,7 @@ import { configRoutes } from './routes/config.js';
 import { memoryRoutes } from './routes/memory.js';
 import { subscriptionRoutes, stripeWebhook } from './routes/subscription.js';
 import { analyticsRoutes } from './routes/analytics.js';
+import { demoRoutes } from './routes/demo.js';
 import { twitchBot } from './bot/twitchBot.js';
 
 dotenv.config();
@@ -96,6 +97,7 @@ app.get('/api/me', authenticateToken, async (req, res) => {
 
 // ── Route pubbliche (no auth) ─────────────────────────────────────────────────
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/demo',      demoRoutes);
 
 // ── Routes con prefisso ───────────────────────────────────────────────────────
 app.use('/api/auth',         authRoutes);

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // ---------------------------------------------------------------------------
 // Logo cervello + onda (SVG inline, lilla)
@@ -240,6 +240,223 @@ function TwitchChatMockup() {
 }
 
 // ---------------------------------------------------------------------------
+// Demo chat interattiva
+// ---------------------------------------------------------------------------
+
+const DEMO_KEY = 'streammindai_demo_count';
+const DEMO_MAX = 3;
+
+function DemoChat() {
+  const [messages, setMessages] = useState([
+    { from: 'bot', text: 'Ciao! Sono Hally 🎃 l\'IA demo di StreaMindAI. Scrivimi qualcosa e ti mostro cosa posso fare!' },
+  ]);
+  const [input, setInput]     = useState('');
+  const [loading, setLoading] = useState(false);
+  const [count, setCount]     = useState(() => {
+    try { return parseInt(sessionStorage.getItem(DEMO_KEY) || '0'); } catch { return 0; }
+  });
+  const bottomRef = useRef(null);
+  const exhausted = count >= DEMO_MAX;
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
+
+  async function send() {
+    const text = input.trim();
+    if (!text || loading || exhausted) return;
+    setInput('');
+    setMessages(prev => [...prev, { from: 'user', text }]);
+    setLoading(true);
+
+    const newCount = count + 1;
+    setCount(newCount);
+    try { sessionStorage.setItem(DEMO_KEY, String(newCount)); } catch {}
+
+    try {
+      const r    = await fetch('/api/demo', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ message: text }),
+      });
+      const data = await r.json();
+      const reply = data.reply || 'Non riesco a rispondere in questo momento.';
+      setMessages(prev => [...prev, { from: 'bot', text: reply }]);
+    } catch {
+      setMessages(prev => [...prev, { from: 'bot', text: 'Errore di connessione. Riprova!' }]);
+    } finally {
+      setLoading(false);
+    }
+
+    if (newCount >= DEMO_MAX) {
+      setTimeout(() => {
+        setMessages(prev => [...prev, { from: 'limit' }]);
+      }, 600);
+    }
+  }
+
+  function onKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  }
+
+  return (
+    <section id="demo" className="py-24 px-6">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-12">
+          <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: PURPLE }}>
+            Provalo ora
+          </p>
+          <h2 className="text-4xl font-extrabold mb-4">Parla con Hally, la nostra demo</h2>
+          <p className="text-lg max-w-xl mx-auto" style={{ color: '#a0a0a0' }}>
+            Scrivi qualcosa in chat e scopri come StreaMindAI risponde in tempo reale sul tuo canale Twitch.
+          </p>
+        </div>
+
+        <div className="max-w-xl mx-auto">
+          {/* Finestra chat */}
+          <div
+            className="rounded-t-xl overflow-hidden border"
+            style={{ backgroundColor: '#18181b', borderColor: '#2a2a2a' }}
+          >
+            {/* Barra titolo */}
+            <div
+              className="px-4 py-3 flex items-center justify-between border-b"
+              style={{ backgroundColor: '#0e0e10', borderColor: '#2a2a2a' }}
+            >
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1.5">
+                  <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                  <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                  <span className="w-3 h-3 rounded-full bg-[#28c840]" />
+                </div>
+                <span className="text-[#efeff1] text-xs font-medium ml-2">💬 Chat — #gcernu</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-xs font-semibold" style={{ color: PURPLE }}>LIVE</span>
+              </div>
+            </div>
+
+            {/* Messaggi */}
+            <div className="px-4 py-4 space-y-4 overflow-y-auto" style={{ minHeight: '280px', maxHeight: '320px' }}>
+              {messages.map((msg, i) => {
+                if (msg.from === 'limit') return (
+                  <div key={i} className="rounded-xl p-4 text-center text-sm font-semibold border"
+                    style={{ backgroundColor: 'rgba(139,92,246,0.1)', borderColor: 'rgba(139,92,246,0.3)', color: '#a78bfa' }}>
+                    Hai esaurito i messaggi demo! 🎃<br />
+                    <Link to="/login" className="underline mt-1 inline-block" style={{ color: PURPLE }}>
+                      Registrati per creare la tua AI personalizzata →
+                    </Link>
+                  </div>
+                );
+
+                if (msg.from === 'user') return (
+                  <div key={i} className="flex justify-end">
+                    <div className="max-w-[75%]">
+                      <p className="text-xs text-right mb-1" style={{ color: '#6b6b6b' }}>Tu</p>
+                      <div
+                        className="px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm text-white"
+                        style={{ backgroundColor: PURPLE }}
+                      >
+                        {msg.text}
+                      </div>
+                    </div>
+                  </div>
+                );
+
+                return (
+                  <div key={i} className="flex items-start gap-3">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-base flex-shrink-0 border"
+                      style={{ backgroundColor: 'rgba(139,92,246,0.15)', borderColor: 'rgba(139,92,246,0.3)' }}
+                    >
+                      🎃
+                    </div>
+                    <div className="max-w-[75%]">
+                      <p className="text-xs mb-1 font-semibold" style={{ color: PURPLE }}>Hally</p>
+                      <div
+                        className="px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm"
+                        style={{ backgroundColor: '#2a2a2d', color: '#efeff1' }}
+                      >
+                        {msg.text}
+                      </div>
+                      <p className="text-[10px] mt-1.5" style={{ color: '#4a4a4a' }}>
+                        Powered by StreaMindAI —{' '}
+                        <Link to="/login" className="underline hover:opacity-80 transition-opacity" style={{ color: '#6b6b6b' }}>
+                          Crea il tuo bot personalizzato →
+                        </Link>
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {loading && (
+                <div className="flex items-start gap-3">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-base flex-shrink-0 border"
+                    style={{ backgroundColor: 'rgba(139,92,246,0.15)', borderColor: 'rgba(139,92,246,0.3)' }}
+                  >
+                    🎃
+                  </div>
+                  <div className="px-4 py-3 rounded-2xl rounded-tl-sm" style={{ backgroundColor: '#2a2a2d' }}>
+                    <div className="flex gap-1.5 items-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#6b6b6b] animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#6b6b6b] animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#6b6b6b] animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={bottomRef} />
+            </div>
+          </div>
+
+          {/* Input */}
+          <div
+            className="rounded-b-xl border-x border-b p-3 flex gap-2"
+            style={{ backgroundColor: '#0e0e10', borderColor: '#2a2a2a' }}
+          >
+            <input
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={onKey}
+              disabled={loading || exhausted}
+              placeholder={exhausted ? 'Messaggi demo esauriti — registrati per continuare' : 'Scrivi un messaggio a Hally…'}
+              className="flex-1 text-sm rounded-lg px-4 py-2.5 outline-none transition-colors"
+              style={{
+                backgroundColor: exhausted ? '#1a1a1a' : '#1e1e21',
+                color: exhausted ? '#4a4a4a' : '#efeff1',
+                border: '1px solid #2a2a2a',
+              }}
+            />
+            <button
+              onClick={send}
+              disabled={loading || exhausted || !input.trim()}
+              className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ backgroundColor: PURPLE }}
+              onMouseEnter={e => { if (!e.currentTarget.disabled) e.currentTarget.style.backgroundColor = PURPLE_H; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = PURPLE; }}
+            >
+              Invia
+            </button>
+          </div>
+
+          {/* Contatore messaggi */}
+          {!exhausted && (
+            <p className="text-center text-xs mt-3" style={{ color: '#4a4a4a' }}>
+              {DEMO_MAX - count} {DEMO_MAX - count === 1 ? 'messaggio rimasto' : 'messaggi rimasti'} nella demo
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Header
 // ---------------------------------------------------------------------------
 
@@ -412,6 +629,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── DEMO CHAT ────────────────────────────────────────────────────── */}
+      <DemoChat />
 
       {/* ── COME FUNZIONA ────────────────────────────────────────────────── */}
       <section id="how" className="py-24 px-6" style={{ backgroundColor: '#0a0a0a' }}>

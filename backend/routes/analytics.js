@@ -5,10 +5,12 @@ import pool from '../db.js';
 export const analyticsRoutes = Router();
 
 const GEMINI_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
   'gemini-1.5-flash',
+  'gemini-2.0-flash',
+  'gemini-2.5-flash',
 ];
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function callGemini(prompt) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -17,22 +19,27 @@ async function callGemini(prompt) {
   let lastErr;
   for (const model of GEMINI_MODELS) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    try {
-      const r = await axios.post(url, {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
-      }, { timeout: 45_000 });
 
-      const text = r.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) return text;
-    } catch (err) {
-      lastErr = err;
-      if (err.response?.status === 503) {
-        console.warn(`Gemini ${model} sovraccarico (503), provo il prossimo...`);
-        continue;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const r = await axios.post(url, {
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+        }, { timeout: 45_000 });
+
+        const text = r.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text;
+      } catch (err) {
+        lastErr = err;
+        if (err.response?.status === 503) {
+          console.warn(`Gemini ${model} sovraccarico (503), tentativo ${attempt}/2`);
+          if (attempt < 2) await sleep(3000);
+          continue;
+        }
+        throw err;
       }
-      throw err;
     }
+    console.warn(`Gemini ${model} non disponibile dopo 2 tentativi, provo il prossimo...`);
   }
   throw lastErr ?? new Error('Tutti i modelli Gemini non disponibili');
 }

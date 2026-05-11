@@ -4,6 +4,39 @@ import pool from '../db.js';
 
 export const analyticsRoutes = Router();
 
+// ── Twitch app token (cache in-memory, dura ~60 giorni) ───────────────────────
+let _twitchAppToken = null;
+let _twitchTokenExpiry = 0;
+
+async function getTwitchAppToken() {
+  if (_twitchAppToken && Date.now() < _twitchTokenExpiry) return _twitchAppToken;
+  const r = await axios.post('https://id.twitch.tv/oauth2/token', null, {
+    params: {
+      client_id:     process.env.TWITCH_CLIENT_ID,
+      client_secret: process.env.TWITCH_CLIENT_SECRET,
+      grant_type:    'client_credentials',
+    },
+  });
+  _twitchAppToken   = r.data.access_token;
+  _twitchTokenExpiry = Date.now() + (r.data.expires_in - 3600) * 1000;
+  return _twitchAppToken;
+}
+
+async function twitchUserExists(username) {
+  if (!process.env.TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) return true;
+  try {
+    const token = await getTwitchAppToken();
+    const r = await axios.get('https://api.twitch.tv/helix/users', {
+      params:  { login: username.toLowerCase() },
+      headers: { 'Client-ID': process.env.TWITCH_CLIENT_ID, Authorization: `Bearer ${token}` },
+      timeout: 8_000,
+    });
+    return r.data?.data?.length > 0;
+  } catch {
+    return true; // in caso di errore API lascia passare
+  }
+}
+
 async function callGemini(prompt) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY non configurata');
@@ -119,18 +152,38 @@ function buildEmailHtml(analysis, username) {
 analyticsRoutes.post('/analyze', async (req, res) => {
   const { email, ...formData } = req.body;
 
-  if (!email?.trim()) {
+  const emailClean    = email?.trim().toLowerCase();
+  const usernameClean = formData.twitch_username?.trim().toLowerCase();
+
+  if (!emailClean) {
     return res.status(400).json({ error: 'L\'email è obbligatoria.' });
   }
+  if (!usernameClean) {
+    return res.status(400).json({ error: 'L\'username Twitch è obbligatorio.' });
+  }
 
-  // Controllo anti-spam: max 3 analisi per email nelle ultime 24h
-  const recent = await pool.query(
-    `SELECT COUNT(*) FROM analytics_leads
-     WHERE email = $1 AND created_at > NOW() - INTERVAL '24 hours'`,
-    [email.trim().toLowerCase()]
+  // 1. Email già usata in precedenza
+  const emailUsed = await pool.query(
+    'SELECT 1 FROM analytics_leads WHERE email = $1 LIMIT 1',
+    [emailClean]
   );
-  if (parseInt(recent.rows[0].count) >= 3) {
-    return res.status(429).json({ error: 'Hai già richiesto 3 analisi nelle ultime 24 ore. Riprova domani.' });
+  if (emailUsed.rowCount > 0) {
+    return res.status(409).json({ error: 'Questa email ha già ricevuto un\'analisi. Ogni email può essere usata una sola volta.' });
+  }
+
+  // 2. Username Twitch già usato in precedenza
+  const usernameUsed = await pool.query(
+    'SELECT 1 FROM analytics_leads WHERE LOWER(twitch_username) = $1 LIMIT 1',
+    [usernameClean]
+  );
+  if (usernameUsed.rowCount > 0) {
+    return res.status(409).json({ error: 'Questo canale Twitch ha già ricevuto un\'analisi. Ogni canale può essere analizzato una sola volta.' });
+  }
+
+  // 3. Verifica che l'username Twitch esista davvero
+  const exists = await twitchUserExists(usernameClean);
+  if (!exists) {
+    return res.status(400).json({ error: `Il canale Twitch "@${formData.twitch_username}" non esiste. Controlla di aver scritto correttamente il tuo username.` });
   }
 
   try {

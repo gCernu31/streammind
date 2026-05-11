@@ -24,7 +24,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="text-3xl font-extrabold text-hally-orange mb-2">StreaMindAI</div>
-          <p className="text-hally-text-muted text-sm">Dai una mente al tuo stream</p>
+          <p className="text-hally-text-muted text-sm">Dai una mente alla tua stream</p>
         </div>
 
         {/* Card login */}

@@ -48,8 +48,8 @@ const features = [
       </svg>
     ),
     title: 'AI Personalizzata',
-    desc: 'Definisci personalità, tono e stile del bot. StreaMindAI diventa unico per la tua community — non un bot generico, ma un\'entità che conosce il tuo stream.',
-    detail: 'Powered by Gemini 2.5 Flash con fallback automatico',
+    desc: 'Definisci personalità, tono e stile del bot. StreaMindAI diventa unico per la tua community — non un bot generico, ma un\'entità che conosce la tua stream.',
+    detail: 'Motore AI proprietario StreaMindAI',
   },
   {
     icon: (
@@ -68,7 +68,7 @@ const features = [
       </svg>
     ),
     title: 'EventSub in Tempo Reale',
-    desc: 'Ringraziamenti automatici per follow, sub, bit e raid. StreaMindAI celebra ogni momento importante del tuo stream.',
+    desc: 'Ringraziamenti automatici per follow, sub, bit e raid. StreaMindAI celebra ogni momento importante della tua stream.',
     detail: 'Follow · Sub · Bit · Raid · Hype Train',
   },
   {
@@ -159,12 +159,6 @@ const plans = [
   },
 ];
 
-const stats = [
-  { value: '500+', label: 'Streamer attivi' },
-  { value: '2M+',  label: 'Messaggi elaborati' },
-  { value: '99.9%', label: 'Uptime garantito' },
-  { value: '4.9★',  label: 'Valutazione media' },
-];
 
 // ---------------------------------------------------------------------------
 // Mockup chat Twitch animato
@@ -338,7 +332,7 @@ export default function LandingPage() {
 
               <h1 className="text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight mb-6">
                 Dai una mente<br />
-                <span style={{ color: PURPLE }}>al tuo stream</span>
+                <span style={{ color: PURPLE }}>alla tua stream</span>
               </h1>
 
               <p className="text-lg lg:text-xl mb-10 max-w-xl mx-auto lg:mx-0" style={{ color: '#a0a0a0' }}>
@@ -382,18 +376,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── STATS ────────────────────────────────────────────────────────── */}
-      <section className="py-12 px-6 border-y" style={{ borderColor: '#1e1e1e' }}>
-        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {stats.map((s) => (
-            <div key={s.label}>
-              <div className="text-3xl font-extrabold mb-1" style={{ color: PURPLE }}>{s.value}</div>
-              <div className="text-sm" style={{ color: '#6b6b6b' }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* ── FUNZIONALITÀ ─────────────────────────────────────────────────── */}
       <section id="features" className="py-24 px-6">
         <div className="max-w-5xl mx-auto">
@@ -403,7 +385,7 @@ export default function LandingPage() {
             </p>
             <h2 className="text-4xl font-extrabold mb-4">Tutto quello che ti serve</h2>
             <p className="text-lg max-w-xl mx-auto" style={{ color: '#a0a0a0' }}>
-              Un bot completo, non solo risposte AI. StreaMindAI gestisce ogni aspetto del tuo stream in modo intelligente.
+              Un bot completo, non solo risposte AI. StreaMindAI gestisce ogni aspetto della tua stream in modo intelligente.
             </p>
           </div>
 
@@ -483,7 +465,7 @@ export default function LandingPage() {
                 Connesso al tuo<br />server Discord
               </h2>
               <p className="text-base leading-relaxed mb-6" style={{ color: '#a0a0a0' }}>
-                Quando vai live, StreaMindAI avvisa automaticamente il tuo server Discord con @everyone e il link diretto allo stream. Nessun bot Discord aggiuntivo necessario.
+                Quando vai live, StreaMindAI avvisa automaticamente il tuo server Discord con @everyone e il link diretto alla stream. Nessun bot Discord aggiuntivo necessario.
               </p>
               <ul className="space-y-2 text-sm" style={{ color: '#a0a0a0' }}>
                 {['Notifica automatica go-live', 'Annuncio nuovi video YouTube', 'Canali configurabili liberamente'].map((item) => (
@@ -624,7 +606,7 @@ export default function LandingPage() {
             <BrainWaveLogo className="w-14 h-14" />
           </div>
           <h2 className="text-4xl font-extrabold mb-4">
-            Dai una mente al tuo stream, oggi
+            Dai una mente alla tua stream, oggi
           </h2>
           <p className="text-lg mb-10" style={{ color: '#a0a0a0' }}>
             Unisciti agli streamer italiani che stanno già usando StreaMindAI per coinvolgere la loro community ogni sera.
@@ -655,7 +637,7 @@ export default function LandingPage() {
                 <span className="text-lg font-extrabold text-white">StreaMindAI</span>
               </div>
               <p className="text-sm max-w-xs" style={{ color: '#6b6b6b' }}>
-                Dai una mente al tuo stream. Il bot AI che trasforma il tuo canale Twitch in un'esperienza indimenticabile.
+                Dai una mente alla tua stream. Il bot AI che trasforma il tuo canale Twitch in un'esperienza indimenticabile.
               </p>
             </div>
 

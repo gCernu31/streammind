@@ -181,7 +181,7 @@ export default function AnalisiPage() {
               style={{ borderColor: 'rgba(139,92,246,0.4)', backgroundColor: 'rgba(139,92,246,0.08)', color: PURPLE }}
             >
               <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: PURPLE }} />
-              Powered by Gemini AI &nbsp;·&nbsp; Completamente gratuito
+              Motore AI StreaMindAI &nbsp;·&nbsp; Completamente gratuito
             </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight mb-4">
               Analisi gratuita del tuo<br />
@@ -283,7 +283,7 @@ export default function AnalisiPage() {
             </button>
 
             <p className="text-center text-xs" style={{ color: '#4a4a4a' }}>
-              Analisi generata da Gemini AI &nbsp;·&nbsp; Max 3 analisi ogni 24 ore
+              Analisi generata da StreaMindAI &nbsp;·&nbsp; Max 3 analisi ogni 24 ore
             </p>
           </form>
         )}
@@ -298,7 +298,7 @@ export default function AnalisiPage() {
             <div className="text-center">
               <p className="font-semibold mb-1">StreaMindAI sta analizzando il tuo canale…</p>
               <p className="text-sm" style={{ color: '#6b6b6b' }}>
-                Gemini AI sta elaborando i dati — circa 15-30 secondi
+                Il motore AI sta elaborando i dati — circa 15-30 secondi
               </p>
             </div>
           </div>
@@ -312,7 +312,7 @@ export default function AnalisiPage() {
               <div>
                 <h1 className="text-2xl font-extrabold mb-1">La tua analisi è pronta!</h1>
                 <p className="text-sm" style={{ color: '#6b6b6b' }}>
-                  Generata da Gemini AI
+                  Generata da StreaMindAI
                   {form.twitch_username ? ` per @${form.twitch_username}` : ''}
                 </p>
               </div>

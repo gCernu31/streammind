@@ -4,10 +4,9 @@ import pool from '../db.js';
 
 export const analyticsRoutes = Router();
 
-const GEMINI_URL =
+const AI_ENDPOINT =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
-// ── Costruisce il prompt per Gemini ───────────────────────────────────────────
 function buildPrompt(data) {
   const {
     twitch_username, avg_viewers, hours_per_month,
@@ -127,9 +126,8 @@ analyticsRoutes.post('/analyze', async (req, res) => {
   }
 
   try {
-    // 1. Chiamata a Gemini
-    const geminiRes = await axios.post(
-      `${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`,
+    const aiRes = await axios.post(
+      `${AI_ENDPOINT}?key=${process.env.GEMINI_API_KEY}`,
       {
         contents: [{ parts: [{ text: buildPrompt({ ...formData }) }] }],
         generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
@@ -137,8 +135,8 @@ analyticsRoutes.post('/analyze', async (req, res) => {
       { timeout: 30_000 }
     );
 
-    const analysis = geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!analysis) throw new Error('Risposta Gemini vuota');
+    const analysis = aiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!analysis) throw new Error('Analisi non disponibile');
 
     // 2. Salva nel DB
     const { rows } = await pool.query(

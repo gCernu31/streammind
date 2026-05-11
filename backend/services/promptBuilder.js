@@ -2,7 +2,7 @@
  * generateBotPrompt(streamerId)
  *
  * Legge la configurazione dal database e costruisce il system prompt
- * da passare a Gemini come system instruction.
+ * per il motore AI StreaMindAI.
  *
  * Risultato cachato in memoria per 5 minuti per evitare query ripetute
  * ad ogni messaggio in chat. Invalidare con invalidateBotPromptCache(streamerId)
@@ -45,7 +45,7 @@ function formatDays(days) {
 /**
  * @param {number|string} streamerId  — ID del record nella tabella streamers
  * @param {{ forceRefresh?: boolean }} [opts]
- * @returns {Promise<string>}  — System prompt completo per Gemini
+ * @returns {Promise<string>}  — System prompt completo per il motore AI
  */
 export async function generateBotPrompt(streamerId, { forceRefresh = false } = {}) {
   const key    = String(streamerId);

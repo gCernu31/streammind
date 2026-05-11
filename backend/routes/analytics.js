@@ -4,21 +4,37 @@ import pool from '../db.js';
 
 export const analyticsRoutes = Router();
 
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+];
 
 async function callGemini(prompt) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY non configurata');
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
-  const r = await axios.post(url, {
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
-  }, { timeout: 45_000 });
+  let lastErr;
+  for (const model of GEMINI_MODELS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    try {
+      const r = await axios.post(url, {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+      }, { timeout: 45_000 });
 
-  const text = r.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Risposta Gemini vuota');
-  return text;
+      const text = r.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return text;
+    } catch (err) {
+      lastErr = err;
+      if (err.response?.status === 503) {
+        console.warn(`Gemini ${model} sovraccarico (503), provo il prossimo...`);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr ?? new Error('Tutti i modelli Gemini non disponibili');
 }
 
 function buildPrompt(data) {

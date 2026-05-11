@@ -5,7 +5,7 @@ import pool from '../db.js';
 export const analyticsRoutes = Router();
 
 const AI_ENDPOINT =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 function buildPrompt(data) {
   const {
@@ -168,6 +168,7 @@ analyticsRoutes.post('/analyze', async (req, res) => {
 
   } catch (err) {
     console.error('Analytics analyze error:', err.message);
+    console.error('Analytics response data:', JSON.stringify(err.response?.data));
     if (err.response?.status === 429) {
       return res.status(503).json({ error: 'Servizio temporaneamente sovraccarico. Riprova tra qualche minuto.' });
     }

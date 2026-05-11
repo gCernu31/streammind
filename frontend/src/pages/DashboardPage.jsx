@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 
 // ---------------------------------------------------------------------------
 // Limiti messaggi mensili per piano
@@ -13,81 +12,23 @@ const MONTHLY_LIMITS = {
 };
 
 // ---------------------------------------------------------------------------
-// Dati mock
-// ---------------------------------------------------------------------------
-
-const MOCK = {
-  botStatus:  'online',
-  botName:    'StreamBot',
-  channel:    'gcernu',
-  uptimeSince: 'Oggi alle 20:15',
-
-  messagesToday:   47,
-  messagesTodayDelta: +12,   // rispetto a ieri
-
-  memoriesCount:   284,
-  memoriesThisWeek: 8,
-
-  subscription: {
-    status:         'active',
-    plan:           'Pro',
-    daysRemaining:  18,
-    totalDays:      30,
-    expiresAt:      '27 mag 2025',
-  },
-};
-
-const MOCK_USAGE = [
-  { day: 'Lun', count: 45 },
-  { day: 'Mar', count: 67 },
-  { day: 'Mer', count: 23 },
-  { day: 'Gio', count: 89 },
-  { day: 'Ven', count: 134 },
-  { day: 'Sab', count: 201 },
-  { day: 'Dom', count: 47, today: true },
-];
-
-const MOCK_MEMORIES = [
-  {
-    id: 1,
-    category: 'inside_joke',
-    subject: 'La caduta del boss',
-    content: 'darkwolf_99 è caduto 47 volte sullo stesso boss in Dark Souls — record del canale',
-    created_at: '2025-05-09',
-  },
-  {
-    id: 2,
-    category: 'utente',
-    subject: 'marta_plays',
-    content: 'Preferisce i giochi horror, detesta i platformer difficili',
-    created_at: '2025-05-08',
-  },
-  {
-    id: 3,
-    category: 'promessa',
-    subject: 'Sub marathon',
-    content: 'gCernu ha promesso una sub marathon al raggiungimento di 600 follower',
-    created_at: '2025-05-08',
-  },
-  {
-    id: 4,
-    category: 'evento',
-    subject: 'Torneo Minecraft',
-    content: 'Organizzato torneo comunitario con 12 partecipanti — vince luigi_gamer',
-    created_at: '2025-05-07',
-  },
-  {
-    id: 5,
-    category: 'nome_gioco',
-    subject: 'Elden Ring',
-    content: 'Il gioco preferito della community, citato spesso in chat',
-    created_at: '2025-05-06',
-  },
-];
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+
+function buildChartData(apiRows) {
+  const today = new Date();
+  const map = {};
+  apiRows.forEach(r => { map[r.date] = r.count; });
+
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (6 - i));
+    const iso = d.toISOString().slice(0, 10);
+    return { day: DAY_LABELS[d.getDay()], count: map[iso] ?? 0, today: i === 6 };
+  });
+}
 
 function catStyle(cat) {
   const m = {
@@ -104,11 +45,16 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
 }
 
+function formatExpiry(iso) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 // ---------------------------------------------------------------------------
 // Card: Bot Status
 // ---------------------------------------------------------------------------
 
-function BotStatusCard({ status, botName, channel, uptimeSince }) {
+function BotStatusCard({ status, botName, channel }) {
   const online = status === 'online';
   return (
     <div className="card flex flex-col gap-3">
@@ -129,9 +75,9 @@ function BotStatusCard({ status, botName, channel, uptimeSince }) {
         <p className="text-xl font-bold text-hally-text truncate">{botName}</p>
         <p className="text-xs text-hally-text-muted mt-0.5">#{channel}</p>
       </div>
-      {online && (
+      {!online && (
         <p className="text-xs text-hally-text-muted border-t border-hally-border pt-2.5">
-          Attiva da: <span className="text-hally-text-soft">{uptimeSince}</span>
+          Attiva StreaMindAI per iniziare
         </p>
       )}
     </div>
@@ -200,7 +146,7 @@ function SubscriptionCard({ status, plan, daysRemaining, totalDays, expiresAt, m
   const pctRemaining = totalDays > 0 ? (daysRemaining / totalDays) * 100 : 0;
   const isLow = daysRemaining < 7;
   const barColor = isLow ? '#f87171' : '#8B5CF6';
-  const active = status === 'active';
+  const active = status === 'active' || status === 'cancelling';
 
   const monthlyLimit = MONTHLY_LIMITS[monthly?.plan ?? plan?.toLowerCase() ?? 'starter'] ?? 2_000;
   const monthlyCount = monthly?.count ?? 0;
@@ -228,7 +174,7 @@ function SubscriptionCard({ status, plan, daysRemaining, totalDays, expiresAt, m
               {daysRemaining}
               <span className="text-lg font-medium text-hally-text-muted ml-1">gg</span>
             </p>
-            <p className="text-xs text-hally-text-muted mt-0.5">Scade il {expiresAt}</p>
+            {expiresAt && <p className="text-xs text-hally-text-muted mt-0.5">Scade il {expiresAt}</p>}
           </div>
           <div className="border-t border-hally-border pt-2.5 space-y-1.5">
             <div className="h-1.5 rounded-full bg-hally-border overflow-hidden">
@@ -239,7 +185,6 @@ function SubscriptionCard({ status, plan, daysRemaining, totalDays, expiresAt, m
             </div>
             <p className="text-xs text-hally-text-muted">{pctRemaining.toFixed(0)}% rimanente</p>
           </div>
-          {/* Contatore messaggi mensili */}
           <div className="border-t border-hally-border pt-2.5 space-y-1.5">
             <div className="flex justify-between text-xs">
               <span className="text-hally-text-muted">Messaggi questo mese</span>
@@ -284,7 +229,6 @@ function UsageChart({ data }) {
     ...d,
   }));
 
-  // Bezier smooth
   const linePath = pts.reduce((acc, p, i) => {
     if (i === 0) return `M${p.x.toFixed(1)},${p.y.toFixed(1)}`;
     const prev = pts[i - 1];
@@ -301,7 +245,6 @@ function UsageChart({ data }) {
     label: Math.round(max * t),
   }));
 
-  // Totale della settimana
   const total = data.reduce((s, d) => s + d.count, 0);
 
   return (
@@ -327,7 +270,6 @@ function UsageChart({ data }) {
           </linearGradient>
         </defs>
 
-        {/* Grid orizzontale */}
         {yTicks.map(({ y, label }) => (
           <g key={label}>
             <line x1={pL} y1={y} x2={W - pR} y2={y} stroke="#1e1e1e" strokeWidth="1"/>
@@ -335,11 +277,9 @@ function UsageChart({ data }) {
           </g>
         ))}
 
-        {/* Area + linea */}
         <path d={areaPath} fill="url(#areaGrad)"/>
         <path d={linePath} stroke="#8B5CF6" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
 
-        {/* Punti */}
         {pts.map((p, i) => (
           <g key={i}>
             {p.today && (
@@ -352,7 +292,6 @@ function UsageChart({ data }) {
               stroke="#8B5CF6"
               strokeWidth="2.5"
             />
-            {/* Label valore per oggi */}
             {p.today && (
               <text x={p.x} y={p.y - 11} textAnchor="middle" fontSize="10" fill="#8B5CF6" fontWeight="600" fontFamily="Inter, sans-serif">
                 {p.count}
@@ -361,7 +300,6 @@ function UsageChart({ data }) {
           </g>
         ))}
 
-        {/* Etichette giorni */}
         {pts.map((p, i) => (
           <text
             key={i}
@@ -385,6 +323,20 @@ function UsageChart({ data }) {
 // ---------------------------------------------------------------------------
 
 function MemoryFeed({ memories }) {
+  if (memories.length === 0) {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-hally-text">Ultime memorie salvate</h2>
+          <a href="/memory" className="text-xs font-medium" style={{ color: '#8B5CF6' }}>Vedi tutte →</a>
+        </div>
+        <p className="text-xs text-hally-text-muted text-center py-8">
+          Nessuna memoria salvata ancora.<br />StreaMindAI inizierà a ricordare non appena sarà attiva.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -408,12 +360,10 @@ function MemoryFeed({ memories }) {
               onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(139,92,246,0.2)'}
               onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
             >
-              {/* Dot categoria */}
               <div
                 className="mt-1 w-2 h-2 rounded-full shrink-0"
                 style={{ backgroundColor: s.color }}
               />
-
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                   <span
@@ -426,7 +376,6 @@ function MemoryFeed({ memories }) {
                 </div>
                 <p className="text-xs text-hally-text-muted truncate">{m.content}</p>
               </div>
-
               <span className="text-[10px] text-hally-text-muted shrink-0 mt-0.5">{formatDate(m.created_at)}</span>
             </div>
           );
@@ -441,26 +390,44 @@ function MemoryFeed({ memories }) {
 // ---------------------------------------------------------------------------
 
 export default function DashboardPage({ user }) {
-  const { subscription: sub } = MOCK;
-  const [monthly, setMonthly]   = useState(null);
-  const [botName, setBotName]   = useState(null);
+  const [stats, setStats]     = useState(null);
+  const [botName, setBotName] = useState(null);
+  const [memories, setMemories] = useState([]);
+  const [monthly, setMonthly] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('streammindai_token');
     if (!token) return;
-    axios.get('/api/me', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => {
-        const d = r.data;
-        setMonthly({
-          count: d.monthly_messages?.count ?? 0,
-          plan:  d.subscription?.plan ?? 'starter',
+    const h = { Authorization: `Bearer ${token}` };
+
+    fetch('/api/dashboard/stats', { headers: h })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setStats(data); })
+      .catch(() => {});
+
+    fetch('/api/config', { headers: h })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.bot_name) setBotName(data.bot_name); })
+      .catch(() => {});
+
+    fetch('/api/memories?limit=5', { headers: h })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.memories) setMemories(data.memories); })
+      .catch(() => {});
+
+    fetch('/api/me', { headers: h })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) setMonthly({
+          count: data.monthly_messages?.count ?? 0,
+          plan:  data.subscription?.plan ?? null,
         });
       })
       .catch(() => {});
-    axios.get('/api/config', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => setBotName(r.data?.bot_name || null))
-      .catch(() => {});
   }, []);
+
+  const sub = stats?.subscription ?? {};
+  const chartData = buildChartData(stats?.usage_last_7_days ?? []);
 
   return (
     <div className="space-y-5">
@@ -477,39 +444,35 @@ export default function DashboardPage({ user }) {
       {/* ── Stat cards ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <BotStatusCard
-          status={MOCK.botStatus}
+          status={stats?.bot_status ?? 'offline'}
           botName={botName ?? 'Il tuo bot'}
           channel={user?.twitch_username ?? '—'}
-          uptimeSince={MOCK.uptimeSince}
         />
         <UsageCard
-          value={MOCK.messagesToday}
-          delta={MOCK.messagesTodayDelta}
+          value={stats?.messages_today ?? 0}
+          delta={stats?.messages_today_delta ?? 0}
         />
         <MemoriesCard
-          total={MOCK.memoriesCount}
-          thisWeek={MOCK.memoriesThisWeek}
+          total={stats?.memories_count ?? 0}
+          thisWeek={stats?.memories_this_week ?? 0}
         />
         <SubscriptionCard
-          status={sub.status}
-          plan={sub.plan}
-          daysRemaining={sub.daysRemaining}
-          totalDays={sub.totalDays}
-          expiresAt={sub.expiresAt}
+          status={sub.status ?? 'inactive'}
+          plan={sub.plan ?? null}
+          daysRemaining={sub.days_remaining ?? 0}
+          totalDays={sub.total_days ?? 30}
+          expiresAt={formatExpiry(sub.end)}
           monthly={monthly}
         />
       </div>
 
       {/* ── Grafico + Feed memorie ──────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
-        {/* Chart */}
         <div className="card">
-          <UsageChart data={MOCK_USAGE} />
+          <UsageChart data={chartData} />
         </div>
-
-        {/* Feed */}
         <div className="card">
-          <MemoryFeed memories={MOCK_MEMORIES} />
+          <MemoryFeed memories={memories} />
         </div>
       </div>
 

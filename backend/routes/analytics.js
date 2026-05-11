@@ -4,8 +4,30 @@ import pool from '../db.js';
 
 export const analyticsRoutes = Router();
 
-const AI_ENDPOINT =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const AI_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-1.5-flash-latest',
+  'gemini-1.5-flash',
+];
+
+async function callGemini(prompt, apiKey) {
+  for (const model of AI_MODELS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    try {
+      const r = await axios.post(url, {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+      }, { timeout: 30_000 });
+      const text = r.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return text;
+    } catch (err) {
+      const status = err.response?.status;
+      if (status === 503 || status === 429 || status === 404) continue;
+      throw err;
+    }
+  }
+  throw new Error('Tutti i modelli AI non disponibili');
+}
 
 function buildPrompt(data) {
   const {
@@ -105,17 +127,11 @@ function buildEmailHtml(analysis, username) {
 
 // ── GET /api/analytics/debug — temporaneo, rimuovere dopo il test ────────────
 analyticsRoutes.get('/debug', async (req, res) => {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!geminiKey) return res.json({ error: 'GEMINI_API_KEY non impostata' });
   try {
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (!geminiKey) return res.json({ error: 'GEMINI_API_KEY non impostata' });
-
-    const r = await axios.post(
-      `${AI_ENDPOINT}?key=${geminiKey}`,
-      { contents: [{ parts: [{ text: 'Di solo "ok"' }] }] },
-      { timeout: 15_000 }
-    );
-    const text = r.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    res.json({ ok: true, model_response: text, key_prefix: geminiKey.slice(0, 8) + '...' });
+    const text = await callGemini('Di solo "ok"', geminiKey);
+    res.json({ ok: true, model_response: text });
   } catch (err) {
     res.json({ ok: false, error: err.message, status: err.response?.status, data: err.response?.data });
   }
@@ -144,16 +160,7 @@ analyticsRoutes.post('/analyze', async (req, res) => {
   }
 
   try {
-    const aiRes = await axios.post(
-      `${AI_ENDPOINT}?key=${process.env.GEMINI_API_KEY}`,
-      {
-        contents: [{ parts: [{ text: buildPrompt({ ...formData }) }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
-      },
-      { timeout: 30_000 }
-    );
-
-    const analysis = aiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const analysis = await callGemini(buildPrompt({ ...formData }), process.env.GEMINI_API_KEY);
     if (!analysis) throw new Error('Analisi non disponibile');
 
     // 2. Salva nel DB

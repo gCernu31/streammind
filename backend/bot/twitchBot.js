@@ -20,6 +20,11 @@ import { getLimits } from '../config/planLimits.js';
 // Gemini — genera risposta AI per la chat
 // ---------------------------------------------------------------------------
 
+function truncate(text, max = 400) {
+  if (!text) return null;
+  return text.length > max ? text.slice(0, max - 1) + '…' : text;
+}
+
 async function generateReply(systemPrompt, userMessage) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
@@ -29,10 +34,15 @@ async function generateReply(systemPrompt, userMessage) {
     const r = await axios.post(url, {
       system_instruction: { parts: [{ text: systemPrompt }] },
       contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-      generationConfig: { temperature: 0.8, maxOutputTokens: 150 },
-    }, { timeout: 15_000 });
+      generationConfig: {
+        temperature:    0.8,
+        maxOutputTokens: 1024,
+        thinkingConfig: { thinkingBudget: 512 },
+      },
+    }, { timeout: 20_000 });
 
-    return r.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null;
+    const text = r.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null;
+    return truncate(text);
   } catch (err) {
     console.error('[Bot] Gemini error:', err.response?.data?.error?.message ?? err.message);
     return null;
@@ -289,13 +299,10 @@ class TwitchBot {
     const reply = await generateReply(systemPrompt, userQuestion);
     if (!reply) return;
 
-    // Twitch ha un limite di 500 caratteri per messaggio
-    const safeReply = reply.length > 490 ? reply.slice(0, 487) + '...' : reply;
-
-    // 5. Invia risposta in chat
+    // 5. Invia risposta in chat (già troncata a 400 da generateReply)
     try {
-      await this.client.say(channel, safeReply);
-      console.log(`[Bot] #${channelName} @${username}: "${userQuestion}" → "${safeReply.slice(0, 60)}..."`);
+      await this.client.say(channel, reply);
+      console.log(`[Bot] #${channelName} @${username}: "${userQuestion}" → "${reply.slice(0, 60)}..."`);
     } catch (err) {
       console.error(`[Bot] say() error in #${channelName}:`, err.message);
       return;

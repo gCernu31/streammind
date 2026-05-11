@@ -5,7 +5,7 @@ import pool from '../db.js';
 export const analyticsRoutes = Router();
 
 const AI_ENDPOINT =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent';
 
 function buildPrompt(data) {
   const {

@@ -4,29 +4,21 @@ import pool from '../db.js';
 
 export const analyticsRoutes = Router();
 
-const AI_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-1.5-flash-latest',
-  'gemini-1.5-flash',
-];
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
-async function callGemini(prompt, apiKey) {
-  for (const model of AI_MODELS) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    try {
-      const r = await axios.post(url, {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
-      }, { timeout: 30_000 });
-      const text = r.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) return text;
-    } catch (err) {
-      const status = err.response?.status;
-      if (status === 503 || status === 429 || status === 404) continue;
-      throw err;
-    }
-  }
-  throw new Error('Tutti i modelli AI non disponibili');
+async function callGemini(prompt) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY non configurata');
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+  const r = await axios.post(url, {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+  }, { timeout: 45_000 });
+
+  const text = r.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Risposta Gemini vuota');
+  return text;
 }
 
 function buildPrompt(data) {
@@ -143,13 +135,8 @@ analyticsRoutes.post('/analyze', async (req, res) => {
     return res.status(429).json({ error: 'Hai già richiesto 3 analisi nelle ultime 24 ore. Riprova domani.' });
   }
 
-  if (!process.env.GEMINI_API_KEY) {
-    return res.status(503).json({ error: 'Servizio di analisi non ancora configurato.' });
-  }
-
   try {
-    const analysis = await callGemini(buildPrompt({ ...formData }), process.env.GEMINI_API_KEY);
-    if (!analysis) throw new Error('Analisi non disponibile');
+    const analysis = await callGemini(buildPrompt({ ...formData }));
 
     // 2. Salva nel DB
     const { rows } = await pool.query(

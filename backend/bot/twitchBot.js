@@ -24,7 +24,7 @@ async function generateReply(systemPrompt, userMessage) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
   try {
     const r = await axios.post(url, {
       system_instruction: { parts: [{ text: systemPrompt }] },

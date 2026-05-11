@@ -119,7 +119,7 @@ function CancelModal({ onConfirm, onClose, loading }) {
           </button>
         </div>
         <p className="text-sm text-hally-text-muted mb-5 leading-relaxed">
-          Il bot rimarrà attivo fino alla fine del periodo corrente. Non verranno effettuati ulteriori addebiti.
+          StreaMindAI rimarrà attiva fino alla fine del periodo corrente. Non verranno effettuati ulteriori addebiti.
         </p>
         <div className="flex gap-3">
           <button

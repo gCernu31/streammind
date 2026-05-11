@@ -48,7 +48,7 @@ const features = [
       </svg>
     ),
     title: 'AI Personalizzata',
-    desc: 'Definisci personalità, tono e stile del bot. StreaMindAI diventa unico per la tua community — non un bot generico, ma un\'entità che conosce la tua stream.',
+    desc: 'Definisci personalità, tono e stile. StreaMindAI diventa unica per la tua community — non un bot generico, ma un\'entità che conosce la tua stream.',
     detail: 'Motore AI proprietario StreaMindAI',
   },
   {
@@ -78,7 +78,7 @@ const features = [
       </svg>
     ),
     title: 'Memoria Persistente',
-    desc: 'Il bot impara dalla tua chat e ricorda inside joke, eventi, promesse e preferenze. La community si sente riconosciuta ad ogni stream.',
+    desc: 'StreaMindAI impara dalla tua chat e ricorda inside joke, eventi, promesse e preferenze. La community si sente riconosciuta ad ogni stream.',
     detail: 'Apprendimento automatico ogni 20 messaggi',
   },
 ];
@@ -86,7 +86,7 @@ const features = [
 const steps = [
   { n: '01', title: 'Accedi con Twitch', desc: 'Un click. Usi il tuo account Twitch esistente, nessuna nuova password.' },
   { n: '02', title: 'Configura StreaMindAI', desc: 'Dai una personalità al bot, imposta i comandi e personalizza le risposte in pochi minuti.' },
-  { n: '03', title: 'Live sul tuo canale', desc: 'StreaMindAI è attivo automaticamente. La tua community inizia a interagire da subito.' },
+  { n: '03', title: 'Live sul tuo canale', desc: 'StreaMindAI è attiva automaticamente. La tua community inizia a interagire da subito.' },
 ];
 
 const plans = [
@@ -637,7 +637,7 @@ export default function LandingPage() {
                 <span className="text-lg font-extrabold text-white">StreaMindAI</span>
               </div>
               <p className="text-sm max-w-xs" style={{ color: '#6b6b6b' }}>
-                Dai una mente alla tua stream. Il bot AI che trasforma il tuo canale Twitch in un'esperienza indimenticabile.
+                Dai una mente alla tua stream. L'AI che trasforma il tuo canale Twitch in un'esperienza indimenticabile.
               </p>
             </div>
 

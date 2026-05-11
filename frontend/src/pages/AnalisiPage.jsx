@@ -345,7 +345,7 @@ export default function AnalisiPage() {
             >
               <p className="text-lg font-bold mb-2">Vuoi realizzare questi obiettivi?</p>
               <p className="text-sm mb-6" style={{ color: '#6b6b6b' }}>
-                StreaMindAI è il bot AI che ti aiuta attivamente ogni sera sul tuo canale Twitch.
+                StreaMindAI è la tua AI che ti aiuta attivamente ogni sera sul tuo canale Twitch.
               </p>
               <Link
                 to="/login"

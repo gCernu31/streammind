@@ -131,7 +131,7 @@ function BotStatusCard({ status, botName, channel, uptimeSince }) {
       </div>
       {online && (
         <p className="text-xs text-hally-text-muted border-t border-hally-border pt-2.5">
-          Attivo da: <span className="text-hally-text-soft">{uptimeSince}</span>
+          Attiva da: <span className="text-hally-text-soft">{uptimeSince}</span>
         </p>
       )}
     </div>
@@ -515,8 +515,8 @@ export default function DashboardPage({ user }) {
         style={{ backgroundColor: 'rgba(139,92,246,0.05)', borderColor: 'rgba(139,92,246,0.2)' }}
       >
         <div>
-          <p className="text-sm font-semibold text-hally-text">Il bot è configurato al minimo?</p>
-          <p className="text-xs text-hally-text-muted mt-0.5">Personalizza personalità e comandi per la tua community.</p>
+          <p className="text-sm font-semibold text-hally-text">StreaMindAI è configurata al minimo?</p>
+          <p className="text-xs text-hally-text-muted mt-0.5">Personalizzala con personalità e comandi per la tua community.</p>
         </div>
         <a
           href="/config"
@@ -525,7 +525,7 @@ export default function DashboardPage({ user }) {
           onMouseEnter={e => e.currentTarget.style.backgroundColor = '#7C3AED'}
           onMouseLeave={e => e.currentTarget.style.backgroundColor = '#8B5CF6'}
         >
-          Configura il bot →
+          Configurala →
         </a>
       </div>
     </div>

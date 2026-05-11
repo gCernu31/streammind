@@ -175,7 +175,7 @@ export default function ConfigPage() {
           <SectionTitle>Identità</SectionTitle>
           <div className="space-y-5">
 
-            <Field label="Nome del bot" hint="Come si chiama il tuo bot in chat. Es. StreamBot, MaxAI, NightBot…">
+            <Field label="Nome" hint="Come si chiama StreaMindAI in chat. Es. StreamBot, MaxAI, NightBot…">
               <input
                 className="input"
                 value={config.bot_name}
@@ -184,7 +184,7 @@ export default function ConfigPage() {
               />
             </Field>
 
-            <Field label="Come chiami il tuo streamer" hint="Il nome con cui il bot si riferisce a te in chat.">
+            <Field label="Come chiami il tuo streamer" hint="Il nome con cui StreaMindAI si riferisce a te in chat.">
               <input
                 className="input"
                 value={config.creator_name}
@@ -193,7 +193,7 @@ export default function ConfigPage() {
               />
             </Field>
 
-            <Field label="Personalità base" hint="Descrivi il carattere del bot: tono, stile, humour, riferimenti alla tua community.">
+            <Field label="Personalità base" hint="Descrivi il carattere di StreaMindAI: tono, stile, humour, riferimenti alla tua community.">
               <textarea
                 className="input min-h-[148px] resize-y"
                 value={config.bot_personality}
@@ -289,7 +289,7 @@ export default function ConfigPage() {
         <div className="card">
           <SectionTitle>Personaggi</SectionTitle>
           <p className="text-xs text-hally-text-muted mb-4">
-            Aggiungi i membri fissi della tua community. Il bot li riconoscerà per nome e si comporterà di conseguenza.
+            Aggiungi i membri fissi della tua community. StreaMindAI li riconoscerà per nome e si comporterà di conseguenza.
           </p>
 
           <div className="space-y-3 mb-4">
@@ -388,7 +388,7 @@ export default function ConfigPage() {
           )}
 
           <p className="text-xs text-hally-text-muted mb-5">
-            Personalizza il messaggio del bot per ogni evento Twitch. Lascia vuoto per usare il messaggio automatico.
+            Personalizza cosa dice StreaMindAI per ogni evento Twitch. Lascia vuoto per usare la risposta automatica.
           </p>
 
           <div className="space-y-4">
@@ -417,7 +417,7 @@ export default function ConfigPage() {
         <div className="card">
           <SectionTitle>Comandi personalizzati</SectionTitle>
           <p className="text-xs text-hally-text-muted mb-4">
-            Crea comandi custom per la tua chat. Quando qualcuno scrive il trigger, il bot risponde con il testo configurato.
+            Crea comandi custom per la tua chat. Quando qualcuno scrive il trigger, StreaMindAI risponde con il testo configurato.
           </p>
 
           <div className="space-y-3 mb-4">

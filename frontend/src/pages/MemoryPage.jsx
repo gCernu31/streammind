@@ -291,7 +291,7 @@ export default function MemoryPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-1">Memoria</h1>
         <p className="text-hally-text-muted text-sm">
-          Il bot salva automaticamente ricordi dalla tua chat. Puoi visualizzarli, aggiungerli ed eliminarli qui.
+          StreaMindAI salva automaticamente ricordi dalla tua chat. Puoi visualizzarli, aggiungerli ed eliminarli qui.
         </p>
       </div>
 
@@ -358,7 +358,7 @@ export default function MemoryPage() {
           <p className="text-3xl mb-3">🧠</p>
           <p className="text-hally-text-muted text-sm">
             {memories.length === 0
-              ? 'Nessuna memoria salvata. Il bot inizierà ad imparare dalla tua chat.'
+              ? 'Nessuna memoria salvata ancora. StreaMindAI inizierà ad imparare dalla tua chat.'
               : 'Nessuna memoria corrisponde ai filtri selezionati.'}
           </p>
         </div>

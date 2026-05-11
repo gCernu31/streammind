@@ -18,11 +18,11 @@ function useAuth() {
     const params = new URLSearchParams(window.location.search);
     const tokenFromUrl = params.get('token');
     if (tokenFromUrl) {
-      localStorage.setItem('streamind_token', tokenFromUrl);
+      localStorage.setItem('streammindai_token', tokenFromUrl);
       window.history.replaceState({}, '', window.location.pathname);
     }
 
-    const token = localStorage.getItem('streamind_token');
+    const token = localStorage.getItem('streammindai_token');
     if (!token) {
       setLoading(false);
       return;
@@ -32,18 +32,18 @@ function useAuth() {
       // Decodifica JWT lato client (solo per UI, la validazione è nel backend)
       const payload = JSON.parse(atob(token.split('.')[1]));
       if (payload.exp * 1000 < Date.now()) {
-        localStorage.removeItem('streamind_token');
+        localStorage.removeItem('streammindai_token');
       } else {
         setUser(payload);
       }
     } catch {
-      localStorage.removeItem('streamind_token');
+      localStorage.removeItem('streammindai_token');
     }
     setLoading(false);
   }, []);
 
   const logout = () => {
-    localStorage.removeItem('streamind_token');
+    localStorage.removeItem('streammindai_token');
     setUser(null);
   };
 

@@ -12,14 +12,14 @@ const PAGE_TITLES = {
 
 export default function Layout({ user, onLogout, children }) {
   const { pathname } = useLocation();
-  const title = PAGE_TITLES[pathname] ?? 'StreaMind';
+  const title = PAGE_TITLES[pathname] ?? 'StreaMindAI';
 
   const [botName, setBotName] = useState(null);
 
   // Carica il nome del bot configurato dall'API
   useEffect(() => {
     if (!user) return;
-    const token = localStorage.getItem('streamind_token');
+    const token = localStorage.getItem('streammindai_token');
     fetch('/api/config', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
       .then(data => data?.bot_name && setBotName(data.bot_name))

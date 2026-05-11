@@ -53,7 +53,7 @@ const PLANS = [
     features: [
       'Tutto di Elite',
       'Setup completamente personalizzato',
-      'Call mensile 1:1 con il team StreaMind',
+      'Call mensile 1:1 con il team StreaMindAI',
       'Supporto WhatsApp diretto',
       'Accesso anticipato alle nuove funzionalità',
       '33.000 messaggi/mese',
@@ -150,7 +150,7 @@ export default function SubscriptionPage() {
   const [showCancel, setShowCancel]   = useState(false);
   const [cancelling, setCancelling]   = useState(false);
 
-  const headers = () => ({ Authorization: `Bearer ${localStorage.getItem('streamind_token')}` });
+  const headers = () => ({ Authorization: `Bearer ${localStorage.getItem('streammindai_token')}` });
 
   useEffect(() => {
     axios.get('/api/subscription', { headers: headers() })
@@ -214,7 +214,7 @@ export default function SubscriptionPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold mb-1">Abbonamento</h1>
-        <p className="text-hally-text-muted text-sm">Gestisci il tuo piano StreaMind e la fatturazione.</p>
+        <p className="text-hally-text-muted text-sm">Gestisci il tuo piano StreaMindAI e la fatturazione.</p>
       </div>
 
       {/* ── Piano attuale ── */}
@@ -262,7 +262,7 @@ export default function SubscriptionPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <StatusBadge status="inactive" />
             <p className="text-hally-text-muted text-sm">
-              Scegli un piano qui sotto per attivare StreaMind sul tuo canale.
+              Scegli un piano qui sotto per attivare StreaMindAI sul tuo canale.
             </p>
           </div>
         )}

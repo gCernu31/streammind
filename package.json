@@ -1,7 +1,7 @@
 {
-  "name": "streamind",
+  "name": "streammindai",
   "version": "1.0.0",
-  "description": "StreaMind — Dai una mente al tuo stream",
+  "description": "StreaMindAI — Dai una mente al tuo stream",
   "private": true,
   "scripts": {
     "dev": "npm run dev:backend & npm run dev:frontend",

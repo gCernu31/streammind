@@ -66,7 +66,7 @@ function AddModal({ onClose, onAdded }) {
     setSaving(true);
     setError('');
     try {
-      const token = localStorage.getItem('streamind_token');
+      const token = localStorage.getItem('streammindai_token');
       const r = await axios.post('/api/memories', form, { headers: { Authorization: `Bearer ${token}` } });
       onAdded(r.data);
       onClose();
@@ -218,7 +218,7 @@ export default function MemoryPage() {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('streamind_token');
+    const token = localStorage.getItem('streammindai_token');
     axios.get('/api/memories', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => setMemories(r.data?.memories ?? r.data ?? []))
       .catch(() => setMemories([]))
@@ -250,7 +250,7 @@ export default function MemoryPage() {
     if (!confirm('Eliminare questa memoria?')) return;
     setDeleting(id);
     try {
-      const token = localStorage.getItem('streamind_token');
+      const token = localStorage.getItem('streammindai_token');
       await axios.delete(`/api/memories/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       setMemories(prev => prev.filter(m => m.id !== id));
     } catch {

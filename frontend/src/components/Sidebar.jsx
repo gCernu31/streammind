@@ -78,7 +78,7 @@ export default function Sidebar({ user, onLogout }) {
       {/* Logo */}
       <Link to="/dashboard" className="px-5 py-4 border-b border-hally-border flex items-center gap-2.5 hover:opacity-80 transition-opacity">
         <BrainWaveLogo className="w-6 h-6" />
-        <span className="font-extrabold text-base tracking-tight text-hally-text">StreaMind</span>
+        <span className="font-extrabold text-base tracking-tight text-hally-text">StreaMindAI</span>
       </Link>
 
       {/* Nav principale */}

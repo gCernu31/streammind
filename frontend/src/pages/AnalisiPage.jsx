@@ -157,7 +157,7 @@ export default function AnalisiPage() {
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-4 h-4">
               <path d="M10 3L4 8l6 5" />
             </svg>
-            StreaMind
+            StreaMindAI
           </Link>
           <Link
             to="/login"
@@ -188,7 +188,7 @@ export default function AnalisiPage() {
               <span style={{ color: PURPLE }}>canale Twitch</span>
             </h1>
             <p className="text-base max-w-xl mx-auto" style={{ color: '#a0a0a0' }}>
-              Inserisci i dati del tuo canale e StreaMind genera un'analisi strategica personalizzata —
+              Inserisci i dati del tuo canale e StreaMindAI genera un'analisi strategica personalizzata —
               punti di forza, aree di crescita, giochi consigliati e un piano d'azione in 90 giorni.
             </p>
           </div>
@@ -296,7 +296,7 @@ export default function AnalisiPage() {
               style={{ borderColor: '#262626', borderTopColor: PURPLE }}
             />
             <div className="text-center">
-              <p className="font-semibold mb-1">StreaMind sta analizzando il tuo canale…</p>
+              <p className="font-semibold mb-1">StreaMindAI sta analizzando il tuo canale…</p>
               <p className="text-sm" style={{ color: '#6b6b6b' }}>
                 Gemini AI sta elaborando i dati — circa 15-30 secondi
               </p>
@@ -335,7 +335,7 @@ export default function AnalisiPage() {
               <AnalysisContent text={analysis} />
             </div>
 
-            {/* CTA StreaMind */}
+            {/* CTA StreaMindAI */}
             <div
               className="rounded-2xl p-8 text-center border"
               style={{
@@ -345,7 +345,7 @@ export default function AnalisiPage() {
             >
               <p className="text-lg font-bold mb-2">Vuoi realizzare questi obiettivi?</p>
               <p className="text-sm mb-6" style={{ color: '#6b6b6b' }}>
-                StreaMind è il bot AI che ti aiuta attivamente ogni sera sul tuo canale Twitch.
+                StreaMindAI è il bot AI che ti aiuta attivamente ogni sera sul tuo canale Twitch.
               </p>
               <Link
                 to="/login"
@@ -354,7 +354,7 @@ export default function AnalisiPage() {
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#7C3AED')}
                 onMouseLeave={e => (e.currentTarget.style.backgroundColor = PURPLE)}
               >
-                Inizia gratis con StreaMind
+                Inizia gratis con StreaMindAI
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                 </svg>

@@ -125,18 +125,6 @@ function buildEmailHtml(analysis, username) {
 </html>`;
 }
 
-// ── GET /api/analytics/debug — temporaneo, rimuovere dopo il test ────────────
-analyticsRoutes.get('/debug', async (req, res) => {
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey) return res.json({ error: 'GEMINI_API_KEY non impostata' });
-  try {
-    const text = await callGemini('Di solo "ok"', geminiKey);
-    res.json({ ok: true, model_response: text });
-  } catch (err) {
-    res.json({ ok: false, error: err.message, status: err.response?.status, data: err.response?.data });
-  }
-});
-
 // ── POST /api/analytics/analyze — pubblico, no auth ───────────────────────────
 analyticsRoutes.post('/analyze', async (req, res) => {
   const { email, ...formData } = req.body;

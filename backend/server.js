@@ -12,6 +12,7 @@ import { configRoutes } from './routes/config.js';
 import { memoryRoutes } from './routes/memory.js';
 import { subscriptionRoutes, stripeWebhook } from './routes/subscription.js';
 import { analyticsRoutes } from './routes/analytics.js';
+import { twitchBot } from './bot/twitchBot.js';
 
 dotenv.config();
 
@@ -132,6 +133,7 @@ pool.query('SELECT 1')
       console.log(`   Ambiente: ${process.env.NODE_ENV ?? 'development'}`);
       console.log(`   Database: connesso`);
       if (isProd) console.log(`   Static:   ${distPath}`);
+      twitchBot.start();
     });
   })
   .catch((err) => {

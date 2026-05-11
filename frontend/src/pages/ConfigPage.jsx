@@ -110,7 +110,7 @@ export default function ConfigPage() {
   const [plan, setPlan]         = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('streammind_token');
+    const token = localStorage.getItem('streamind_token');
     axios.get('/api/config', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => {
         const d = r.data ?? {};
@@ -147,7 +147,7 @@ export default function ConfigPage() {
   const handleSave = async () => {
     setSaveState('saving');
     try {
-      const token = localStorage.getItem('streammind_token');
+      const token = localStorage.getItem('streamind_token');
       await axios.put('/api/config', config, { headers: { Authorization: `Bearer ${token}` } });
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), 3000);
@@ -165,7 +165,7 @@ export default function ConfigPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold mb-1">Il Mio Bot</h1>
-        <p className="text-hally-text-muted text-sm">Personalizza come StreamMind si comporta nel tuo canale.</p>
+        <p className="text-hally-text-muted text-sm">Personalizza come StreaMind si comporta nel tuo canale.</p>
       </div>
 
       <div className="space-y-6">

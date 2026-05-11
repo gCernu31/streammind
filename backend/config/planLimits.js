@@ -1,5 +1,5 @@
 /**
- * Limiti e funzionalità per ogni piano StreamMind.
+ * Limiti e funzionalità per ogni piano StreaMind.
  * Importare questo file ovunque servano controlli sul piano.
  *
  * Convenzione: -1 = illimitato, false = non disponibile

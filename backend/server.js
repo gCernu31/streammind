@@ -53,7 +53,7 @@ if (isProd) {
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ status: 'ok', service: 'streammind-api', db: 'connected', timestamp: new Date().toISOString() });
+    res.json({ status: 'ok', service: 'streamind-api', db: 'connected', timestamp: new Date().toISOString() });
   } catch {
     res.status(503).json({ status: 'error', db: 'disconnected' });
   }
@@ -128,7 +128,7 @@ app.use((err, req, res, _next) => {
 pool.query('SELECT 1')
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`🟣 StreamMind API avviata su http://localhost:${PORT}`);
+      console.log(`🟣 StreaMind API avviata su http://localhost:${PORT}`);
       console.log(`   Ambiente: ${process.env.NODE_ENV ?? 'development'}`);
       console.log(`   Database: connesso`);
       if (isProd) console.log(`   Static:   ${distPath}`);

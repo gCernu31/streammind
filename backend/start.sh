@@ -4,5 +4,5 @@ set -e
 echo "🔄 Applicazione migrazioni database..."
 node /app/backend/migrate.js
 
-echo "🟣 Avvio StreamMind API..."
+echo "🟣 Avvio StreaMind API..."
 exec node /app/backend/server.js

@@ -1,4 +1,4 @@
-# StreamMind
+# StreaMind
 
 > Dai una mente al tuo stream.
 

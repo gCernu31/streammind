@@ -5,7 +5,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('streammind_token');
+    const token = localStorage.getItem('streamind_token');
     if (token) navigate('/dashboard');
 
     const params = new URLSearchParams(window.location.search);
@@ -23,7 +23,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="text-3xl font-extrabold text-hally-orange mb-2">StreamMind</div>
+          <div className="text-3xl font-extrabold text-hally-orange mb-2">StreaMind</div>
           <p className="text-hally-text-muted text-sm">Dai una mente al tuo stream</p>
         </div>
 

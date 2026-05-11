@@ -259,7 +259,7 @@ function SubscriptionCard({ status, plan, daysRemaining, totalDays, expiresAt, m
         <div>
           <p className="text-sm font-medium text-hally-text-muted">Nessun piano attivo</p>
           <a href="/subscription" className="text-xs font-semibold mt-2 inline-block" style={{ color: '#8B5CF6' }}>
-            Attiva StreamMind →
+            Attiva StreaMind →
           </a>
         </div>
       )}
@@ -445,7 +445,7 @@ export default function DashboardPage({ user }) {
   const [monthly, setMonthly] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('streammind_token');
+    const token = localStorage.getItem('streamind_token');
     if (!token) return;
     axios.get('/api/me', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => {

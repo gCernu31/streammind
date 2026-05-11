@@ -74,7 +74,7 @@ function buildEmailHtml(analysis, username) {
 <head><meta charset="utf-8"></head>
 <body style="background:#0d0d0d;color:#f0f0f0;font-family:Inter,Arial,sans-serif;padding:40px 20px;max-width:640px;margin:0 auto">
   <div style="text-align:center;margin-bottom:32px">
-    <div style="font-size:24px;font-weight:900;color:#8B5CF6">StreamMind</div>
+    <div style="font-size:24px;font-weight:900;color:#8B5CF6">StreaMind</div>
     <p style="color:#6b6b6b;font-size:14px;margin-top:4px">Dai una mente al tuo stream</p>
   </div>
 
@@ -90,14 +90,14 @@ function buildEmailHtml(analysis, username) {
   <div style="background:linear-gradient(135deg,rgba(139,92,246,0.12),rgba(139,92,246,0.04));border:1px solid rgba(139,92,246,0.2);border-radius:16px;padding:28px;margin-top:24px;text-align:center">
     <p style="font-size:16px;font-weight:700;margin:0 0 8px">Vuoi raggiungere questi obiettivi?</p>
     <p style="color:#6b6b6b;font-size:14px;margin:0 0 20px">Un bot AI che ti aiuta attivamente ogni sera sul tuo canale.</p>
-    <a href="${process.env.FRONTEND_URL || 'https://streammind.it'}/login"
+    <a href="${process.env.FRONTEND_URL || 'https://streamind.it'}/login"
        style="display:inline-block;background:#8B5CF6;color:#fff;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none;font-size:14px">
-      Inizia gratis con StreamMind →
+      Inizia gratis con StreaMind →
     </a>
   </div>
 
   <p style="text-align:center;color:#3a3a3a;font-size:12px;margin-top:24px">
-    StreamMind · Dai una mente al tuo stream<br>
+    StreaMind · Dai una mente al tuo stream<br>
     Hai ricevuto questa email perché hai richiesto un'analisi gratuita.
   </p>
 </body>
@@ -157,9 +157,9 @@ analyticsRoutes.post('/analyze', async (req, res) => {
       axios.post(
         'https://api.resend.com/emails',
         {
-          from:    'StreamMind <analisi@streammind.it>',
+          from:    'StreaMind <analisi@streamind.it>',
           to:      email.trim(),
-          subject: `La tua analisi StreamMind${formData.twitch_username ? ` — @${formData.twitch_username}` : ''}`,
+          subject: `La tua analisi StreaMind${formData.twitch_username ? ` — @${formData.twitch_username}` : ''}`,
           html:    buildEmailHtml(analysis, formData.twitch_username),
         },
         { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` } }

@@ -1,7 +1,7 @@
 {
-  "name": "streammind",
+  "name": "streamind",
   "version": "1.0.0",
-  "description": "StreamMind — Dai una mente al tuo stream",
+  "description": "StreaMind — Dai una mente al tuo stream",
   "private": true,
   "scripts": {
     "dev": "npm run dev:backend & npm run dev:frontend",

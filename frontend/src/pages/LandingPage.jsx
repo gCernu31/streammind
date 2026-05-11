@@ -48,7 +48,7 @@ const features = [
       </svg>
     ),
     title: 'AI Personalizzata',
-    desc: 'Definisci personalità, tono e stile del bot. StreamMind diventa unico per la tua community — non un bot generico, ma un\'entità che conosce il tuo stream.',
+    desc: 'Definisci personalità, tono e stile del bot. StreaMind diventa unico per la tua community — non un bot generico, ma un\'entità che conosce il tuo stream.',
     detail: 'Powered by Gemini 2.5 Flash con fallback automatico',
   },
   {
@@ -58,7 +58,7 @@ const features = [
       </svg>
     ),
     title: 'Song Request Spotify',
-    desc: 'I tuoi viewer possono richiedere canzoni direttamente in chat. StreamMind le aggiunge alla coda Spotify in tempo reale.',
+    desc: 'I tuoi viewer possono richiedere canzoni direttamente in chat. StreaMind le aggiunge alla coda Spotify in tempo reale.',
     detail: 'Limite configurabile per sub e non-sub',
   },
   {
@@ -68,7 +68,7 @@ const features = [
       </svg>
     ),
     title: 'EventSub in Tempo Reale',
-    desc: 'Ringraziamenti automatici per follow, sub, bit e raid. StreamMind celebra ogni momento importante del tuo stream.',
+    desc: 'Ringraziamenti automatici per follow, sub, bit e raid. StreaMind celebra ogni momento importante del tuo stream.',
     detail: 'Follow · Sub · Bit · Raid · Hype Train',
   },
   {
@@ -85,8 +85,8 @@ const features = [
 
 const steps = [
   { n: '01', title: 'Accedi con Twitch', desc: 'Un click. Usi il tuo account Twitch esistente, nessuna nuova password.' },
-  { n: '02', title: 'Configura StreamMind', desc: 'Dai una personalità al bot, imposta i comandi e personalizza le risposte in pochi minuti.' },
-  { n: '03', title: 'Live sul tuo canale', desc: 'StreamMind è attivo automaticamente. La tua community inizia a interagire da subito.' },
+  { n: '02', title: 'Configura StreaMind', desc: 'Dai una personalità al bot, imposta i comandi e personalizza le risposte in pochi minuti.' },
+  { n: '03', title: 'Live sul tuo canale', desc: 'StreaMind è attivo automaticamente. La tua community inizia a interagire da subito.' },
 ];
 
 const plans = [
@@ -149,7 +149,7 @@ const plans = [
     features: [
       'Tutto di Elite',
       'Setup completamente personalizzato',
-      'Call mensile 1:1 con il team StreamMind',
+      'Call mensile 1:1 con il team StreaMind',
       'Supporto WhatsApp diretto',
       'Accesso anticipato alle nuove funzionalità',
       '33.000 messaggi/mese',
@@ -172,13 +172,13 @@ const stats = [
 
 const chatMessages = [
   { user: 'darkwolf_99',  color: '#9147ff', text: '!bot qual è il tuo gioco preferito?' },
-  { user: 'StreamMindBot', color: PURPLE, badge: 'BOT', text: 'Dipende dall\'umore! Ma se mi costringi a scegliere… God of War. gCernu ne ha parlato per ore 😄' },
+  { user: 'StreaMindAI', color: PURPLE, badge: 'BOT', text: 'Dipende dall\'umore! Ma se mi costringi a scegliere… God of War. gCernu ne ha parlato per ore 😄' },
   { user: 'streamer_fan', color: '#00c8ff', text: '!sr Blinding Lights - The Weeknd' },
-  { user: 'StreamMindBot', color: PURPLE, badge: 'BOT', text: '✅ Aggiunta alla coda Spotify! Posizione #2 🎵' },
+  { user: 'StreaMindAI', color: PURPLE, badge: 'BOT', text: '✅ Aggiunta alla coda Spotify! Posizione #2 🎵' },
   { user: 'luigi_gamer',  color: '#ff4e6a', text: 'primo follow della serata!' },
-  { user: 'StreamMindBot', color: PURPLE, badge: 'BOT', text: '🎉 Benvenuto luigi_gamer! Primo follow = cuore speciale nel nostro stream ❤️' },
+  { user: 'StreaMindAI', color: PURPLE, badge: 'BOT', text: '🎉 Benvenuto luigi_gamer! Primo follow = cuore speciale nel nostro stream ❤️' },
   { user: 'marta_plays',  color: '#43b581', text: '!bot cosa sta giocando oggi?' },
-  { user: 'StreamMindBot', color: PURPLE, badge: 'BOT', text: 'Oggi è serata Elden Ring! gCernu ha giurato di finire il boss stasera… vedremo 😂' },
+  { user: 'StreaMindAI', color: PURPLE, badge: 'BOT', text: 'Oggi è serata Elden Ring! gCernu ha giurato di finire il boss stasera… vedremo 😂' },
 ];
 
 function TwitchChatMockup() {
@@ -269,7 +269,7 @@ function Header() {
         <a href="/" className="flex items-center gap-2.5 group">
           <BrainWaveLogo className="w-7 h-7 group-hover:opacity-80 transition-opacity" />
           <span className="text-xl font-extrabold text-white tracking-tight group-hover:text-[#8B5CF6] transition-colors">
-            StreamMind
+            StreaMind
           </span>
         </a>
 
@@ -342,7 +342,7 @@ export default function LandingPage() {
               </h1>
 
               <p className="text-lg lg:text-xl mb-10 max-w-xl mx-auto lg:mx-0" style={{ color: '#a0a0a0' }}>
-                StreamMind risponde in chat, ringrazia i tuoi follower, gestisce le song request e impara dalla tua community — tutto in automatico, tutto personalizzabile.
+                StreaMind risponde in chat, ringrazia i tuoi follower, gestisce le song request e impara dalla tua community — tutto in automatico, tutto personalizzabile.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center lg:items-start gap-4 justify-center lg:justify-start">
@@ -403,7 +403,7 @@ export default function LandingPage() {
             </p>
             <h2 className="text-4xl font-extrabold mb-4">Tutto quello che ti serve</h2>
             <p className="text-lg max-w-xl mx-auto" style={{ color: '#a0a0a0' }}>
-              Un bot completo, non solo risposte AI. StreamMind gestisce ogni aspetto del tuo stream in modo intelligente.
+              Un bot completo, non solo risposte AI. StreaMind gestisce ogni aspetto del tuo stream in modo intelligente.
             </p>
           </div>
 
@@ -483,7 +483,7 @@ export default function LandingPage() {
                 Connesso al tuo<br />server Discord
               </h2>
               <p className="text-base leading-relaxed mb-6" style={{ color: '#a0a0a0' }}>
-                Quando vai live, StreamMind avvisa automaticamente il tuo server Discord con @everyone e il link diretto allo stream. Nessun bot Discord aggiuntivo necessario.
+                Quando vai live, StreaMind avvisa automaticamente il tuo server Discord con @everyone e il link diretto allo stream. Nessun bot Discord aggiuntivo necessario.
               </p>
               <ul className="space-y-2 text-sm" style={{ color: '#a0a0a0' }}>
                 {['Notifica automatica go-live', 'Annuncio nuovi video YouTube', 'Canali configurabili liberamente'].map((item) => (
@@ -512,7 +512,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <div className="flex items-baseline gap-2 mb-1">
-                      <span className="text-white text-xs font-semibold">StreamMindBot</span>
+                      <span className="text-white text-xs font-semibold">StreaMindAI</span>
                       <span
                         className="text-[10px] px-1 py-0.5 rounded font-semibold"
                         style={{ backgroundColor: 'rgba(139,92,246,0.2)', color: PURPLE }}
@@ -627,7 +627,7 @@ export default function LandingPage() {
             Dai una mente al tuo stream, oggi
           </h2>
           <p className="text-lg mb-10" style={{ color: '#a0a0a0' }}>
-            Unisciti agli streamer italiani che stanno già usando StreamMind per coinvolgere la loro community ogni sera.
+            Unisciti agli streamer italiani che stanno già usando StreaMind per coinvolgere la loro community ogni sera.
           </p>
           <Link
             to="/login"
@@ -652,7 +652,7 @@ export default function LandingPage() {
             <div>
               <div className="flex items-center gap-2.5 mb-3">
                 <BrainWaveLogo className="w-6 h-6" />
-                <span className="text-lg font-extrabold text-white">StreamMind</span>
+                <span className="text-lg font-extrabold text-white">StreaMind</span>
               </div>
               <p className="text-sm max-w-xs" style={{ color: '#6b6b6b' }}>
                 Dai una mente al tuo stream. Il bot AI che trasforma il tuo canale Twitch in un'esperienza indimenticabile.
@@ -684,7 +684,7 @@ export default function LandingPage() {
 
           <div className="pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4" style={{ borderColor: '#1e1e1e' }}>
             <p className="text-xs" style={{ color: '#6b6b6b' }}>
-              © 2025 StreamMind — Fatto con ❤️ per gli streamer italiani
+              © 2025 StreaMind — Fatto con ❤️ per gli streamer italiani
             </p>
             <p className="text-xs" style={{ color: '#6b6b6b' }}>
               Non affiliato con Twitch Interactive, Inc.

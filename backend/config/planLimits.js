@@ -14,7 +14,7 @@ export const PLAN_LIMITS = {
     monthlyMessages:           2_000,
 
     // Funzionalità
-    characters:          5,       // max personaggi configurabili
+    characters:          5,
     songRequest:         false,
     memory:              false,
     discord:             false,
@@ -32,7 +32,7 @@ export const PLAN_LIMITS = {
 
     characters:          -1,      // illimitati
     songRequest:         true,
-    memory:              true,
+    memory:              true,    // memoria base
     discord:             true,
     analytics:           false,
     customEventMessages: false,
@@ -47,10 +47,10 @@ export const PLAN_LIMITS = {
 
     characters:          -1,
     songRequest:         true,
-    memory:              true,      // avanzata con game_context
+    memory:              true,    // avanzata con game_context
     discord:             true,
     analytics:           true,
-    customEventMessages: true,      // messaggi eventi personalizzabili
+    customEventMessages: true,
 
     events: ['follow', 'subscribe', 'gift_sub', 'cheer', 'hype_train', 'raid'],
   },

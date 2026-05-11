@@ -265,6 +265,7 @@ function DemoChat({ user }) {
   const exhausted = count >= DEMO_MAX;
 
   useEffect(() => {
+    if (messages.length <= 1 && !loading) return;
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 

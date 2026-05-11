@@ -247,6 +247,9 @@ const DEMO_KEY = 'streammindai_demo_count';
 const DEMO_MAX = 3;
 
 function DemoChat() {
+  const isLoggedIn = !!localStorage.getItem('streammindai_token');
+
+  const [unlocked, setUnlocked] = useState(isLoggedIn);
   const [messages, setMessages] = useState([
     { from: 'bot', text: 'Ciao! Sono Hally 🎃 l\'IA demo di StreaMindAI. Scrivimi qualcosa e ti mostro cosa posso fare!' },
   ]);
@@ -281,9 +284,9 @@ function DemoChat() {
       });
       const data = await r.json();
       const reply = data.reply || 'Non riesco a rispondere in questo momento.';
-      setMessages(prev => [...prev, { from: 'bot', text: reply }]);
+      setMessages(prev => [...prev, { from: 'bot', text: reply, showPowered: newCount >= DEMO_MAX }]);
     } catch {
-      setMessages(prev => [...prev, { from: 'bot', text: 'Errore di connessione. Riprova!' }]);
+      setMessages(prev => [...prev, { from: 'bot', text: 'Errore di connessione. Riprova!', showPowered: false }]);
     } finally {
       setLoading(false);
     }
@@ -312,7 +315,34 @@ function DemoChat() {
           </p>
         </div>
 
-        <div className="max-w-xl mx-auto">
+        <div className="max-w-xl mx-auto relative">
+
+          {/* Overlay blocco — visibile solo se non sbloccato */}
+          {!unlocked && (
+            <div
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl gap-5 backdrop-blur-sm"
+              style={{ backgroundColor: 'rgba(13,13,13,0.82)', border: '1px solid rgba(139,92,246,0.25)' }}
+            >
+              <div className="text-4xl">🎃</div>
+              <div className="text-center px-6">
+                <p className="text-base font-bold text-white mb-1">Accedi con Twitch per provare Hally</p>
+                <p className="text-sm" style={{ color: '#a0a0a0' }}>È gratis. Nessuna carta richiesta.</p>
+              </div>
+              <Link
+                to="/login"
+                className="flex items-center gap-2.5 font-bold text-white px-7 py-3 rounded-xl text-sm transition-all duration-150"
+                style={{ backgroundColor: '#9147ff' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#772ce8'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#9147ff'}
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
+                </svg>
+                Accedi con Twitch
+              </Link>
+            </div>
+          )}
+
           {/* Finestra chat */}
           <div
             className="rounded-t-xl overflow-hidden border"
@@ -380,12 +410,14 @@ function DemoChat() {
                       >
                         {msg.text}
                       </div>
-                      <p className="text-[10px] mt-1.5" style={{ color: '#4a4a4a' }}>
-                        Powered by StreaMindAI —{' '}
-                        <Link to="/login" className="underline hover:opacity-80 transition-opacity" style={{ color: '#6b6b6b' }}>
-                          Crea il tuo bot personalizzato →
-                        </Link>
-                      </p>
+                      {msg.showPowered && (
+                        <p className="text-[10px] mt-1.5" style={{ color: '#4a4a4a' }}>
+                          Powered by StreaMindAI —{' '}
+                          <Link to="/login" className="underline hover:opacity-80 transition-opacity" style={{ color: '#6b6b6b' }}>
+                            Crea il tuo bot personalizzato →
+                          </Link>
+                        </p>
+                      )}
                     </div>
                   </div>
                 );
@@ -445,7 +477,7 @@ function DemoChat() {
           </div>
 
           {/* Contatore messaggi */}
-          {!exhausted && (
+          {unlocked && !exhausted && (
             <p className="text-center text-xs mt-3" style={{ color: '#4a4a4a' }}>
               {DEMO_MAX - count} {DEMO_MAX - count === 1 ? 'messaggio rimasto' : 'messaggi rimasti'} nella demo
             </p>

@@ -289,9 +289,17 @@ class TwitchBot {
     const reply = await generateReply(systemPrompt, userQuestion);
     if (!reply) return;
 
+    // Twitch ha un limite di 500 caratteri per messaggio
+    const safeReply = reply.length > 490 ? reply.slice(0, 487) + '...' : reply;
+
     // 5. Invia risposta in chat
-    await this.client.say(channel, reply);
-    console.log(`[Bot] #${channelName} @${username}: "${userQuestion}" → "${reply.slice(0, 60)}..."`);
+    try {
+      await this.client.say(channel, safeReply);
+      console.log(`[Bot] #${channelName} @${username}: "${userQuestion}" → "${safeReply.slice(0, 60)}..."`);
+    } catch (err) {
+      console.error(`[Bot] say() error in #${channelName}:`, err.message);
+      return;
+    }
 
     // 6. Aggiorna contatori
     await Promise.all([

@@ -76,10 +76,10 @@ export default function Sidebar({ user, onLogout }) {
   return (
     <aside className="w-60 shrink-0 bg-hally-bg-card border-r border-hally-border flex flex-col h-screen sticky top-0">
       {/* Logo */}
-      <Link to="/dashboard" className="px-5 py-4 border-b border-hally-border flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+      <a href="/" className="px-5 py-4 border-b border-hally-border flex items-center gap-2.5 hover:opacity-80 transition-opacity">
         <BrainWaveLogo className="w-6 h-6" />
         <span className="font-extrabold text-base tracking-tight text-hally-text">StreaMindAI</span>
-      </Link>
+      </a>
 
       {/* Nav principale */}
       <nav className="flex-1 px-2.5 py-3 space-y-0.5">

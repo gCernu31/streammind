@@ -14,15 +14,14 @@ export default function Layout({ user, onLogout, children }) {
   const { pathname } = useLocation();
   const title = PAGE_TITLES[pathname] ?? 'StreaMindAI';
 
-  const [botName, setBotName] = useState(null);
+  const [botName, setBotName] = useState('Il tuo bot');
 
-  // Carica il nome del bot configurato dall'API
   useEffect(() => {
     if (!user) return;
     const token = localStorage.getItem('streammindai_token');
     fetch('/api/config', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(data => data?.bot_name && setBotName(data.bot_name))
+      .then(data => setBotName(data?.bot_name || 'Il tuo bot'))
       .catch(() => {});
   }, [user]);
 
@@ -39,15 +38,13 @@ export default function Layout({ user, onLogout, children }) {
           {/* Destra: bot badge + user */}
           <div className="flex items-center gap-3">
             {/* Nome bot */}
-            {botName && (
-              <div
-                className="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border"
-                style={{ backgroundColor: 'rgba(139,92,246,0.1)', borderColor: 'rgba(139,92,246,0.25)', color: '#8B5CF6' }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
-                {botName}
-              </div>
-            )}
+            <div
+              className="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border"
+              style={{ backgroundColor: 'rgba(139,92,246,0.1)', borderColor: 'rgba(139,92,246,0.25)', color: '#8B5CF6' }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
+              {botName}
+            </div>
 
             {/* Divider */}
             <div className="h-6 w-px bg-hally-border hidden sm:block" />

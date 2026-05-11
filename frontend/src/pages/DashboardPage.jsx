@@ -442,7 +442,8 @@ function MemoryFeed({ memories }) {
 
 export default function DashboardPage({ user }) {
   const { subscription: sub } = MOCK;
-  const [monthly, setMonthly] = useState(null);
+  const [monthly, setMonthly]   = useState(null);
+  const [botName, setBotName]   = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('streammindai_token');
@@ -455,6 +456,9 @@ export default function DashboardPage({ user }) {
           plan:  d.subscription?.plan ?? 'starter',
         });
       })
+      .catch(() => {});
+    axios.get('/api/config', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => setBotName(r.data?.bot_name || null))
       .catch(() => {});
   }, []);
 
@@ -474,8 +478,8 @@ export default function DashboardPage({ user }) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <BotStatusCard
           status={MOCK.botStatus}
-          botName={MOCK.botName}
-          channel={MOCK.channel}
+          botName={botName ?? 'Il tuo bot'}
+          channel={user?.twitch_username ?? '—'}
           uptimeSince={MOCK.uptimeSince}
         />
         <UsageCard

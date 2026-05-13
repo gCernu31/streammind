@@ -125,10 +125,10 @@ const EMPTY = {
   event_messages: { ...EMPTY_EVENT_MESSAGES },
 };
 
-let _cid = 1;
+let _mid = 1;
 let _kid = 1;
-const newChar = () => ({ id: _cid++, twitch_username: '', nickname: '', description: '' });
-const newCmd  = () => ({ id: _kid++, trigger: '', response: '', active: true });
+const newMember = () => ({ id: _mid++, twitch_username: '', nickname: '', description: '' });
+const newCmd    = () => ({ id: _kid++, trigger: '', response: '', active: true });
 
 // ─── Pagina principale ────────────────────────────────────────────────────────
 export default function ConfigPage() {
@@ -162,10 +162,10 @@ export default function ConfigPage() {
   const set       = (k, v)      => setConfig(p => ({ ...p, [k]: v }));
   const setNested = (k, sub, v) => setConfig(p => ({ ...p, [k]: { ...p[k], [sub]: v } }));
 
-  // Characters
-  const addChar    = ()           => set('characters', [...config.characters, newChar()]);
-  const removeChar = id           => set('characters', config.characters.filter(c => c.id !== id));
-  const updateChar = (id, f, v)   => set('characters', config.characters.map(c => c.id === id ? { ...c, [f]: v } : c));
+  // Membri
+  const addMember    = ()         => set('characters', [...config.characters, newMember()]);
+  const removeMember = id         => set('characters', config.characters.filter(c => c.id !== id));
+  const updateMember = (id, f, v) => set('characters', config.characters.map(c => c.id === id ? { ...c, [f]: v } : c));
 
   // Commands
   const addCmd    = ()           => set('custom_commands', [...config.custom_commands, newCmd()]);
@@ -335,9 +335,9 @@ export default function ConfigPage() {
           </div>
         </div>
 
-        {/* ── PERSONAGGI ── */}
+        {/* ── MEMBRI ── */}
         <div className="card">
-          <SectionTitle>Personaggi</SectionTitle>
+          <SectionTitle>Membri</SectionTitle>
           <p className="text-xs text-hally-text-muted mb-4">
             Aggiungi i membri fissi della tua community. StreaMindAI li riconoscerà per nome e si comporterà di conseguenza.
           </p>
@@ -345,20 +345,20 @@ export default function ConfigPage() {
           <div className="space-y-3 mb-4">
             {config.characters.length === 0 && (
               <p className="text-sm text-hally-text-muted py-6 text-center border border-dashed border-hally-border rounded-lg">
-                Nessun personaggio aggiunto ancora.
+                Nessun membro aggiunto ancora.
               </p>
             )}
-            {config.characters.map(char => (
+            {config.characters.map(member => (
               <div
-                key={char.id}
+                key={member.id}
                 className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-lg border border-hally-border bg-hally-bg"
               >
                 <div>
                   <label className="text-xs text-hally-text-muted block mb-1">Username Twitch</label>
                   <input
                     className="input text-sm"
-                    value={char.twitch_username}
-                    onChange={e => updateChar(char.id, 'twitch_username', e.target.value)}
+                    value={member.twitch_username}
+                    onChange={e => updateMember(member.id, 'twitch_username', e.target.value)}
                     placeholder="Es. xX_modacoda_Xx"
                   />
                 </div>
@@ -366,8 +366,8 @@ export default function ConfigPage() {
                   <label className="text-xs text-hally-text-muted block mb-1">Soprannome</label>
                   <input
                     className="input text-sm"
-                    value={char.nickname}
-                    onChange={e => updateChar(char.id, 'nickname', e.target.value)}
+                    value={member.nickname}
+                    onChange={e => updateMember(member.id, 'nickname', e.target.value)}
                     placeholder="Es. Il Moderatore"
                   />
                 </div>
@@ -375,15 +375,15 @@ export default function ConfigPage() {
                   <label className="text-xs text-hally-text-muted block mb-1">Descrizione comportamento</label>
                   <input
                     className="input text-sm pr-8"
-                    value={char.description}
-                    onChange={e => updateChar(char.id, 'description', e.target.value)}
+                    value={member.description}
+                    onChange={e => updateMember(member.id, 'description', e.target.value)}
                     placeholder="Es. Moderatore storico, sempre ironico"
                   />
                   <button
                     type="button"
-                    onClick={() => removeChar(char.id)}
+                    onClick={() => removeMember(member.id)}
                     className="absolute right-2.5 top-[26px] text-hally-text-muted hover:text-red-400 transition-colors"
-                    title="Rimuovi personaggio"
+                    title="Rimuovi membro"
                   >
                     <IconTrash />
                   </button>
@@ -394,12 +394,12 @@ export default function ConfigPage() {
 
           <button
             type="button"
-            onClick={addChar}
+            onClick={addMember}
             className="flex items-center gap-2 text-sm font-medium transition-colors duration-150 hover:opacity-80"
             style={{ color: '#8B5CF6' }}
           >
             <IconPlus />
-            Aggiungi personaggio
+            Aggiungi membro
           </button>
         </div>
 

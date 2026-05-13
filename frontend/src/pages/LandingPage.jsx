@@ -98,7 +98,7 @@ const plans = [
     desc: 'Per chi inizia',
     features: [
       'Bot AI base con personalità configurabile',
-      'Max 5 personaggi configurabili',
+      'Max 5 membri configurabili',
       'Comandi standard (!hally info, !hally [domanda])',
       'Risposte automatiche: follow e sub',
       '2.000 messaggi/mese',
@@ -113,7 +113,7 @@ const plans = [
     desc: 'Per streamer in crescita',
     features: [
       'Bot AI completamente personalizzato',
-      'Personaggi illimitati',
+      'Membri illimitati',
       'Song request Spotify (!sr)',
       'Memoria base (apprendimento automatico)',
       'Eventi: follow, sub, gift, bit, hype train, raid + shoutout',

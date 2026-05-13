@@ -85,6 +85,33 @@ const EVENT_LABELS = {
 
 const EMPTY_EVENT_MESSAGES = Object.fromEntries(Object.keys(EVENT_LABELS).map(k => [k, '']));
 
+// ─── Filtro termini bannabili Twitch ─────────────────────────────────────────
+const BANNED = [
+  { r: /\bn[i!1l]+g{1,2}[ae3]r+s?\b/i,  cat: 'insulto razziale' },
+  { r: /\bn[i!1l]+g{1,2}[ae3]s?\b/i,    cat: 'insulto razziale' },
+  { r: /\bspics?\b/i,                    cat: 'insulto razziale' },
+  { r: /\bgooks?\b/i,                    cat: 'insulto razziale' },
+  { r: /\bwetbacks?\b/i,                 cat: 'insulto razziale' },
+  { r: /\bkik[e3]s?\b/i,                 cat: 'insulto razziale' },
+  { r: /\bcoons?\b/i,                    cat: 'insulto razziale' },
+  { r: /\bzingaracc[oi]\b/i,             cat: 'insulto razziale' },
+  { r: /\bterron[ei]\b/i,                cat: 'insulto razziale' },
+  { r: /\bf[a4]g+[o0]ts?\b/i,           cat: "linguaggio d'odio" },
+  { r: /\bf[a4]gs?\b/i,                  cat: "linguaggio d'odio" },
+  { r: /\bdyk[e3]s?\b/i,                 cat: "linguaggio d'odio" },
+  { r: /\btr[a4]nn[iy]s?\b/i,            cat: "linguaggio d'odio" },
+  { r: /\bporn[o]?\b/i,                  cat: 'contenuto sessuale esplicito' },
+  { r: /\bcunts?\b/i,                    cat: 'contenuto sessuale esplicito' },
+];
+
+function detectBanned(text) {
+  if (!text) return null;
+  for (const { r, cat } of BANNED) {
+    if (r.test(text)) return cat;
+  }
+  return null;
+}
+
 // ─── Default config vuota ─────────────────────────────────────────────────────
 const EMPTY = {
   bot_name: '',
@@ -105,9 +132,10 @@ const newCmd  = () => ({ id: _kid++, trigger: '', response: '', active: true });
 
 // ─── Pagina principale ────────────────────────────────────────────────────────
 export default function ConfigPage() {
-  const [config, setConfig]     = useState(null);
+  const [config, setConfig]       = useState(null);
   const [saveState, setSaveState] = useState('idle'); // idle | saving | saved | error
-  const [plan, setPlan]         = useState(null);
+  const [banError, setBanError]   = useState(null);
+  const [plan, setPlan]           = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('streammindai_token');
@@ -145,6 +173,28 @@ export default function ConfigPage() {
   const updateCmd = (id, f, v)   => set('custom_commands', config.custom_commands.map(c => c.id === id ? { ...c, [f]: v } : c));
 
   const handleSave = async () => {
+    setBanError(null);
+
+    // Controllo termini bannabili Twitch
+    const fields = [
+      { val: config.bot_name,        label: 'Nome bot' },
+      { val: config.bot_personality, label: 'Personalità' },
+    ];
+    for (const { val, label } of fields) {
+      const cat = detectBanned(val);
+      if (cat) {
+        setBanError(`Il campo "${label}" contiene ${cat} non consentito dalle linee guida Twitch.`);
+        return;
+      }
+    }
+    for (const m of config.characters ?? []) {
+      const cat = detectBanned(m.nickname) || detectBanned(m.description);
+      if (cat) {
+        setBanError(`Un membro contiene ${cat} non consentito dalle linee guida Twitch.`);
+        return;
+      }
+    }
+
     setSaveState('saving');
     try {
       const token = localStorage.getItem('streammindai_token');
@@ -484,7 +534,20 @@ export default function ConfigPage() {
       </div>
 
       {/* ── SALVA ── */}
-      <div className="mt-8 flex items-center gap-4">
+      <div className="mt-8 space-y-3">
+        {banError && (
+          <div
+            className="flex items-start gap-3 px-4 py-3 rounded-lg border text-sm"
+            style={{ backgroundColor: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.25)', color: '#f87171' }}
+          >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-4 h-4 flex-shrink-0 mt-0.5">
+              <path d="M8 6v3M8 11.5v.5M3.3 13h9.4L8 3 3.3 13z" />
+            </svg>
+            <span>{banError} Rimuovi il termine prima di salvare.</span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-4">
         <button
           onClick={handleSave}
           disabled={saveState === 'saving'}
@@ -510,6 +573,7 @@ export default function ConfigPage() {
             Errore nel salvataggio
           </span>
         )}
+        </div>
       </div>
     </div>
   );

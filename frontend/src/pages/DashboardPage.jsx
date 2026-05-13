@@ -441,6 +441,48 @@ export default function DashboardPage({ user }) {
         </p>
       </div>
 
+      {/* ── CTA Configura ──────────────────────────────────────────── */}
+      <a
+        href="/config"
+        className="block w-full rounded-xl border px-6 py-5 transition-all duration-150 group"
+        style={{
+          background:   'linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(139,92,246,0.05) 100%)',
+          borderColor:  'rgba(139,92,246,0.35)',
+          boxShadow:    '0 0 24px rgba(139,92,246,0.08)',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(139,92,246,0.6)'; e.currentTarget.style.boxShadow = '0 0 32px rgba(139,92,246,0.16)'; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(139,92,246,0.35)'; e.currentTarget.style.boxShadow = '0 0 24px rgba(139,92,246,0.08)'; }}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: 'rgba(139,92,246,0.18)', border: '1px solid rgba(139,92,246,0.3)' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round" className="w-5 h-5">
+                <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572C4.561 14.924 4.561 12.426 6.317 12a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 0 0 2.572-1.065Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-base font-bold text-hally-text">Configura il tuo bot</p>
+              <p className="text-xs text-hally-text-muted mt-0.5">
+                Dai una personalità, aggiungi comandi e imposta gli orari di streaming.
+              </p>
+            </div>
+          </div>
+          <span
+            className="self-start sm:self-auto flex items-center gap-2 font-bold text-white text-sm px-6 py-2.5 rounded-xl flex-shrink-0 transition-colors duration-150 group-hover:opacity-90"
+            style={{ backgroundColor: '#8B5CF6' }}
+          >
+            Configura ora
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+            </svg>
+          </span>
+        </div>
+      </a>
+
       {/* ── Stat cards ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <BotStatusCard
@@ -474,26 +516,6 @@ export default function DashboardPage({ user }) {
         <div className="card">
           <MemoryFeed memories={memories} />
         </div>
-      </div>
-
-      {/* ── Quick actions ───────────────────────────────────────────── */}
-      <div
-        className="rounded-xl border p-4 flex flex-wrap items-center justify-between gap-4"
-        style={{ backgroundColor: 'rgba(139,92,246,0.05)', borderColor: 'rgba(139,92,246,0.2)' }}
-      >
-        <div>
-          <p className="text-sm font-semibold text-hally-text">StreaMindAI è configurata al minimo?</p>
-          <p className="text-xs text-hally-text-muted mt-0.5">Personalizzala con personalità e comandi per la tua community.</p>
-        </div>
-        <a
-          href="/config"
-          className="text-sm font-semibold px-4 py-2 rounded-lg text-white transition-colors duration-150"
-          style={{ backgroundColor: '#8B5CF6' }}
-          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#7C3AED'}
-          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#8B5CF6'}
-        >
-          Configurala →
-        </a>
       </div>
     </div>
   );

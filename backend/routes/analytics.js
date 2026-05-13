@@ -149,6 +149,13 @@ function buildEmailHtml(analysis, username) {
 }
 
 // ── POST /api/analytics/analyze — pubblico, no auth ───────────────────────────
+const EMAIL_RE    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_RE = /^[a-z0-9_]{1,25}$/;
+const DANGEROUS   = /<[^>]*>|javascript:|on\w+=/i;
+const MAX_NUM     = 9_999_999;
+const NUM_KEYS    = ['avg_viewers', 'hours_per_month', 'total_followers', 'monthly_follower_growth', 'current_subs'];
+const TEXT_KEYS   = ['main_games', 'stream_schedule', 'social_links'];
+
 analyticsRoutes.post('/analyze', async (req, res) => {
   const { email, ...formData } = req.body;
 
@@ -158,8 +165,28 @@ analyticsRoutes.post('/analyze', async (req, res) => {
   if (!emailClean) {
     return res.status(400).json({ error: 'L\'email è obbligatoria.' });
   }
+  if (!EMAIL_RE.test(emailClean)) {
+    return res.status(400).json({ error: 'Email non valida.' });
+  }
   if (!usernameClean) {
     return res.status(400).json({ error: 'L\'username Twitch è obbligatorio.' });
+  }
+  if (!USERNAME_RE.test(usernameClean)) {
+    return res.status(400).json({ error: 'Username Twitch non valido: solo lettere, numeri e underscore, max 25 caratteri.' });
+  }
+  for (const key of NUM_KEYS) {
+    const raw = formData[key];
+    if (raw !== undefined && raw !== '') {
+      const n = Number(raw);
+      if (!Number.isInteger(n) || n < 0 || n > MAX_NUM) {
+        return res.status(400).json({ error: `Valore non valido per campo numerico (max ${MAX_NUM.toLocaleString()}).` });
+      }
+    }
+  }
+  for (const key of TEXT_KEYS) {
+    if (formData[key] && DANGEROUS.test(formData[key])) {
+      return res.status(400).json({ error: 'Contenuto non consentito nei campi testo.' });
+    }
   }
 
   // 1. Email già usata in precedenza

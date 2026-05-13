@@ -76,52 +76,102 @@ const TEXT_FIELDS = [
   { key: 'social_links',    label: 'Social / Link',     placeholder: 'Es. Instagram @gcernu, Discord discord.gg/gcernu' },
 ];
 
-// ─── Stile input ──────────────────────────────────────────────────────────────
-const INPUT_STYLE = {
-  width: '100%',
-  padding: '10px 14px',
-  borderRadius: '8px',
-  border: '1px solid #2a2a2a',
-  backgroundColor: '#0d0d0d',
-  color: '#f0f0f0',
-  fontSize: '14px',
-  outline: 'none',
-  transition: 'border-color 0.15s',
-};
+// ─── Validazione ─────────────────────────────────────────────────────────────
+const MAX_NUM = 9_999_999;
+const EMAIL_RE    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_RE = /^[a-zA-Z0-9_]+$/;
+const DANGEROUS   = /<[^>]*>|javascript:|on\w+=/i;
 
-function FocusInput({ type = 'text', value, onChange, placeholder, required, min }) {
+function validate(form) {
+  const errors = {};
+
+  if (!form.email.trim()) {
+    errors.email = "L'email è obbligatoria.";
+  } else if (!EMAIL_RE.test(form.email.trim())) {
+    errors.email = "Inserisci un'email valida.";
+  }
+
+  if (form.twitch_username.trim()) {
+    if (!USERNAME_RE.test(form.twitch_username.trim())) {
+      errors.twitch_username = 'Solo lettere, numeri e underscore (_).';
+    } else if (form.twitch_username.trim().length > 25) {
+      errors.twitch_username = 'Massimo 25 caratteri.';
+    }
+  }
+
+  for (const f of NUM_FIELDS) {
+    const raw = form[f.key];
+    if (raw !== '') {
+      const n = Number(raw);
+      if (!Number.isInteger(n) || n < 0) {
+        errors[f.key] = 'Solo numeri interi positivi.';
+      } else if (n > MAX_NUM) {
+        errors[f.key] = `Massimo ${MAX_NUM.toLocaleString('it-IT')}.`;
+      }
+    }
+  }
+
+  for (const f of TEXT_FIELDS) {
+    if (form[f.key].trim() && DANGEROUS.test(form[f.key])) {
+      errors[f.key] = 'Caratteri non consentiti.';
+    }
+  }
+
+  return { isValid: Object.keys(errors).length === 0, errors };
+}
+
+// ─── Stile input ──────────────────────────────────────────────────────────────
+function FocusInput({ type = 'text', value, onChange, placeholder, required, error }) {
+  const BASE = {
+    width: '100%',
+    padding: '10px 14px',
+    borderRadius: '8px',
+    backgroundColor: '#0d0d0d',
+    color: '#f0f0f0',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'border-color 0.15s',
+  };
   return (
-    <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      required={required}
-      min={min}
-      style={INPUT_STYLE}
-      onFocus={e => (e.target.style.borderColor = PURPLE)}
-      onBlur={e => (e.target.style.borderColor = '#2a2a2a')}
-    />
+    <>
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        style={{ ...BASE, border: `1px solid ${error ? '#f87171' : '#2a2a2a'}` }}
+        onFocus={e => (e.target.style.borderColor = error ? '#f87171' : PURPLE)}
+        onBlur={e => (e.target.style.borderColor = error ? '#f87171' : '#2a2a2a')}
+      />
+      {error && <p className="text-xs mt-1.5" style={{ color: '#f87171' }}>{error}</p>}
+    </>
   );
 }
 
 // ─── Pagina principale ────────────────────────────────────────────────────────
 export default function AnalisiPage({ user, loading: authLoading, onLogout }) {
-  const [form, setForm]       = useState(EMPTY_FORM);
+  const [form, setForm]         = useState(EMPTY_FORM);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [analysis, setAnalysis] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState(null);
 
-  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+  const set = (k, v) => {
+    setForm(p => ({ ...p, [k]: v }));
+    if (fieldErrors[k]) setFieldErrors(p => ({ ...p, [k]: undefined }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.email.trim()) {
-      setError("L'email è obbligatoria.");
+    const { isValid, errors } = validate(form);
+    if (!isValid) {
+      setFieldErrors(errors);
       return;
     }
     setLoading(true);
     setError(null);
+    setFieldErrors({});
     setAnalysis(null);
     try {
       const r = await axios.post('/api/analytics/analyze', form, { timeout: 35_000 });
@@ -212,16 +262,20 @@ export default function AnalisiPage({ user, loading: authLoading, onLogout }) {
                   onChange={e => set('email', e.target.value)}
                   placeholder="la-tua@email.com"
                   required
+                  error={fieldErrors.email}
                 />
               </div>
 
               {/* Username Twitch */}
               <div>
-                <label className="block text-sm font-medium mb-1">Username Twitch</label>
+                <label className="block text-sm font-medium mb-1">
+                  Username Twitch <span className="text-xs" style={{ color: '#6b6b6b' }}>(max 25 caratteri)</span>
+                </label>
                 <FocusInput
                   value={form.twitch_username}
                   onChange={e => set('twitch_username', e.target.value)}
                   placeholder="gcernu"
+                  error={fieldErrors.twitch_username}
                 />
               </div>
 
@@ -232,10 +286,10 @@ export default function AnalisiPage({ user, loading: authLoading, onLogout }) {
                     <label className="block text-sm font-medium mb-1">{f.label}</label>
                     <FocusInput
                       type="number"
-                      min="0"
                       value={form[f.key]}
                       onChange={e => set(f.key, e.target.value)}
                       placeholder={f.placeholder}
+                      error={fieldErrors[f.key]}
                     />
                   </div>
                 ))}
@@ -249,6 +303,7 @@ export default function AnalisiPage({ user, loading: authLoading, onLogout }) {
                     value={form[f.key]}
                     onChange={e => set(f.key, e.target.value)}
                     placeholder={f.placeholder}
+                    error={fieldErrors[f.key]}
                   />
                 </div>
               ))}

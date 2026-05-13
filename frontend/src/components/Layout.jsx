@@ -14,7 +14,13 @@ export default function Layout({ user, onLogout, children }) {
   const { pathname } = useLocation();
   const title = PAGE_TITLES[pathname] ?? 'StreaMindAI';
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [botName, setBotName] = useState('Il tuo bot');
+
+  // Chiudi drawer al cambio di rotta
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!user) return;
@@ -27,13 +33,31 @@ export default function Layout({ user, onLogout, children }) {
 
   return (
     <div className="flex min-h-screen bg-hally-bg">
-      <Sidebar user={user} onLogout={onLogout} />
+      <Sidebar
+        user={user}
+        onLogout={onLogout}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top header */}
-        <header className="h-14 shrink-0 border-b border-hally-border bg-hally-bg-card flex items-center justify-between px-6 gap-4">
-          {/* Titolo pagina */}
-          <h1 className="text-sm font-semibold text-hally-text">{title}</h1>
+        <header className="h-14 shrink-0 border-b border-hally-border bg-hally-bg-card flex items-center justify-between px-4 sm:px-6 gap-4">
+          <div className="flex items-center gap-3">
+            {/* Hamburger — visibile solo mobile */}
+            <button
+              className="md:hidden p-2 rounded-lg text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover transition-colors"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Apri menu"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                <path fillRule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75Zm0 10.5a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75ZM2 10a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 10Z" clipRule="evenodd" />
+              </svg>
+            </button>
+
+            {/* Titolo pagina */}
+            <h1 className="text-sm font-semibold text-hally-text">{title}</h1>
+          </div>
 
           {/* Destra: bot badge + user */}
           <div className="flex items-center gap-3">
@@ -70,7 +94,7 @@ export default function Layout({ user, onLogout, children }) {
 
         {/* Contenuto pagina */}
         <main className="flex-1 overflow-auto">
-          <div className="max-w-5xl mx-auto px-6 py-7">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 sm:py-7">
             {children}
           </div>
         </main>

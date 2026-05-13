@@ -1,4 +1,4 @@
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 // ---------------------------------------------------------------------------
 // Icone SVG inline
@@ -45,7 +45,6 @@ const IconGuide = () => (
   </svg>
 );
 
-// Logo cervello + onda
 function BrainWaveLogo({ className = 'w-6 h-6' }) {
   return (
     <svg viewBox="0 0 36 36" fill="none" className={className} aria-hidden="true">
@@ -72,88 +71,126 @@ const navItems = [
 // Sidebar
 // ---------------------------------------------------------------------------
 
-export default function Sidebar({ user, onLogout }) {
+export default function Sidebar({ user, onLogout, open, onClose }) {
   return (
-    <aside className="w-60 shrink-0 bg-hally-bg-card border-r border-hally-border flex flex-col h-screen sticky top-0">
-      {/* Logo */}
-      <a href="/" className="px-5 py-4 border-b border-hally-border flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-        <BrainWaveLogo className="w-6 h-6" />
-        <span className="font-extrabold text-base tracking-tight text-hally-text">StreaMindAI</span>
-      </a>
+    <>
+      {/* Overlay mobile (scuro dietro il drawer) */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/60 md:hidden transition-opacity duration-300 ${
+          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-      {/* Nav principale */}
-      <nav className="flex-1 px-2.5 py-3 space-y-0.5">
-        {navItems.map(({ to, Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
-                isActive
-                  ? 'bg-hally-orange-muted text-hally-orange'
-                  : 'text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover'
-              }`
-            }
+      {/* Aside — drawer su mobile, sticky su desktop */}
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-50 flex flex-col w-64
+          bg-hally-bg-card border-r border-hally-border
+          transition-transform duration-300 ease-in-out
+          md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:translate-x-0
+          ${open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}
+      >
+        {/* Logo + X (mobile) */}
+        <div className="px-5 py-4 border-b border-hally-border flex items-center gap-2.5">
+          <a
+            href="/"
+            className="flex items-center gap-2.5 flex-1 hover:opacity-80 transition-opacity"
+            onClick={onClose}
           >
-            {({ isActive }) => (
-              <>
-                <span style={{ color: isActive ? '#8B5CF6' : undefined }}>
-                  <Icon />
-                </span>
-                {label}
-              </>
-            )}
-          </NavLink>
-        ))}
-
-        {/* Separator */}
-        <div className="my-2 border-t border-hally-border" />
-
-        {/* Guida — link esterno alla sezione */}
-        <a
-          href="/guide"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover transition-all duration-150"
-        >
-          <IconGuide />
-          Guida
-        </a>
-
-        {/* Torna al sito */}
-        <a
-          href="/"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover transition-all duration-150"
-        >
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
-            <path d="M2 8h12M2 8l4-4M2 8l4 4"/>
-          </svg>
-          Torna al sito
-        </a>
-      </nav>
-
-      {/* User info + logout */}
-      <div className="px-3 py-3 border-t border-hally-border">
-        <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-hally-bg-hover transition-colors group">
-          {user?.avatar
-            ? <img src={user.avatar} alt={user.display_name} className="w-8 h-8 rounded-full border border-hally-border shrink-0" />
-            : <div className="w-8 h-8 rounded-full bg-hally-orange-muted border border-hally-orange/30 flex items-center justify-center shrink-0 text-xs font-bold text-hally-orange">
-                {user?.display_name?.[0]?.toUpperCase() ?? '?'}
-              </div>
-          }
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-hally-text truncate leading-tight">{user?.display_name ?? '—'}</p>
-            <p className="text-xs text-hally-text-muted truncate leading-tight">@{user?.twitch_username ?? '—'}</p>
-          </div>
+            <BrainWaveLogo className="w-6 h-6" />
+            <span className="font-extrabold text-base tracking-tight text-hally-text">StreaMindAI</span>
+          </a>
+          {/* X button — solo mobile */}
           <button
-            onClick={onLogout}
-            title="Esci"
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-hally-text-muted hover:text-red-400 p-1"
+            onClick={onClose}
+            className="md:hidden p-1.5 rounded-lg text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover transition-colors flex-shrink-0"
+            aria-label="Chiudi menu"
           >
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3.5 h-3.5">
-              <path d="M6 2H2.5A.5.5 0 0 0 2 2.5v11a.5.5 0 0 0 .5.5H6M11 11l3-3-3-3M6 8h8"/>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-4 h-4">
+              <path d="M2 2l12 12M14 2L2 14" />
             </svg>
           </button>
         </div>
-      </div>
-    </aside>
+
+        {/* Nav principale */}
+        <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto">
+          {navItems.map(({ to, Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                  isActive
+                    ? 'bg-hally-orange-muted text-hally-orange'
+                    : 'text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <span style={{ color: isActive ? '#8B5CF6' : undefined }}>
+                    <Icon />
+                  </span>
+                  {label}
+                </>
+              )}
+            </NavLink>
+          ))}
+
+          {/* Separator */}
+          <div className="my-2 border-t border-hally-border" />
+
+          {/* Guida */}
+          <a
+            href="/guide"
+            onClick={onClose}
+            className="flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-sm font-medium text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover transition-all duration-150"
+          >
+            <IconGuide />
+            Guida
+          </a>
+
+          {/* Torna al sito */}
+          <a
+            href="/"
+            className="flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-sm font-medium text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover transition-all duration-150"
+          >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
+              <path d="M2 8h12M2 8l4-4M2 8l4 4"/>
+            </svg>
+            Torna al sito
+          </a>
+        </nav>
+
+        {/* User info + logout */}
+        <div className="px-3 py-3 border-t border-hally-border">
+          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-hally-bg-hover transition-colors group">
+            {user?.avatar
+              ? <img src={user.avatar} alt={user.display_name} className="w-8 h-8 rounded-full border border-hally-border shrink-0" />
+              : <div className="w-8 h-8 rounded-full bg-hally-orange-muted border border-hally-orange/30 flex items-center justify-center shrink-0 text-xs font-bold text-hally-orange">
+                  {user?.display_name?.[0]?.toUpperCase() ?? '?'}
+                </div>
+            }
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-hally-text truncate leading-tight">{user?.display_name ?? '—'}</p>
+              <p className="text-xs text-hally-text-muted truncate leading-tight">@{user?.twitch_username ?? '—'}</p>
+            </div>
+            <button
+              onClick={() => { onLogout(); onClose(); }}
+              title="Esci"
+              className="opacity-0 group-hover:opacity-100 transition-opacity text-hally-text-muted hover:text-red-400 p-1"
+            >
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3.5 h-3.5">
+                <path d="M6 2H2.5A.5.5 0 0 0 2 2.5v11a.5.5 0 0 0 .5.5H6M11 11l3-3-3-3M6 8h8"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }

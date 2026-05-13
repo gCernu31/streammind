@@ -484,7 +484,7 @@ export default function DashboardPage({ user }) {
       </a>
 
       {/* ── Stat cards ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <BotStatusCard
           status={stats?.bot_status ?? 'offline'}
           botName={botName ?? 'Il tuo bot'}

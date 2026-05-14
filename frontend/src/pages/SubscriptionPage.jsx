@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { getToken } from '../utils/auth.js';
 
 // ─── Piani ────────────────────────────────────────────────────────────────────
 const PLANS = [
@@ -273,7 +274,7 @@ export default function SubscriptionPage() {
   const [cancelling, setCancelling]     = useState(false);
   const [showContact, setShowContact]   = useState(false);
 
-  const headers = () => ({ Authorization: `Bearer ${localStorage.getItem('streammindai_token')}` });
+  const headers = () => ({ Authorization: `Bearer ${getToken()}` });
 
   useEffect(() => {
     axios.get('/api/subscription', { headers: headers() })

@@ -1,21 +1,7 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-
 export default function LoginPage() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem('streammindai_token');
-    if (token) navigate('/dashboard');
-
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('error')) {
-      console.error('Errore login:', params.get('error'));
-    }
-  }, [navigate]);
-
   const handleTwitchLogin = () => {
-    window.location.href = '/api/auth/twitch';
+    const redirectTo = new URLSearchParams(window.location.search).get('redirect_to') || '/';
+    window.location.href = `/api/auth/twitch?redirect_to=${encodeURIComponent(redirectTo)}`;
   };
 
   return (

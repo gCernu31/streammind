@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getToken } from '../utils/auth.js';
 
 // ---------------------------------------------------------------------------
 // Limiti messaggi mensili per piano
@@ -431,7 +432,7 @@ export default function DashboardPage({ user }) {
   const [subStatus, setSubStatus] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('streammindai_token');
+    const token = getToken();
     if (!token) return;
     const h = { Authorization: `Bearer ${token}` };
 

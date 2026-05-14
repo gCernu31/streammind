@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
+import { getToken } from '../utils/auth.js';
 
 const PAGE_SIZE = 20;
 
@@ -66,7 +67,7 @@ function AddModal({ onClose, onAdded }) {
     setSaving(true);
     setError('');
     try {
-      const token = localStorage.getItem('streammindai_token');
+      const token = getToken();
       const r = await axios.post('/api/memories', form, { headers: { Authorization: `Bearer ${token}` } });
       onAdded(r.data);
       onClose();
@@ -250,7 +251,7 @@ export default function MemoryPage() {
     if (!confirm('Eliminare questa memoria?')) return;
     setDeleting(id);
     try {
-      const token = localStorage.getItem('streammindai_token');
+      const token = getToken();
       await axios.delete(`/api/memories/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       setMemories(prev => prev.filter(m => m.id !== id));
     } catch {

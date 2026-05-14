@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar.jsx';
 import OnboardingWizard from './OnboardingWizard.jsx';
+import { getToken } from '../utils/auth.js';
 
 const PAGE_TITLES = {
   '/dashboard':    'Dashboard',
@@ -65,7 +66,7 @@ export default function Layout({ user, onLogout, children }) {
 
   useEffect(() => {
     if (!user) { setHasActivePlan(false); return; }
-    const token = localStorage.getItem('streammindai_token');
+    const token = getToken();
     fetch('/api/config', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
       .then(data => setBotName(data?.bot_name || 'Il tuo bot'))

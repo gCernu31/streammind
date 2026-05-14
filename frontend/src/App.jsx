@@ -9,6 +9,7 @@ import SubscriptionPage from './pages/SubscriptionPage.jsx';
 import AnalisiPage from './pages/AnalisiPage.jsx';
 import GuidePage from './pages/GuidePage.jsx';
 import Layout from './components/Layout.jsx';
+import { getToken, setToken, clearToken } from './utils/auth.js';
 
 // Disabilita la scroll restoration del browser e torna sempre in cima ad ogni rotta
 function ScrollToTop() {
@@ -25,15 +26,15 @@ function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Legge token da URL dopo callback OAuth oppure da localStorage
+    // Legge token da URL dopo callback OAuth oppure da cookie
     const params = new URLSearchParams(window.location.search);
     const tokenFromUrl = params.get('token');
     if (tokenFromUrl) {
-      localStorage.setItem('streammindai_token', tokenFromUrl);
+      setToken(tokenFromUrl);
       window.history.replaceState({}, '', window.location.pathname);
     }
 
-    const token = localStorage.getItem('streammindai_token');
+    const token = getToken();
     if (!token) {
       setLoading(false);
       return;
@@ -43,18 +44,18 @@ function useAuth() {
       // Decodifica JWT lato client (solo per UI, la validazione è nel backend)
       const payload = JSON.parse(atob(token.split('.')[1]));
       if (payload.exp * 1000 < Date.now()) {
-        localStorage.removeItem('streammindai_token');
+        clearToken();
       } else {
         setUser(payload);
       }
     } catch {
-      localStorage.removeItem('streammindai_token');
+      clearToken();
     }
     setLoading(false);
   }, []);
 
   const logout = () => {
-    localStorage.removeItem('streammindai_token');
+    clearToken();
     setUser(null);
   };
 

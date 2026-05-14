@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getToken } from '../utils/auth.js';
 
 export default function OnboardingWizard({ initialStep = 0, onComplete }) {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ export default function OnboardingWizard({ initialStep = 0, onComplete }) {
   const [memberNickname, setMemberNickname]         = useState('');
   const [memberRelationship, setMemberRelationship] = useState('');
 
-  const token = localStorage.getItem('streammindai_token');
+  const token = getToken();
   const jsonHeaders = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
   const authHeader  = { Authorization: `Bearer ${token}` };
 

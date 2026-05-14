@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import { getToken } from '../utils/auth.js';
 
 // ─── Giorni della settimana ───────────────────────────────────────────────────
 const DAYS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
@@ -156,7 +157,7 @@ export default function ConfigPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const token = localStorage.getItem('streammindai_token');
+    const token = getToken();
     axios.get('/api/config', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => {
         const d = r.data ?? {};
@@ -219,7 +220,7 @@ export default function ConfigPage() {
 
     setSaveState('saving');
     try {
-      const token = localStorage.getItem('streammindai_token');
+      const token = getToken();
       await axios.put('/api/config', config, { headers: { Authorization: `Bearer ${token}` } });
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), 3000);
@@ -232,7 +233,7 @@ export default function ConfigPage() {
   const handleSpotifyAuth = async () => {
     setSpotifyAuthLoading(true);
     try {
-      const token = localStorage.getItem('streammindai_token');
+      const token = getToken();
       const r = await axios.get('/api/spotify/auth-url', { headers: { Authorization: `Bearer ${token}` } });
       window.location.href = r.data.url;
     } catch (e) {
@@ -244,7 +245,7 @@ export default function ConfigPage() {
   };
 
   const handleSpotifyDisconnect = async () => {
-    const token = localStorage.getItem('streammindai_token');
+    const token = getToken();
     await axios.delete('/api/spotify/disconnect', { headers: { Authorization: `Bearer ${token}` } });
     setConfig(p => ({ ...p, spotify_connected: false }));
   };

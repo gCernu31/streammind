@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar.jsx';
+import OnboardingWizard from './OnboardingWizard.jsx';
 
 const PAGE_TITLES = {
   '/dashboard':    'Dashboard',
@@ -55,6 +56,7 @@ export default function Layout({ user, onLogout, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [botName, setBotName] = useState('Il tuo bot');
   const [hasActivePlan, setHasActivePlan] = useState(null); // null=caricamento, true/false=caricato
+  const [onboarding, setOnboarding] = useState({ completed: true, step: 0 }); // default true evita flicker
 
   // Chiudi drawer al cambio di rotta
   useEffect(() => {
@@ -72,13 +74,27 @@ export default function Layout({ user, onLogout, children }) {
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         const s = data?.subscription?.status;
-        setHasActivePlan(s === 'active' || s === 'cancelling' || s === 'trialing');
+        const active = s === 'active' || s === 'cancelling' || s === 'trialing';
+        setHasActivePlan(active);
+        if (active) {
+          fetch('/api/onboarding', { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.ok ? r.json() : null)
+            .then(ob => { if (ob) setOnboarding({ completed: ob.completed, step: ob.step }); })
+            .catch(() => {});
+        }
       })
       .catch(() => setHasActivePlan(false));
   }, [user]);
 
   return (
     <div className="flex min-h-screen bg-hally-bg">
+      {hasActivePlan && !onboarding.completed && (
+        <OnboardingWizard
+          initialStep={onboarding.step}
+          onComplete={() => setOnboarding({ completed: true, step: 3 })}
+        />
+      )}
+
       <Sidebar
         user={user}
         onLogout={onLogout}

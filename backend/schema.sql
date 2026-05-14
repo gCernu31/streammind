@@ -162,6 +162,18 @@ BEGIN
 END;
 $$;
 
+-- Aggiunge colonne onboarding wizard (idempotente)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='streamers' AND column_name='onboarding_completed') THEN
+    ALTER TABLE streamers ADD COLUMN onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='streamers' AND column_name='onboarding_step') THEN
+    ALTER TABLE streamers ADD COLUMN onboarding_step SMALLINT NOT NULL DEFAULT 0;
+  END IF;
+END;
+$$;
+
 DO $$
 BEGIN
   IF NOT EXISTS (

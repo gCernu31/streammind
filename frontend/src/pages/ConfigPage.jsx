@@ -576,6 +576,7 @@ export default function ConfigPage() {
       </div>
 
         {/* ── SPOTIFY ────────────────────────────────────────────────── */}
+        {['creator', 'elite', 'signature'].includes(plan) && (
         <div className="card space-y-5">
           <div className="flex items-center justify-between">
             <SectionTitle>Song Request — Spotify</SectionTitle>
@@ -661,8 +662,10 @@ export default function ConfigPage() {
             )}
           </div>
         </div>
+        )}
 
         {/* ── DISCORD ─────────────────────────────────────────────────── */}
+        {['creator', 'elite', 'signature'].includes(plan) && (
         <div className="card space-y-5">
           <SectionTitle>Integrazione Discord</SectionTitle>
 
@@ -701,6 +704,7 @@ export default function ConfigPage() {
             </div>
           )}
         </div>
+        )}
 
       {/* ── SALVA ── */}
       <div className="mt-8 space-y-3">

@@ -49,12 +49,25 @@ function Toggle({ checked, onChange }) {
 }
 
 // ─── Helpers UI ───────────────────────────────────────────────────────────────
-function Field({ label, hint, children }) {
+function InlineBanError({ msg }) {
+  if (!msg) return null;
+  return (
+    <p className="mt-1.5 text-xs flex items-start gap-1" style={{ color: '#f87171' }}>
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-3.5 h-3.5 shrink-0 mt-0.5">
+        <path d="M8 6v3M8 11.5v.5M3.3 13h9.4L8 3 3.3 13z"/>
+      </svg>
+      {msg} Rimuovi il termine prima di salvare.
+    </p>
+  );
+}
+
+function Field({ label, hint, children, banError }) {
   return (
     <div>
       <label className="block text-sm font-medium mb-1.5 text-hally-text">{label}</label>
       {hint && <p className="text-xs text-hally-text-muted mb-2">{hint}</p>}
       {children}
+      <InlineBanError msg={banError} />
     </div>
   );
 }
@@ -114,6 +127,96 @@ function detectBanned(text) {
   return null;
 }
 
+// ─── Cronologia modifiche ─────────────────────────────────────────────────────
+function HistoryPanel({ history, onRestore }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="card">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between gap-3"
+      >
+        <div className="flex items-center gap-2">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0" style={{ color: '#6b6b6b' }}>
+            <path d="M1.5 8A6.5 6.5 0 1 0 8 1.5M1.5 1.5v6h6"/>
+            <path d="M8 5v3.5l2 2"/>
+          </svg>
+          <span className="font-semibold text-base text-hally-text">Cronologia modifiche</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {history.length > 0 && (
+            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(139,92,246,0.1)', color: '#8B5CF6' }}>
+              {history.length}
+            </span>
+          )}
+          <svg
+            viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+            className="w-3.5 h-3.5 transition-transform duration-150"
+            style={{ color: '#6b6b6b', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          >
+            <path d="M3 5l5 5 5-5"/>
+          </svg>
+        </div>
+      </button>
+
+      {open && (
+        <div className="mt-4 border-t border-hally-border pt-4">
+          {history.length === 0 ? (
+            <p className="text-sm text-hally-text-muted text-center py-4">
+              Nessuna modifica salvata ancora. La cronologia si aggiorna ad ogni salvataggio.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {history.map((entry, i) => {
+                const snap = entry.config_snapshot;
+                const ts   = new Date(entry.saved_at);
+                const date = ts.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' });
+                const time = ts.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                const preview = snap.bot_personality?.slice(0, 55) ?? '';
+
+                return (
+                  <div
+                    key={entry.id}
+                    className="flex items-center gap-3 p-3 rounded-lg border transition-colors"
+                    style={{ backgroundColor: '#111', borderColor: i === 0 ? 'rgba(139,92,246,0.2)' : '#1e1e1e' }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                        <span className="text-sm font-semibold text-hally-text truncate">{snap.bot_name || '—'}</span>
+                        {i === 0 && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(139,92,246,0.12)', color: '#8B5CF6' }}>
+                            più recente
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-hally-text-muted">
+                        {date} alle {time}
+                        {preview ? ` · ${preview}${snap.bot_personality?.length > 55 ? '…' : ''}` : ''}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onRestore(entry)}
+                      className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all duration-150 min-h-[32px]"
+                      style={{ borderColor: 'rgba(139,92,246,0.3)', color: '#8B5CF6', backgroundColor: 'transparent' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(139,92,246,0.1)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    >
+                      Ripristina
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Default config vuota ─────────────────────────────────────────────────────
 const EMPTY = {
   bot_name: '',
@@ -140,9 +243,11 @@ const newCmd    = () => ({ id: _kid++, trigger: '', response: '', active: true }
 export default function ConfigPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [config, setConfig]       = useState(null);
-  const [saveState, setSaveState] = useState('idle'); // idle | saving | saved | error
-  const [banError, setBanError]   = useState(null);
-  const [plan, setPlan]           = useState(null);
+  const [saveState, setSaveState]     = useState('idle'); // idle | saving | saved | error
+  const [banErrors, setBanErrors]     = useState({});     // { fieldKey: 'messaggio' | null }
+  const [plan, setPlan]               = useState(null);
+  const [history, setHistory]         = useState([]);
+  const [restoreNotice, setRestoreNotice] = useState(null);
   const [spotifyBanner, setSpotifyBanner] = useState(null); // 'connected'|'error'|'denied'|null
   const [spotifyAuthLoading, setSpotifyAuthLoading] = useState(false);
   const [discordShowToken, setDiscordShowToken] = useState(false);
@@ -156,7 +261,15 @@ export default function ConfigPage() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const fetchHistory = () => {
+    const token = getToken();
+    axios.get('/api/config/history', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => setHistory(r.data?.history ?? []))
+      .catch(() => {});
+  };
+
   useEffect(() => {
+    fetchHistory();
     const token = getToken();
     axios.get('/api/config', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => {
@@ -195,27 +308,24 @@ export default function ConfigPage() {
   const removeCmd = id           => set('custom_commands', config.custom_commands.filter(c => c.id !== id));
   const updateCmd = (id, f, v)   => set('custom_commands', config.custom_commands.map(c => c.id === id ? { ...c, [f]: v } : c));
 
-  const handleSave = async () => {
-    setBanError(null);
+  // Controllo inline per-campo
+  const checkBan = (key, val) => {
+    const cat = detectBanned(val);
+    setBanErrors(prev => ({ ...prev, [key]: cat ? `Contiene ${cat} non consentito dalle linee guida Twitch.` : null }));
+  };
 
-    // Controllo termini bannabili Twitch
-    const fields = [
-      { val: config.bot_name,        label: 'Nome bot' },
-      { val: config.bot_personality, label: 'Personalità' },
-    ];
-    for (const { val, label } of fields) {
-      const cat = detectBanned(val);
-      if (cat) {
-        setBanError(`Il campo "${label}" contiene ${cat} non consentito dalle linee guida Twitch.`);
-        return;
-      }
-    }
+  const handleSave = async () => {
+    // Ri-verifica tutti i campi sensibili prima di salvare
+    const newErrors = {};
+    const cat1 = detectBanned(config.bot_name);       if (cat1) newErrors.bot_name        = `Contiene ${cat1} non consentito.`;
+    const cat2 = detectBanned(config.bot_personality); if (cat2) newErrors.bot_personality = `Contiene ${cat2} non consentito.`;
     for (const m of config.members ?? []) {
-      const cat = detectBanned(m.nickname) || detectBanned(m.description);
-      if (cat) {
-        setBanError(`Un membro contiene ${cat} non consentito dalle linee guida Twitch.`);
-        return;
-      }
+      const c1 = detectBanned(m.nickname);    if (c1) newErrors[`m_${m.id}_nick`] = `Contiene ${c1} non consentito.`;
+      const c2 = detectBanned(m.description); if (c2) newErrors[`m_${m.id}_desc`] = `Contiene ${c2} non consentito.`;
+    }
+    if (Object.values(newErrors).some(Boolean)) {
+      setBanErrors(newErrors);
+      return;
     }
 
     setSaveState('saving');
@@ -223,6 +333,8 @@ export default function ConfigPage() {
       const token = getToken();
       await axios.put('/api/config', config, { headers: { Authorization: `Bearer ${token}` } });
       setSaveState('saved');
+      setRestoreNotice(null);
+      fetchHistory();
       setTimeout(() => setSaveState('idle'), 3000);
     } catch {
       setSaveState('error');
@@ -250,6 +362,30 @@ export default function ConfigPage() {
     setConfig(p => ({ ...p, spotify_connected: false }));
   };
 
+  const handleRestore = (entry) => {
+    const snap = entry.config_snapshot;
+    const ts   = new Date(entry.saved_at).toLocaleString('it-IT', {
+      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+    });
+    setConfig(prev => ({
+      ...prev,
+      bot_name:        snap.bot_name        ?? prev.bot_name,
+      creator_name:    snap.creator_name    ?? prev.creator_name,
+      bot_personality: snap.bot_personality ?? prev.bot_personality,
+      twitch_username: snap.twitch_username ?? prev.twitch_username,
+      stream_schedule: snap.stream_schedule ?? prev.stream_schedule,
+      social_links:    snap.social_links    ?? prev.social_links,
+      custom_commands: (snap.custom_commands ?? []).map(c => ({ ...c, id: _kid++ })),
+      members:         (snap.members         ?? []).map(m => ({ ...m, id: _mid++ })),
+      ai_provider:     snap.ai_provider     ?? prev.ai_provider,
+      event_messages:  snap.event_messages  ?? prev.event_messages,
+      // Mantieni credenziali Spotify/Discord correnti
+    }));
+    setBanErrors({});
+    setRestoreNotice(`Versione del ${ts} caricata — clicca "Salva configurazione" per confermare.`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (!config) {
     return <div className="text-hally-text-muted text-sm py-8 text-center">Caricamento configurazione...</div>;
   }
@@ -268,12 +404,13 @@ export default function ConfigPage() {
           <SectionTitle>Identità</SectionTitle>
           <div className="space-y-5">
 
-            <Field label="Nome" hint="Come si chiama StreaMindAI in chat. Es. StreamBot, MaxAI, NightBot…">
+            <Field label="Nome" hint="Come si chiama StreaMindAI in chat. Es. StreamBot, MaxAI, NightBot…" banError={banErrors.bot_name}>
               <input
                 className="input"
                 value={config.bot_name}
-                onChange={e => set('bot_name', e.target.value)}
+                onChange={e => { set('bot_name', e.target.value); checkBan('bot_name', e.target.value); }}
                 placeholder="Es. StreamBot"
+                style={banErrors.bot_name ? { borderColor: '#f87171' } : undefined}
               />
             </Field>
 
@@ -286,12 +423,13 @@ export default function ConfigPage() {
               />
             </Field>
 
-            <Field label="Personalità base" hint="Descrivi il carattere di StreaMindAI: tono, stile, humour, riferimenti alla tua community.">
+            <Field label="Personalità base" hint="Descrivi il carattere di StreaMindAI: tono, stile, humour, riferimenti alla tua community." banError={banErrors.bot_personality}>
               <textarea
                 className="input min-h-[148px] resize-y"
                 value={config.bot_personality}
-                onChange={e => set('bot_personality', e.target.value)}
+                onChange={e => { set('bot_personality', e.target.value); checkBan('bot_personality', e.target.value); }}
                 placeholder={`Es. Sei un bot diretto e ironico, ami i giochi indie e i meme della community. Usi un tono informale, a volte sarcasmo leggero, ma sempre rispettoso. Conosci le reference interne della chat come "modacoda" e "la regola del giovedì".`}
+                style={banErrors.bot_personality ? { borderColor: '#f87171' } : undefined}
               />
             </Field>
 
@@ -410,18 +548,22 @@ export default function ConfigPage() {
                   <input
                     className="input text-sm"
                     value={member.nickname}
-                    onChange={e => updateMember(member.id, 'nickname', e.target.value)}
+                    onChange={e => { updateMember(member.id, 'nickname', e.target.value); checkBan(`m_${member.id}_nick`, e.target.value); }}
                     placeholder="Es. Il Moderatore"
+                    style={banErrors[`m_${member.id}_nick`] ? { borderColor: '#f87171' } : undefined}
                   />
+                  <InlineBanError msg={banErrors[`m_${member.id}_nick`]} />
                 </div>
                 <div className="relative">
                   <label className="text-xs text-hally-text-muted block mb-1">Descrizione comportamento</label>
                   <input
                     className="input text-sm pr-8"
                     value={member.description}
-                    onChange={e => updateMember(member.id, 'description', e.target.value)}
+                    onChange={e => { updateMember(member.id, 'description', e.target.value); checkBan(`m_${member.id}_desc`, e.target.value); }}
                     placeholder="Es. Moderatore storico, sempre ironico"
+                    style={banErrors[`m_${member.id}_desc`] ? { borderColor: '#f87171' } : undefined}
                   />
+                  <InlineBanError msg={banErrors[`m_${member.id}_desc`]} />
                   <button
                     type="button"
                     onClick={() => removeMember(member.id)}
@@ -707,20 +849,26 @@ export default function ConfigPage() {
         </div>
         )}
 
+        {/* ── CRONOLOGIA ── */}
+        <HistoryPanel history={history} onRestore={handleRestore} />
+
+      </div>
+
       {/* ── SALVA ── */}
       <div className="mt-8 space-y-3">
-        {banError && (
+        {/* Banner ripristino versione */}
+        {restoreNotice && (
           <div
             className="flex items-start gap-3 px-4 py-3 rounded-lg border text-sm"
-            style={{ backgroundColor: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.25)', color: '#f87171' }}
+            style={{ backgroundColor: 'rgba(251,191,36,0.08)', borderColor: 'rgba(251,191,36,0.3)', color: '#fbbf24' }}
           >
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-4 h-4 flex-shrink-0 mt-0.5">
-              <path d="M8 6v3M8 11.5v.5M3.3 13h9.4L8 3 3.3 13z" />
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-4 h-4 shrink-0 mt-0.5">
+              <path d="M1.5 8A6.5 6.5 0 1 0 8 1.5M1.5 1.5v6h6"/>
+              <path d="M8 5v3.5l2 2"/>
             </svg>
-            <span>{banError} Rimuovi il termine prima di salvare.</span>
+            <span>{restoreNotice}</span>
           </div>
         )}
-
         <div className="flex items-center gap-4">
         <button
           onClick={handleSave}

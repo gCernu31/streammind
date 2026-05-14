@@ -217,3 +217,16 @@ BEGIN
   END IF;
 END;
 $$;
+
+-- ============================================================
+-- Cronologia configurazioni bot (ultimi 10 per streamer)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS bot_config_history (
+  id              SERIAL PRIMARY KEY,
+  streamer_id     INTEGER   NOT NULL REFERENCES streamers(id) ON DELETE CASCADE,
+  saved_at        TIMESTAMP NOT NULL DEFAULT NOW(),
+  config_snapshot JSONB     NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_bot_config_history_streamer
+  ON bot_config_history (streamer_id, saved_at DESC);

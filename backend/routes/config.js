@@ -50,6 +50,23 @@ configRoutes.get('/', requireAuth, async (req, res) => {
   }
 });
 
+// ── GET /api/config/history ───────────────────────────────────────────────────
+configRoutes.get('/history', requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, saved_at, config_snapshot
+       FROM bot_config_history
+       WHERE streamer_id = $1
+       ORDER BY saved_at DESC LIMIT 10`,
+      [req.user.streamer_id]
+    );
+    res.json({ history: rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Errore nel recupero della cronologia' });
+  }
+});
+
 // ── PUT /api/config ───────────────────────────────────────────────────────────
 configRoutes.put('/', requireAuth, async (req, res) => {
   const {
@@ -61,6 +78,32 @@ configRoutes.put('/', requireAuth, async (req, res) => {
   } = req.body;
 
   try {
+    // Salva snapshot corrente nella cronologia prima di sovrascrivere
+    const snapResult = await pool.query(
+      `SELECT bot_name, creator_name, bot_personality, twitch_username,
+              stream_schedule, social_links, custom_commands, members,
+              ai_provider, event_messages
+       FROM bot_configs WHERE streamer_id = $1`,
+      [req.user.streamer_id]
+    );
+    if (snapResult.rows[0]) {
+      await pool.query(
+        `INSERT INTO bot_config_history (streamer_id, config_snapshot) VALUES ($1, $2)`,
+        [req.user.streamer_id, JSON.stringify(snapResult.rows[0])]
+      );
+      // Mantieni solo gli ultimi 10 snapshot
+      await pool.query(
+        `DELETE FROM bot_config_history
+         WHERE streamer_id = $1
+           AND id NOT IN (
+             SELECT id FROM bot_config_history
+             WHERE streamer_id = $1
+             ORDER BY saved_at DESC LIMIT 10
+           )`,
+        [req.user.streamer_id]
+      );
+    }
+
     const { rows } = await pool.query(
       `UPDATE bot_configs
        SET bot_name               = COALESCE($1,  bot_name),

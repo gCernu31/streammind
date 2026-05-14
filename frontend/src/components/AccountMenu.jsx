@@ -40,9 +40,11 @@ export default function AccountMenu({ user, loading, onLogout }) {
   // ── NON LOGGATO ──────────────────────────────────────────────────────────────
   if (!user) {
     const redirectTo = typeof window !== 'undefined' ? window.location.pathname : '/';
+    const refCode    = typeof window !== 'undefined' ? localStorage.getItem('streammindai_ref') : null;
+    const loginHref  = `/api/auth/twitch?redirect_to=${encodeURIComponent(redirectTo)}${refCode ? `&ref=${encodeURIComponent(refCode)}` : ''}`;
     return (
       <a
-        href={`/api/auth/twitch?redirect_to=${encodeURIComponent(redirectTo)}`}
+        href={loginHref}
         className="flex items-center gap-2 text-sm font-semibold text-white px-5 py-2 rounded-lg transition-all duration-150"
         style={{ backgroundColor: PURPLE }}
         onMouseEnter={e => e.currentTarget.style.backgroundColor = PURPLE_H}

@@ -13,12 +13,15 @@ export const authRoutes = Router();
 authRoutes.get('/twitch', (req, res) => {
   const raw = req.query.redirect_to || '/dashboard';
   const redirectTo = raw.startsWith('/') ? raw : '/dashboard';
+  // Codice referral opzionale — codificato nello state come "{redirect}|{ref}"
+  const ref = req.query.ref ? String(req.query.ref).toUpperCase().slice(0, 50) : '';
+  const state = ref ? `${redirectTo}|${ref}` : redirectTo;
   const params = new URLSearchParams({
     client_id:     process.env.TWITCH_CLIENT_ID,
     redirect_uri:  process.env.TWITCH_REDIRECT_URI,
     response_type: 'code',
     scope:         'user:read:email',
-    state:         redirectTo,
+    state,
   });
   res.redirect(`https://id.twitch.tv/oauth2/authorize?${params}`);
 });
@@ -28,7 +31,11 @@ authRoutes.get('/twitch', (req, res) => {
 // ---------------------------------------------------------------------------
 authRoutes.get('/twitch/callback', async (req, res) => {
   const { code, error, state } = req.query;
-  const redirectTo = (state && state.startsWith('/')) ? state : '/dashboard';
+  // State può essere "{redirect}" o "{redirect}|{refCode}"
+  const pipeIdx    = state ? state.indexOf('|') : -1;
+  const rawRedirect = pipeIdx >= 0 ? state.slice(0, pipeIdx) : (state ?? '');
+  const refCode    = pipeIdx >= 0 ? state.slice(pipeIdx + 1) : null;
+  const redirectTo = rawRedirect.startsWith('/') ? rawRedirect : '/dashboard';
 
   if (error) {
     return res.redirect(`${process.env.FRONTEND_URL}/login?error=${error}`);
@@ -86,10 +93,35 @@ authRoutes.get('/twitch/callback', async (req, res) => {
 
     const streamer = rows[0];
 
+    // Genera codice referral se assente (nuovi utenti o migration)
+    if (!streamer.referral_code) {
+      const candidate = `REF-${tw.login.toUpperCase()}`;
+      await pool.query(
+        `UPDATE streamers SET referral_code = $1 WHERE id = $2 AND referral_code IS NULL`,
+        [candidate, streamer.id]
+      );
+      streamer.referral_code = candidate;
+    }
+
     // Email di benvenuto solo alla prima registrazione
     if (streamer.is_new && tw.email) {
       sendWelcomeEmail({ to: tw.email, displayName: tw.display_name })
         .catch(e => console.error('[Email] welcome:', e.message));
+    }
+
+    // Traccia referral se nuovo utente arrivato tramite link
+    if (streamer.is_new && refCode) {
+      pool.query(
+        `SELECT id FROM streamers WHERE referral_code = $1`,
+        [refCode]
+      ).then(({ rows: rr }) => {
+        if (!rr[0] || rr[0].id === streamer.id) return;
+        return pool.query(
+          `INSERT INTO referrals (referrer_id, referred_id) VALUES ($1, $2)
+           ON CONFLICT (referred_id) DO NOTHING`,
+          [rr[0].id, streamer.id]
+        );
+      }).catch(e => console.error('[Referral] tracking error:', e.message));
     }
 
     // 4. Crea bot_config di default se è il primo accesso

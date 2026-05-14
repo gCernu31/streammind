@@ -15,6 +15,7 @@ import { analyticsRoutes } from './routes/analytics.js';
 import { contactRoutes } from './routes/contact.js';
 import { onboardingRoutes } from './routes/onboarding.js';
 import { spotifyRoutes }    from './routes/spotify.js';
+import { referralRoutes }  from './routes/referral.js';
 import { botManager, verifyEventSubSignature } from './bot/botManager.js';
 
 dotenv.config();
@@ -141,6 +142,7 @@ app.use('/api/config',       configRoutes);
 app.use('/api/memories',     memoryRoutes);
 app.use('/api/memory',       memoryRoutes);   // alias backward-compat
 app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/referral',    referralRoutes);
 
 // ── React Router catch-all (produzione) ──────────────────────────────────────
 // DEVE stare dopo tutte le route API

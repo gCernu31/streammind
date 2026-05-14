@@ -1,7 +1,9 @@
 export default function LoginPage() {
   const handleTwitchLogin = () => {
     const redirectTo = new URLSearchParams(window.location.search).get('redirect_to') || '/';
-    window.location.href = `/api/auth/twitch?redirect_to=${encodeURIComponent(redirectTo)}`;
+    const refCode    = localStorage.getItem('streammindai_ref');
+    const url        = `/api/auth/twitch?redirect_to=${encodeURIComponent(redirectTo)}${refCode ? `&ref=${encodeURIComponent(refCode)}` : ''}`;
+    window.location.href = url;
   };
 
   return (

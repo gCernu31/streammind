@@ -117,6 +117,16 @@ async function handleCheckout(req, res) {
       );
     }
 
+    // Controlla se l'utente ha un referral pending → 14 giorni di trial invece di 7
+    let trialDays = PLANS_WITH_TRIAL.has(plan) ? 7 : undefined;
+    if (trialDays) {
+      const { rows: refRows } = await pool.query(
+        `SELECT id FROM referrals WHERE referred_id = $1 AND status = 'pending' LIMIT 1`,
+        [req.user.streamer_id]
+      );
+      if (refRows[0]) trialDays = 14;
+    }
+
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const session = await stripe.checkout.sessions.create({
       customer:             customerId,
@@ -128,7 +138,7 @@ async function handleCheckout(req, res) {
       metadata:          { streamer_id: String(req.user.streamer_id), plan },
       subscription_data: {
         metadata:            { streamer_id: String(req.user.streamer_id), plan },
-        ...(PLANS_WITH_TRIAL.has(plan) ? { trial_period_days: 7 } : {}),
+        ...(trialDays != null ? { trial_period_days: trialDays } : {}),
       },
     });
 
@@ -246,6 +256,36 @@ export async function stripeWebhook(req, res) {
             planName:    labels[plan] ?? plan,
             trialEnd:    sub.status === 'trialing' ? sub.trial_end * 1000 : null,
           }).catch(e => console.error('[Email] subscription-activated:', e.message));
+        }
+
+        // Processa referral: attiva + premia referrer con coupon Stripe 1 mese gratis
+        if (streamerId) {
+          const { rows: refActivated } = await pool.query(
+            `UPDATE referrals SET status = 'active', activated_at = NOW()
+             WHERE referred_id = $1 AND status = 'pending'
+             RETURNING referrer_id`,
+            [streamerId]
+          );
+          if (refActivated[0] && stripe) {
+            const { rows: referrerRows } = await pool.query(
+              `SELECT stripe_subscription_id, email, display_name FROM streamers WHERE id = $1`,
+              [refActivated[0].referrer_id]
+            );
+            if (referrerRows[0]?.stripe_subscription_id) {
+              stripe.coupons.create({
+                percent_off: 100,
+                duration:    'once',
+                name:        'Referral — 1 mese gratis',
+              }).then(coupon =>
+                stripe.subscriptions.update(referrerRows[0].stripe_subscription_id, { coupon: coupon.id })
+              ).then(() =>
+                pool.query(
+                  `UPDATE referrals SET status = 'rewarded' WHERE referred_id = $1`,
+                  [streamerId]
+                )
+              ).catch(e => console.error('[Referral] coupon error:', e.message));
+            }
+          }
         }
         break;
       }

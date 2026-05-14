@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getToken } from '../utils/auth.js';
 
@@ -421,6 +421,77 @@ function MemoryFeed({ memories }) {
 }
 
 // ---------------------------------------------------------------------------
+// Card: Referral
+// ---------------------------------------------------------------------------
+
+function ReferralCard({ code, link, activeReferrals, creditsEarned }) {
+  const [copied, setCopied] = useState(false);
+
+  const copyLink = useCallback(() => {
+    if (!link) return;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  }, [link]);
+
+  return (
+    <div className="card">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold text-hally-text">Invita streamer</h2>
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+          style={{ background: 'rgba(139,92,246,0.1)', color: '#8B5CF6', border: '1px solid rgba(139,92,246,0.2)' }}>
+          Referral
+        </span>
+      </div>
+
+      {code ? (
+        <>
+          {/* Link copiabile */}
+          <div className="flex items-center gap-2 p-3 rounded-lg mb-4"
+            style={{ background: '#111', border: '1px solid #222' }}>
+            <span className="flex-1 text-xs truncate font-mono" style={{ color: '#8B5CF6' }}>
+              {link}
+            </span>
+            <button
+              onClick={copyLink}
+              className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all duration-150"
+              style={copied
+                ? { background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }
+                : { background: 'rgba(139,92,246,0.15)', color: '#8B5CF6', border: '1px solid rgba(139,92,246,0.3)' }
+              }
+            >
+              {copied ? '✓ Copiato' : 'Copia'}
+            </button>
+          </div>
+
+          {/* Statistiche */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="text-center p-3 rounded-lg" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+              <p className="text-2xl font-extrabold text-hally-text">{activeReferrals}</p>
+              <p className="text-xs text-hally-text-muted mt-0.5">Referral attivi</p>
+            </div>
+            <div className="text-center p-3 rounded-lg" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
+              <p className="text-2xl font-extrabold" style={{ color: '#8B5CF6' }}>{creditsEarned}</p>
+              <p className="text-xs text-hally-text-muted mt-0.5">Mesi gratis</p>
+            </div>
+          </div>
+
+          <p className="text-xs text-hally-text-muted leading-relaxed" style={{ borderTop: '1px solid #1e1e1e', paddingTop: '12px' }}>
+            Chi si abbona tramite il tuo link: riceve <strong className="text-hally-text">14 giorni</strong> di trial.
+            Tu guadagni <strong className="text-hally-text">1 mese gratis</strong> per ogni abbonato attivo.
+          </p>
+        </>
+      ) : (
+        <p className="text-xs text-hally-text-muted text-center py-6">
+          Codice referral non ancora assegnato.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Dashboard Page
 // ---------------------------------------------------------------------------
 
@@ -430,6 +501,7 @@ export default function DashboardPage({ user }) {
   const [memories, setMemories] = useState([]);
   const [monthly, setMonthly]   = useState(null);
   const [subStatus, setSubStatus] = useState(null);
+  const [referral, setReferral]   = useState(null);
 
   useEffect(() => {
     const token = getToken();
@@ -462,6 +534,11 @@ export default function DashboardPage({ user }) {
           setSubStatus(data.subscription?.status ?? 'inactive');
         }
       })
+      .catch(() => {});
+
+    fetch('/api/referral', { headers: h })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setReferral(data); })
       .catch(() => {});
   }, []);
 
@@ -550,6 +627,16 @@ export default function DashboardPage({ user }) {
           <MemoryFeed memories={memories} />
         </div>
       </div>
+
+      {/* ── Referral ───────────────────────────────────────────────── */}
+      {referral && (
+        <ReferralCard
+          code={referral.code}
+          link={referral.link}
+          activeReferrals={referral.active_referrals}
+          creditsEarned={referral.credits_earned}
+        />
+      )}
     </div>
   );
 }

@@ -230,3 +230,41 @@ CREATE TABLE IF NOT EXISTS bot_config_history (
 
 CREATE INDEX IF NOT EXISTS idx_bot_config_history_streamer
   ON bot_config_history (streamer_id, saved_at DESC);
+
+-- ============================================================
+-- Sistema Referral
+-- ============================================================
+
+-- Codice referral univoco per streamer (es. REF-GCERNU)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='streamers' AND column_name='referral_code') THEN
+    ALTER TABLE streamers ADD COLUMN referral_code VARCHAR(100) UNIQUE;
+  END IF;
+END;
+$$;
+
+CREATE INDEX IF NOT EXISTS idx_streamers_referral_code ON streamers (referral_code);
+
+-- Genera codice per utenti esistenti senza codice (idempotente)
+UPDATE streamers
+SET referral_code = 'REF-' || UPPER(twitch_username)
+WHERE referral_code IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM streamers s2
+    WHERE s2.referral_code = 'REF-' || UPPER(streamers.twitch_username)
+      AND s2.id <> streamers.id
+  );
+
+-- Tabella referral: chi ha invitato chi
+CREATE TABLE IF NOT EXISTS referrals (
+  id           SERIAL PRIMARY KEY,
+  referrer_id  INTEGER NOT NULL REFERENCES streamers(id) ON DELETE CASCADE,
+  referred_id  INTEGER NOT NULL REFERENCES streamers(id) ON DELETE CASCADE,
+  status       VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending | active | rewarded
+  created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  activated_at TIMESTAMP,
+  UNIQUE (referred_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals (referrer_id, status);

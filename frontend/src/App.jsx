@@ -9,6 +9,7 @@ import SubscriptionPage from './pages/SubscriptionPage.jsx';
 import AnalisiPage from './pages/AnalisiPage.jsx';
 import GuidePage from './pages/GuidePage.jsx';
 import ChangelogPage from './pages/ChangelogPage.jsx';
+import RefPage from './pages/RefPage.jsx';
 import Layout from './components/Layout.jsx';
 import { getToken, setToken, clearToken } from './utils/auth.js';
 
@@ -32,6 +33,7 @@ function useAuth() {
     const tokenFromUrl = params.get('token');
     if (tokenFromUrl) {
       setToken(tokenFromUrl);
+      localStorage.removeItem('streammindai_ref'); // ref usato, pulizia
       window.history.replaceState({}, '', window.location.pathname);
     }
 
@@ -80,6 +82,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/analisi"   element={<AnalisiPage   user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
         <Route path="/changelog" element={<ChangelogPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
+        <Route path="/ref/:code" element={<RefPage />} />
 
         {/* Rotte protette con Layout (sidebar + navbar) */}
         <Route

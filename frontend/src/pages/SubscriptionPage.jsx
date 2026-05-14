@@ -87,6 +87,7 @@ const IconClose = () => (
 // ─── Status badge ─────────────────────────────────────────────────────────────
 const STATUS_VARIANTS = {
   active:     { bg: 'rgba(74,222,128,0.1)',  border: 'rgba(74,222,128,0.25)',  color: '#4ade80', dot: '#4ade80', label: 'Attivo' },
+  trialing:   { bg: 'rgba(139,92,246,0.1)',  border: 'rgba(139,92,246,0.25)', color: '#8B5CF6', dot: '#8B5CF6', label: 'Trial attivo' },
   cancelling: { bg: 'rgba(251,191,36,0.1)',  border: 'rgba(251,191,36,0.25)',  color: '#fbbf24', dot: '#fbbf24', label: 'In scadenza' },
   past_due:   { bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.25)', color: '#f87171', dot: '#f87171', label: 'Pagamento scaduto' },
   inactive:   { bg: 'rgba(107,114,128,0.1)', border: 'rgba(107,114,128,0.25)', color: '#9ca3af', dot: '#9ca3af', label: 'Inattivo' },
@@ -102,6 +103,125 @@ function StatusBadge({ status }) {
       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: v.dot }} />
       {v.label}
     </span>
+  );
+}
+
+// ─── Modal contatto Signature ─────────────────────────────────────────────────
+function SignatureContactModal({ onClose }) {
+  const [form, setForm]   = useState({ nome: '', twitch_username: '', piano: 'Signature', motivo: '' });
+  const [status, setStatus] = useState('idle'); // idle | sending | sent | error
+  const [errMsg, setErrMsg] = useState('');
+
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.nome.trim() || !form.twitch_username.trim() || !form.motivo.trim()) return;
+    setStatus('sending');
+    try {
+      const r = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error ?? 'Errore');
+      setStatus('sent');
+    } catch (err) {
+      setErrMsg(err.message);
+      setStatus('error');
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div className="w-full max-w-md bg-hally-bg-card border border-hally-border rounded-xl p-7 shadow-2xl">
+        <div className="flex items-start justify-between mb-5">
+          <div>
+            <h3 className="font-bold text-lg text-hally-text">Contattaci per Signature</h3>
+            <p className="text-xs text-hally-text-muted mt-0.5">Ti risponderemo entro 24 ore su support@streamindai.com</p>
+          </div>
+          <button onClick={onClose} className="text-hally-text-muted hover:text-hally-text transition-colors ml-4 shrink-0">
+            <IconClose />
+          </button>
+        </div>
+
+        {status === 'sent' ? (
+          <div className="text-center py-8">
+            <div className="text-4xl mb-4">✅</div>
+            <p className="font-semibold text-hally-text mb-1">Messaggio inviato!</p>
+            <p className="text-sm text-hally-text-muted">Ti contatteremo entro 24 ore.</p>
+            <button onClick={onClose} className="btn-secondary mt-6 text-sm">Chiudi</button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-hally-text-muted mb-1.5">Nome *</label>
+              <input
+                className="input w-full"
+                value={form.nome}
+                onChange={e => set('nome', e.target.value)}
+                placeholder="Il tuo nome"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-hally-text-muted mb-1.5">Username Twitch *</label>
+              <input
+                className="input w-full"
+                value={form.twitch_username}
+                onChange={e => set('twitch_username', e.target.value)}
+                placeholder="@username"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-hally-text-muted mb-1.5">Piano di interesse</label>
+              <select
+                className="input w-full"
+                value={form.piano}
+                onChange={e => set('piano', e.target.value)}
+              >
+                <option value="Signature">Signature — 85€/mese</option>
+                <option value="Elite">Elite — 35€/mese</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-hally-text-muted mb-1.5">Motivo di interesse *</label>
+              <textarea
+                className="input w-full min-h-[96px] resize-y"
+                value={form.motivo}
+                onChange={e => set('motivo', e.target.value)}
+                placeholder="Raccontaci brevemente il tuo canale e cosa cerchi…"
+                required
+              />
+            </div>
+            {status === 'error' && (
+              <p className="text-xs text-red-400">{errMsg}</p>
+            )}
+            <div className="flex gap-3 pt-1">
+              <button
+                type="submit"
+                disabled={status === 'sending'}
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors duration-150 disabled:opacity-60"
+                style={{ backgroundColor: '#8B5CF6' }}
+                onMouseEnter={e => { if (status !== 'sending') e.currentTarget.style.backgroundColor = '#7C3AED'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#8B5CF6'; }}
+              >
+                {status === 'sending' ? 'Invio…' : 'Invia richiesta'}
+              </button>
+              <button type="button" onClick={onClose} className="flex-1 btn-secondary text-sm">
+                Annulla
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -149,8 +269,9 @@ export default function SubscriptionPage() {
   const [invLoading, setInvLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(null);
   const [portalLoading, setPortalLoading] = useState(false);
-  const [showCancel, setShowCancel]   = useState(false);
-  const [cancelling, setCancelling]   = useState(false);
+  const [showCancel, setShowCancel]     = useState(false);
+  const [cancelling, setCancelling]     = useState(false);
+  const [showContact, setShowContact]   = useState(false);
 
   const headers = () => ({ Authorization: `Bearer ${localStorage.getItem('streammindai_token')}` });
 
@@ -206,7 +327,8 @@ export default function SubscriptionPage() {
     }
   };
 
-  const isActive = sub?.status === 'active' || sub?.status === 'cancelling' || sub?.status === 'past_due';
+  const isActive  = ['active', 'trialing', 'cancelling', 'past_due'].includes(sub?.status);
+  const isTrialing = sub?.status === 'trialing';
   const currentPlan = PLANS.find(p => p.id === sub?.plan);
 
   const fmt = (iso) =>
@@ -236,8 +358,15 @@ export default function SubscriptionPage() {
               </div>
               {sub.subscription_end && (
                 <p className="text-xs text-hally-text-muted">
-                  {sub.status === 'cancelling' ? 'Attivo fino al' : 'Prossimo rinnovo il'}{' '}
+                  {isTrialing   ? 'Trial attivo — primo addebito il'
+                  : sub.status === 'cancelling' ? 'Attivo fino al'
+                  : 'Prossimo rinnovo il'}{' '}
                   <span className="text-hally-text font-medium">{fmt(sub.subscription_end)}</span>
+                </p>
+              )}
+              {isTrialing && (
+                <p className="text-xs mt-0.5" style={{ color: '#8B5CF6' }}>
+                  Puoi cancellare prima della scadenza senza costi.
                 </p>
               )}
             </div>
@@ -322,22 +451,35 @@ export default function SubscriptionPage() {
                 <button disabled className="btn-secondary w-full text-sm opacity-50 cursor-not-allowed">
                   Piano attuale
                 </button>
+              ) : plan.id === 'signature' ? (
+                <button
+                  onClick={() => setShowContact(true)}
+                  className="w-full text-sm font-semibold py-2.5 rounded-lg transition-colors duration-150 btn-secondary"
+                >
+                  Contattaci
+                </button>
               ) : plan.highlight ? (
-                <button
-                  onClick={() => handleCheckout(plan.id)}
-                  disabled={!!checkingOut}
-                  className="w-full text-sm font-semibold py-2.5 rounded-lg transition-colors duration-150 disabled:opacity-60 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
-                >
-                  {checkingOut === plan.id ? 'Reindirizzamento…' : `Attiva ${plan.name}`}
-                </button>
+                <div>
+                  <button
+                    onClick={() => handleCheckout(plan.id)}
+                    disabled={!!checkingOut}
+                    className="w-full text-sm font-semibold py-2.5 rounded-lg transition-colors duration-150 disabled:opacity-60 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
+                  >
+                    {checkingOut === plan.id ? 'Reindirizzamento…' : `Inizia Trial — ${plan.name}`}
+                  </button>
+                  <p className="text-center text-xs text-hally-text-muted mt-2">7 giorni gratis · carta richiesta</p>
+                </div>
               ) : (
-                <button
-                  onClick={() => handleCheckout(plan.id)}
-                  disabled={!!checkingOut}
-                  className="btn-secondary w-full text-sm font-semibold disabled:opacity-60"
-                >
-                  {checkingOut === plan.id ? 'Reindirizzamento…' : `Attiva ${plan.name}`}
-                </button>
+                <div>
+                  <button
+                    onClick={() => handleCheckout(plan.id)}
+                    disabled={!!checkingOut}
+                    className="btn-secondary w-full text-sm font-semibold disabled:opacity-60"
+                  >
+                    {checkingOut === plan.id ? 'Reindirizzamento…' : `Inizia Trial — ${plan.name}`}
+                  </button>
+                  <p className="text-center text-xs text-hally-text-muted mt-2">7 giorni gratis · carta richiesta</p>
+                </div>
               )}
             </div>
           );
@@ -412,6 +554,9 @@ export default function SubscriptionPage() {
           loading={cancelling}
         />
       )}
+
+      {/* ── Modal contatto Signature ── */}
+      {showContact && <SignatureContactModal onClose={() => setShowContact(false)} />}
     </div>
   );
 }

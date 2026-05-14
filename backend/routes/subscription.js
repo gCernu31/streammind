@@ -2,6 +2,13 @@ import { Router } from 'express';
 import Stripe from 'stripe';
 import pool from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import {
+  sendTrialReminderEmail,
+  sendTrialActivatedEmail,
+} from '../services/emailService.js';
+
+// Piani con trial di 7 giorni
+const PLANS_WITH_TRIAL = new Set(['starter', 'creator', 'elite']);
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' })
@@ -115,8 +122,11 @@ async function handleCheckout(req, res) {
       line_items:           [{ price: PRICE_IDS[plan], quantity: 1 }],
       success_url:          `${frontendUrl}/subscription?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:           `${frontendUrl}/subscription?cancelled=1`,
-      metadata:             { streamer_id: String(req.user.streamer_id), plan },
-      subscription_data:    { metadata: { streamer_id: String(req.user.streamer_id), plan } },
+      metadata:          { streamer_id: String(req.user.streamer_id), plan },
+      subscription_data: {
+        metadata:            { streamer_id: String(req.user.streamer_id), plan },
+        ...(PLANS_WITH_TRIAL.has(plan) ? { trial_period_days: 7 } : {}),
+      },
     });
 
     res.json({ checkout_url: session.url });
@@ -205,25 +215,29 @@ export async function stripeWebhook(req, res) {
         const streamerId = session.metadata?.streamer_id;
         const plan       = session.metadata?.plan;
         const sub = await stripe.subscriptions.retrieve(session.subscription);
+        // Durante il trial lo status è 'trialing', altrimenti 'active'
+        const checkoutStatus = sub.status === 'trialing' ? 'trialing' : 'active';
         await pool.query(
           `UPDATE streamers
-           SET subscription_status    = 'active',
-               subscription_plan      = $1,
-               stripe_subscription_id = $2,
-               stripe_customer_id     = $3,
-               subscription_end       = to_timestamp($4)
-           WHERE id = $5`,
-          [plan, sub.id, sub.customer, sub.current_period_end, streamerId]
+           SET subscription_status    = $1,
+               subscription_plan      = $2,
+               stripe_subscription_id = $3,
+               stripe_customer_id     = $4,
+               subscription_end       = to_timestamp($5)
+           WHERE id = $6`,
+          [checkoutStatus, plan, sub.id, sub.customer, sub.current_period_end, streamerId]
         );
         break;
       }
 
       case 'customer.subscription.updated': {
-        const sub    = event.data.object;
-        const plan   = sub.metadata?.plan ?? null;
-        const status = sub.cancel_at_period_end ? 'cancelling'
-          : sub.status === 'active'             ? 'active'
-          : sub.status === 'past_due'           ? 'past_due'
+        const sub      = event.data.object;
+        const plan     = sub.metadata?.plan ?? null;
+        const prevAttr = event.data.previous_attributes ?? {};
+        const status   = sub.cancel_at_period_end ? 'cancelling'
+          : sub.status === 'trialing'             ? 'trialing'
+          : sub.status === 'active'               ? 'active'
+          : sub.status === 'past_due'             ? 'past_due'
           : sub.status;
         await pool.query(
           `UPDATE streamers
@@ -233,6 +247,22 @@ export async function stripeWebhook(req, res) {
            WHERE stripe_subscription_id = $4`,
           [status, plan, sub.current_period_end, sub.id]
         );
+        // Trial → attivo: invia email di conferma
+        if (prevAttr.status === 'trialing' && sub.status === 'active') {
+          const { rows } = await pool.query(
+            'SELECT email, display_name, subscription_plan FROM streamers WHERE stripe_subscription_id = $1',
+            [sub.id]
+          );
+          if (rows[0]?.email) {
+            const labels = { starter: 'Starter', creator: 'Creator', elite: 'Elite', signature: 'Signature' };
+            sendTrialActivatedEmail({
+              to:              rows[0].email,
+              displayName:     rows[0].display_name ?? 'Streamer',
+              planName:        labels[rows[0].subscription_plan] ?? rows[0].subscription_plan,
+              nextBillingDate: sub.current_period_end * 1000,
+            }).catch(e => console.error('[Email] trial-activated:', e.message));
+          }
+        }
         break;
       }
 
@@ -247,6 +277,26 @@ export async function stripeWebhook(req, res) {
            WHERE stripe_subscription_id = $1`,
           [sub.id]
         );
+        break;
+      }
+
+      // Reminder trial: Stripe lo invia 3 giorni prima della scadenza di default.
+      // Per inviarlo esattamente a 2 giorni: Stripe Dashboard → Settings → Subscriptions → Trial reminders.
+      case 'customer.subscription.trial_will_end': {
+        const sub = event.data.object;
+        const { rows } = await pool.query(
+          'SELECT email, display_name, subscription_plan FROM streamers WHERE stripe_subscription_id = $1',
+          [sub.id]
+        );
+        if (rows[0]?.email) {
+          const labels = { starter: 'Starter', creator: 'Creator', elite: 'Elite' };
+          sendTrialReminderEmail({
+            to:          rows[0].email,
+            displayName: rows[0].display_name ?? 'Streamer',
+            planName:    labels[rows[0].subscription_plan] ?? 'StreaMindAI',
+            trialEnd:    sub.trial_end * 1000,
+          }).catch(e => console.error('[Email] trial-reminder:', e.message));
+        }
         break;
       }
 

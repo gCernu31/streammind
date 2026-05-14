@@ -321,6 +321,34 @@ export async function sendRenewalConfirmationEmail({ to, displayName, planName, 
   });
 }
 
+// ── 8. Email: bot tornato online ──────────────────────────────────────────────
+export async function sendBotOnlineEmail({ to, displayName }) {
+  await sendEmail({
+    to,
+    subject: `✅ Il tuo bot è di nuovo online`,
+    html: wrapHtml(`
+      <h1 style="margin:0 0 14px;font-size:20px;font-weight:700;color:#ffffff">
+        ✅ Il tuo bot è di nuovo attivo
+      </h1>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#a0a0a0">
+        Ciao <strong style="color:#ffffff">${displayName}</strong>,<br>
+        buone notizie! Il tuo bot è stato ripristinato ed è nuovamente connesso alla tua chat Twitch.
+      </p>
+      <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-left:3px solid #22c55e;border-radius:8px;padding:16px 20px;margin:0 0 20px">
+        <p style="margin:0;font-size:14px;color:#a0a0a0;line-height:1.6">
+          <strong style="color:#22c55e">Servizio ripristinato:</strong><br>
+          Il bot è ora operativo e pronto a rispondere nella tua chat come sempre.
+        </p>
+      </div>
+      <p style="margin:0;font-size:14px;color:#6b6b6b">
+        Ci scusiamo per l'interruzione. Per qualsiasi domanda scrivi a
+        <a href="mailto:${REPLY_TO}" style="color:#8B5CF6;text-decoration:none">${REPLY_TO}</a>.
+      </p>
+      ${ctaButton('Vai alla Dashboard →', `${FRONTEND}/dashboard`)}
+    `),
+  });
+}
+
 // ── Email: form contatto Signature ────────────────────────────────────────────
 export async function sendContactFormEmail({ nome, twitchUsername, piano, motivo }) {
   await sendEmail({

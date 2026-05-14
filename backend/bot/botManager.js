@@ -28,8 +28,12 @@ import tmi    from 'tmi.js';
 import axios  from 'axios';
 import crypto from 'crypto';
 import pool   from '../db.js';
-import { generateBotPrompt } from '../services/promptBuilder.js';
-import { getLimits }          from '../config/planLimits.js';
+import { generateBotPrompt }  from '../services/promptBuilder.js';
+import { getLimits }           from '../config/planLimits.js';
+import {
+  sendBotOfflineEmail,
+  sendBotOnlineEmail,
+} from '../services/emailService.js';
 
 // ─── Costanti ─────────────────────────────────────────────────────────────────
 const EVENTSUB_SECRET   = process.env.EVENTSUB_SECRET || 'streamindai-eventsub-secret';
@@ -466,12 +470,19 @@ async function resetMonthlyIfNeeded(streamer) {
 
 // ─── BotManager ───────────────────────────────────────────────────────────────
 
+const SUPPORT_EMAIL      = 'support@streamindai.com';
+const OFFLINE_GRACE_MS   = 5 * 60_000; // 5 minuti prima di notificare
+
 class BotManager {
   constructor() {
-    this.client       = null;
-    this.channelMap   = {};   // lowercase channel → streamer row
-    this.connected    = false;
-    this._restarting  = false;
+    this.client              = null;
+    this.channelMap          = {};   // lowercase channel → streamer row
+    this.connected           = false;
+    this._restarting         = false;
+    this._offlineSince       = null; // timestamp quando il bot è andato offline
+    this._offlineNotified    = false;
+    this._monitorStarted     = false;
+    this._notifiedStreamers  = [];   // snapshot streamer notificati (per invio recovery)
   }
 
   // ── Avvio ──────────────────────────────────────────────────────────────────
@@ -511,11 +522,19 @@ class BotManager {
     this.client.on('connected', (addr, port) => {
       this.connected = true;
       console.log(`[Bot] Connesso a ${addr}:${port} — ${channels.length} canali`);
+      if (this._offlineSince !== null) {
+        const prev = this._offlineSince;
+        this._offlineSince = null;
+        this._handleRecovery().catch(e => console.error('[Bot] recovery:', e.message));
+      }
+      this._upsertServiceStatus('operational').catch(() => {});
     });
 
     this.client.on('disconnected', reason => {
       this.connected = false;
+      if (this._offlineSince === null) this._offlineSince = Date.now();
       console.warn('[Bot] Disconnesso:', reason);
+      this._upsertServiceStatus('outage').catch(() => {});
       this._scheduleRestart();
     });
 
@@ -577,7 +596,8 @@ class BotManager {
       }
     }
 
-    setInterval(() => this._syncChannels(), 5 * 60 * 1000);
+    setInterval(() => this._syncChannels(), 5 * 60_000);
+    this._startMonitor();
   }
 
   _scheduleRestart(delayMs = 30_000) {
@@ -859,6 +879,95 @@ class BotManager {
     const msg = await buildEventMessage(streamer, eventType, data);
     if (msg) {
       try { await this.client.say(channel, msg); } catch {}
+    }
+  }
+
+  // ── Monitoraggio offline ──────────────────────────────────────────────────
+
+  _startMonitor() {
+    if (this._monitorStarted) return;
+    this._monitorStarted = true;
+    setInterval(() => this._checkOfflineStatus(), 60_000);
+  }
+
+  async _upsertServiceStatus(status, message = null) {
+    try {
+      await pool.query(`
+        INSERT INTO service_status (service, status, message, updated_at)
+        VALUES ('bot', $1, $2, NOW())
+        ON CONFLICT (service) DO UPDATE SET status=$1, message=$2, updated_at=NOW()
+      `, [status, message]);
+    } catch {}
+  }
+
+  async _checkOfflineStatus() {
+    // Aggiorna service_status ogni minuto
+    await this._upsertServiceStatus(this.connected ? 'operational' : 'outage');
+
+    if (this.connected || !this._offlineSince || this._offlineNotified) return;
+
+    const offlineMs = Date.now() - this._offlineSince;
+    if (offlineMs < OFFLINE_GRACE_MS) return;
+
+    this._offlineNotified = true;
+    console.warn('[Bot] Offline da 5+ min — invio notifiche email');
+
+    try {
+      // Apri incident in DB
+      await pool.query(`
+        INSERT INTO status_incidents (service, description)
+        VALUES ('bot', 'Bot Twitch disconnesso — ripristino in corso')
+      `);
+
+      // Email al supporto
+      sendBotOfflineEmail({ to: SUPPORT_EMAIL, displayName: 'Team StreaMindAI' }).catch(() => {});
+
+      // Email a tutti gli streamer attivi con email registrata
+      const { rows: streamers } = await pool.query(`
+        SELECT id, display_name, twitch_username, email FROM streamers
+        WHERE subscription_status IN ('active', 'trialing')
+          AND email IS NOT NULL AND email <> ''
+      `);
+      this._notifiedStreamers = streamers;
+
+      for (const s of streamers) {
+        sendBotOfflineEmail({
+          to:          s.email,
+          displayName: s.display_name || s.twitch_username,
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.error('[Bot] offline notifications:', e.message);
+    }
+  }
+
+  async _handleRecovery() {
+    if (!this._offlineNotified) return;
+    this._offlineNotified = false;
+    const notified = this._notifiedStreamers ?? [];
+    this._notifiedStreamers = [];
+
+    console.log('[Bot] Recupero dall\'offline — invio email di recovery');
+
+    try {
+      // Chiudi incident aperti
+      await pool.query(`
+        UPDATE status_incidents SET resolved_at = NOW()
+        WHERE service = 'bot' AND resolved_at IS NULL
+      `);
+
+      // Email di recovery al supporto
+      sendBotOnlineEmail({ to: SUPPORT_EMAIL, displayName: 'Team StreaMindAI' }).catch(() => {});
+
+      // Email di recovery agli streamer che erano stati notificati
+      for (const s of notified) {
+        sendBotOnlineEmail({
+          to:          s.email,
+          displayName: s.display_name || s.twitch_username,
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.error('[Bot] recovery notifications:', e.message);
     }
   }
 

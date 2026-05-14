@@ -268,3 +268,36 @@ CREATE TABLE IF NOT EXISTS referrals (
 );
 
 CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals (referrer_id, status);
+
+-- ============================================================
+-- Pagina /status — monitoraggio servizi
+-- ============================================================
+
+-- Stato corrente di ogni servizio (upsert dal bot manager)
+CREATE TABLE IF NOT EXISTS service_status (
+  service     VARCHAR(50) PRIMARY KEY,
+  status      VARCHAR(20) NOT NULL DEFAULT 'operational', -- operational | degraded | outage
+  message     TEXT,
+  updated_at  TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Log incidenti per storico uptime 30 giorni
+CREATE TABLE IF NOT EXISTS status_incidents (
+  id           SERIAL PRIMARY KEY,
+  service      VARCHAR(50) NOT NULL,
+  started_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+  resolved_at  TIMESTAMP,
+  description  TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_status_incidents_service ON status_incidents (service, started_at DESC);
+
+-- Finestre di manutenzione programmata
+CREATE TABLE IF NOT EXISTS maintenance_windows (
+  id          SERIAL PRIMARY KEY,
+  title       VARCHAR(200) NOT NULL,
+  description TEXT,
+  starts_at   TIMESTAMP NOT NULL,
+  ends_at     TIMESTAMP NOT NULL,
+  active      BOOLEAN NOT NULL DEFAULT true
+);

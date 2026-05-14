@@ -645,6 +645,7 @@ export default function LandingPage({ user, loading, onLogout }) {
                   <li><a href="#how"      className="hover:text-white transition-colors">Come funziona</a></li>
                   <li><Link to="/analisi"   className="hover:text-white transition-colors">Analisi Gratis</Link></li>
                   <li><Link to="/changelog" className="hover:text-white transition-colors">Changelog</Link></li>
+                  <li><Link to="/status"    className="hover:text-white transition-colors">Status</Link></li>
                   <li><Link to="/login"    className="hover:text-white transition-colors">Accedi</Link></li>
                 </ul>
               </div>

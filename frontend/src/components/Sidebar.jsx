@@ -45,6 +45,21 @@ const IconGuide = () => (
   </svg>
 );
 
+const IconChangelog = () => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
+    <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Z"/>
+    <path d="M8 4.5v4l2.5 1.5"/>
+  </svg>
+);
+
+const IconStatus = () => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
+    <circle cx="8" cy="8" r="2.5" fill="currentColor" stroke="none"/>
+    <path d="M3.5 12.5A6.5 6.5 0 0 1 8 1.5a6.5 6.5 0 0 1 4.5 11"/>
+    <path d="M1.5 10a7.5 7.5 0 0 0 13 0"/>
+  </svg>
+);
+
 function BrainWaveLogo({ className = 'w-6 h-6' }) {
   return (
     <svg viewBox="0 0 36 36" fill="none" className={className} aria-hidden="true">
@@ -162,6 +177,50 @@ export default function Sidebar({ user, onLogout, open, onClose }) {
                   <IconGuide />
                 </span>
                 Guida
+              </>
+            )}
+          </NavLink>
+
+          {/* Changelog */}
+          <NavLink
+            to="/changelog"
+            onClick={onClose}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                isActive
+                  ? 'bg-hally-orange-muted text-hally-orange'
+                  : 'text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <span style={{ color: isActive ? '#8B5CF6' : undefined }}>
+                  <IconChangelog />
+                </span>
+                Novità
+              </>
+            )}
+          </NavLink>
+
+          {/* Status */}
+          <NavLink
+            to="/status"
+            onClick={onClose}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                isActive
+                  ? 'bg-hally-orange-muted text-hally-orange'
+                  : 'text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <span style={{ color: isActive ? '#8B5CF6' : undefined }}>
+                  <IconStatus />
+                </span>
+                Status
               </>
             )}
           </NavLink>

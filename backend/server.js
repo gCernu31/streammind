@@ -14,7 +14,7 @@ import { subscriptionRoutes, stripeWebhook } from './routes/subscription.js';
 import { analyticsRoutes } from './routes/analytics.js';
 import { contactRoutes } from './routes/contact.js';
 import { onboardingRoutes } from './routes/onboarding.js';
-import { twitchBot } from './bot/twitchBot.js';
+import { botManager, verifyEventSubSignature } from './bot/botManager.js';
 
 dotenv.config();
 
@@ -42,6 +42,36 @@ app.use(cors({
 // ── Webhook Stripe — raw body PRIMA di express.json() ─────────────────────────
 app.post('/api/subscription/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 app.post('/webhooks/stripe',          express.raw({ type: 'application/json' }), stripeWebhook);
+
+// ── Webhook Twitch EventSub — raw body per verifica firma ─────────────────────
+app.post('/webhooks/twitch-eventsub', express.raw({ type: 'application/json' }), (req, res) => {
+  const messageId   = req.headers['twitch-eventsub-message-id']        ?? '';
+  const timestamp   = req.headers['twitch-eventsub-message-timestamp'] ?? '';
+  const messageType = req.headers['twitch-eventsub-message-type']      ?? '';
+  const subType     = req.headers['twitch-eventsub-subscription-type'] ?? '';
+  const signature   = req.headers['twitch-eventsub-message-signature'] ?? '';
+  const rawBody     = req.body.toString('utf8');
+
+  if (!verifyEventSubSignature(messageId, timestamp, rawBody, signature)) {
+    return res.status(403).send('Firma non valida');
+  }
+
+  let body;
+  try { body = JSON.parse(rawBody); } catch { return res.status(400).send('JSON non valido'); }
+
+  // Verifica challenge (primo handshake)
+  if (messageType === 'webhook_callback_verification') {
+    return res.status(200).send(body.challenge);
+  }
+
+  res.status(204).send();
+
+  // Notifica asincrona al botManager
+  if (messageType === 'notification') {
+    botManager.handleEventSubNotification(subType, body.event)
+              .catch(e => console.error('[EventSub] handler:', e.message));
+  }
+});
 
 app.use(express.json());
 
@@ -137,7 +167,7 @@ pool.query('SELECT 1')
       console.log(`   Ambiente: ${process.env.NODE_ENV ?? 'development'}`);
       console.log(`   Database: connesso`);
       if (isProd) console.log(`   Static:   ${distPath}`);
-      twitchBot.start();
+      botManager.start();
     });
   })
   .catch((err) => {

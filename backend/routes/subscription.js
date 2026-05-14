@@ -2,6 +2,7 @@ import { Router } from 'express';
 import Stripe from 'stripe';
 import pool from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { botManager } from '../bot/botManager.js';
 import {
   sendTrialReminderEmail,
   sendTrialActivatedEmail,
@@ -227,6 +228,13 @@ export async function stripeWebhook(req, res) {
            WHERE id = $6`,
           [checkoutStatus, plan, sub.id, sub.customer, sub.current_period_end, streamerId]
         );
+        // Connette immediatamente il bot al canale senza attendere il sync periodico
+        const { rows: newUser } = await pool.query(
+          'SELECT twitch_username FROM streamers WHERE id = $1', [streamerId]
+        );
+        if (newUser[0]?.twitch_username) {
+          botManager.joinChannel(newUser[0].twitch_username).catch(() => {});
+        }
         break;
       }
 

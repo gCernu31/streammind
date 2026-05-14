@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 // ---------------------------------------------------------------------------
 // Limiti messaggi mensili per piano
 // ---------------------------------------------------------------------------
 
 const MONTHLY_LIMITS = {
-  starter:   2_000,
-  creator:   6_000,
-  elite:     13_000,
-  signature: 33_000,
+  starter:   4_000,
+  creator:   12_000,
+  elite:     24_000,
+  signature: 60_000,
 };
 
 // ---------------------------------------------------------------------------
@@ -48,6 +49,39 @@ function formatDate(iso) {
 function formatExpiry(iso) {
   if (!iso) return null;
   return new Date(iso).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// ---------------------------------------------------------------------------
+// Banner trial per utenti senza abbonamento
+// ---------------------------------------------------------------------------
+
+function TrialBanner() {
+  return (
+    <div
+      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border px-5 py-4"
+      style={{
+        background:   'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(139,92,246,0.04) 100%)',
+        borderColor:  'rgba(139,92,246,0.3)',
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">🚀</span>
+        <div>
+          <p className="text-sm font-bold text-hally-text">Prova StreaMindAI gratis per 7 giorni</p>
+          <p className="text-xs text-hally-text-muted mt-0.5">Nessun addebito oggi. Disdici in qualsiasi momento.</p>
+        </div>
+      </div>
+      <Link
+        to="/subscription"
+        className="self-start sm:self-auto inline-flex items-center gap-2 font-bold text-white text-sm px-5 py-2.5 rounded-xl flex-shrink-0 transition-all duration-150"
+        style={{ backgroundColor: '#8B5CF6' }}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#7C3AED'}
+        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#8B5CF6'}
+      >
+        Inizia la prova gratuita →
+      </Link>
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -146,7 +180,7 @@ function SubscriptionCard({ status, plan, daysRemaining, totalDays, expiresAt, m
   const pctRemaining = totalDays > 0 ? (daysRemaining / totalDays) * 100 : 0;
   const isLow = daysRemaining < 7;
   const barColor = isLow ? '#f87171' : '#8B5CF6';
-  const active = status === 'active' || status === 'cancelling';
+  const active = status === 'active' || status === 'cancelling' || status === 'trialing';
 
   const monthlyLimit = MONTHLY_LIMITS[monthly?.plan ?? plan?.toLowerCase() ?? 'starter'] ?? 2_000;
   const monthlyCount = monthly?.count ?? 0;
@@ -390,10 +424,11 @@ function MemoryFeed({ memories }) {
 // ---------------------------------------------------------------------------
 
 export default function DashboardPage({ user }) {
-  const [stats, setStats]     = useState(null);
-  const [botName, setBotName] = useState(null);
+  const [stats, setStats]       = useState(null);
+  const [botName, setBotName]   = useState(null);
   const [memories, setMemories] = useState([]);
-  const [monthly, setMonthly] = useState(null);
+  const [monthly, setMonthly]   = useState(null);
+  const [subStatus, setSubStatus] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('streammindai_token');
@@ -418,10 +453,13 @@ export default function DashboardPage({ user }) {
     fetch('/api/me', { headers: h })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (data) setMonthly({
-          count: data.monthly_messages?.count ?? 0,
-          plan:  data.subscription?.plan ?? null,
-        });
+        if (data) {
+          setMonthly({
+            count: data.monthly_messages?.count ?? 0,
+            plan:  data.subscription?.plan ?? null,
+          });
+          setSubStatus(data.subscription?.status ?? 'inactive');
+        }
       })
       .catch(() => {});
   }, []);
@@ -440,6 +478,9 @@ export default function DashboardPage({ user }) {
           Ecco cosa sta succedendo sul tuo canale oggi.
         </p>
       </div>
+
+      {/* ── Banner trial ───────────────────────────────────────────── */}
+      {subStatus === 'inactive' && <TrialBanner />}
 
       {/* ── CTA Configura ──────────────────────────────────────────── */}
       <a

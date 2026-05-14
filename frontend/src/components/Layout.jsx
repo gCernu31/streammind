@@ -31,7 +31,7 @@ function PaywallGate({ locked, children }) {
           <div className="text-5xl mb-5">🔒</div>
           <h2 className="text-xl font-bold text-hally-text mb-3">Funzionalità Premium</h2>
           <p className="text-sm leading-relaxed mb-6" style={{ color: '#a0a0a0' }}>
-            Questa sezione è disponibile a partire dal piano Starter. Attiva il tuo abbonamento per accedere.
+            Attiva il tuo abbonamento per accedere. Prova gratis per 7 giorni — nessun addebito oggi.
           </p>
           <Link
             to="/subscription"
@@ -40,7 +40,7 @@ function PaywallGate({ locked, children }) {
             onMouseEnter={e => e.currentTarget.style.backgroundColor = '#7C3AED'}
             onMouseLeave={e => e.currentTarget.style.backgroundColor = '#8B5CF6'}
           >
-            Vedi i piani →
+            Inizia la prova gratuita →
           </Link>
         </div>
       </div>
@@ -72,7 +72,7 @@ export default function Layout({ user, onLogout, children }) {
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         const s = data?.subscription?.status;
-        setHasActivePlan(s === 'active' || s === 'cancelling');
+        setHasActivePlan(s === 'active' || s === 'cancelling' || s === 'trialing');
       })
       .catch(() => setHasActivePlan(false));
   }, [user]);

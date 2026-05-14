@@ -86,10 +86,10 @@ export default function GuidePage() {
         <p className="text-sm font-semibold text-hally-text mb-3">Limiti per piano:</p>
         <div className="rounded-xl border border-hally-border overflow-hidden">
           {[
-            { plan: 'Starter',   msgs: '3 messaggi per utente a sera' },
-            { plan: 'Creator',   msgs: '5 messaggi per utente a sera' },
-            { plan: 'Elite',     msgs: '10 messaggi per utente a sera' },
-            { plan: 'Signature', msgs: '20 messaggi per utente a sera' },
+            { plan: 'Starter',   msgs: '200 msg/sera sul canale · 4.000/mese' },
+            { plan: 'Creator',   msgs: '600 msg/sera sul canale · 12.000/mese' },
+            { plan: 'Elite',     msgs: '1.200 msg/sera sul canale · 24.000/mese' },
+            { plan: 'Signature', msgs: '3.000 msg/sera sul canale · 60.000/mese' },
           ].map(({ plan, msgs }, i, arr) => (
             <div
               key={plan}
@@ -101,7 +101,7 @@ export default function GuidePage() {
           ))}
         </div>
         <p className="text-xs text-hally-text-muted mt-3">
-          Gli spettatori che hanno esaurito i messaggi ricevono un messaggio automatico che li invita a supportare il canale con una sub.
+          Il conteggio è sul totale del canale per sessione, non per singolo utente. I limiti per utente sono configurabili dallo streamer dal pannello entro i massimi del piano.
         </p>
       </Section>
 

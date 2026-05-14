@@ -126,6 +126,20 @@ BEGIN
     ALTER TABLE bot_configs ADD COLUMN discord_video_channel VARCHAR(100);
   END IF;
 
+  -- bot_configs: limiti per utente configurabili dallo streamer (null = usa default del piano)
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='user_msg_nonsub') THEN
+    ALTER TABLE bot_configs ADD COLUMN user_msg_nonsub INTEGER;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='user_msg_subvip') THEN
+    ALTER TABLE bot_configs ADD COLUMN user_msg_subvip INTEGER;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='song_req_nonsub') THEN
+    ALTER TABLE bot_configs ADD COLUMN song_req_nonsub INTEGER;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='song_req_subvip') THEN
+    ALTER TABLE bot_configs ADD COLUMN song_req_subvip INTEGER;
+  END IF;
+
   -- streamers: contatori messaggi mensili
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='streamers' AND column_name='monthly_message_count') THEN
     ALTER TABLE streamers ADD COLUMN monthly_message_count INTEGER NOT NULL DEFAULT 0;

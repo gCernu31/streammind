@@ -8,6 +8,7 @@ import MemoryPage from './pages/MemoryPage.jsx';
 import SubscriptionPage from './pages/SubscriptionPage.jsx';
 import AnalisiPage from './pages/AnalisiPage.jsx';
 import GuidePage from './pages/GuidePage.jsx';
+import ChangelogPage from './pages/ChangelogPage.jsx';
 import Layout from './components/Layout.jsx';
 import { getToken, setToken, clearToken } from './utils/auth.js';
 
@@ -77,7 +78,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/analisi" element={<AnalisiPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
+        <Route path="/analisi"   element={<AnalisiPage   user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
+        <Route path="/changelog" element={<ChangelogPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
 
         {/* Rotte protette con Layout (sidebar + navbar) */}
         <Route

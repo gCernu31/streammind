@@ -12,7 +12,7 @@
 
 import nodemailer from 'nodemailer';
 
-const FRONTEND = process.env.FRONTEND_URL ?? 'https://streammindai.com';
+const FRONTEND = process.env.FRONTEND_URL ?? 'https://streamindai.com';
 const FROM     = process.env.FROM_EMAIL   ?? 'noreply@streamindai.com';
 const REPLY_TO = 'support@streamindai.com';
 
@@ -331,7 +331,7 @@ export async function sendContactFormEmail({ nome, twitchUsername, piano, motivo
 <head><meta charset="UTF-8"></head>
 <body style="font-family:system-ui,sans-serif;color:#1a1a1a;padding:32px;max-width:600px">
   <h2 style="margin:0 0 6px;color:#8B5CF6">Nuova richiesta ${piano}</h2>
-  <p style="margin:0 0 24px;font-size:13px;color:#888">Ricevuta tramite streammindai.com</p>
+  <p style="margin:0 0 24px;font-size:13px;color:#888">Ricevuta tramite streamindai.com</p>
   <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:14px">
     <tr>
       <td style="padding:11px 16px;background:#f5f5f5;width:130px;color:#666;font-weight:600">Nome</td>

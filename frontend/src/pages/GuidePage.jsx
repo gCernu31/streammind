@@ -219,8 +219,8 @@ export default function GuidePage() {
         </p>
         <p className="text-sm text-hally-text-muted mt-1">
           Oppure scrivi a:{' '}
-          <a href="mailto:support@streammindai.com" style={{ color: '#8B5CF6' }} className="hover:underline font-medium">
-            support@streammindai.com
+          <a href="mailto:support@streamindai.com" style={{ color: '#8B5CF6' }} className="hover:underline font-medium">
+            support@streamindai.com
           </a>
         </p>
       </div>

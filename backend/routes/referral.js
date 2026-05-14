@@ -4,7 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 
 export const referralRoutes = Router();
 
-const FRONTEND = process.env.FRONTEND_URL ?? 'https://streammindai.com';
+const FRONTEND = process.env.FRONTEND_URL ?? 'https://streamindai.com';
 
 // ── GET /api/referral — statistiche e link referral ───────────────────────────
 referralRoutes.get('/', requireAuth, async (req, res) => {

@@ -92,36 +92,51 @@ Nel pannello Railway → *Variables*, aggiungi:
 |-----------|--------|
 | `NODE_ENV` | `production` |
 | `PORT` | `3001` |
-| `FRONTEND_URL` | `https://<tuoapp>.up.railway.app` |
+| `FRONTEND_URL` | `https://streamindai.com` |
 | `JWT_SECRET` | stringa casuale 64+ caratteri |
 | `TWITCH_CLIENT_ID` | da dev.twitch.tv |
 | `TWITCH_CLIENT_SECRET` | da dev.twitch.tv |
-| `TWITCH_REDIRECT_URI` | `https://<tuoapp>.up.railway.app/api/auth/twitch/callback` |
+| `TWITCH_REDIRECT_URI` | `https://streamindai.com/api/auth/twitch/callback` |
 | `STRIPE_SECRET_KEY` | `sk_live_...` |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` |
-| `STRIPE_PRICE_BASE` | ID prezzo Base (7€) |
-| `STRIPE_PRICE_PRO` | ID prezzo Pro (15€) |
-| `STRIPE_PRICE_ELITE` | ID prezzo Elite (29€) |
+| `STRIPE_PRICE_STARTER` | ID prezzo Starter (9€) |
+| `STRIPE_PRICE_CREATOR` | ID prezzo Creator (19€) |
+| `STRIPE_PRICE_ELITE` | ID prezzo Elite (35€) |
+| `STRIPE_PRICE_SIGNATURE` | ID prezzo Signature (99€) |
+| `SMTP_HOST` | host SMTP (es. smtp.brevo.com) |
+| `SMTP_PORT` | `587` |
+| `SMTP_USER` | username SMTP |
+| `SMTP_PASS` | password SMTP |
+| `FROM_EMAIL` | `noreply@streamindai.com` |
+| `APP_URL` | `https://streamindai.com` |
 
-**4. Configura il webhook Stripe**
+**4. Configura il dominio su Railway**
+
+Railway → progetto StreaMindAI → **Settings → Domains → Add Domain** → `streamindai.com`
+
+Aggiungi i record DNS generati da Railway su Cloudflare (CNAME o A record).
+
+**5. Configura il webhook Stripe**
 
 Nel [Stripe Dashboard → Webhooks](https://dashboard.stripe.com/webhooks):
 
-- Endpoint URL: `https://<tuoapp>.up.railway.app/webhooks/stripe`
+- Endpoint URL: `https://streamindai.com/webhooks/stripe`
 - Eventi da ascoltare:
   - `checkout.session.completed`
   - `customer.subscription.updated`
   - `customer.subscription.deleted`
+  - `customer.subscription.trial_will_end`
+  - `invoice.payment_succeeded`
   - `invoice.payment_failed`
 
 Copia il **Webhook signing secret** (`whsec_...`) in `STRIPE_WEBHOOK_SECRET`.
 
-**5. Configura l'app Twitch**
+**6. Configura l'app Twitch**
 
 Su [dev.twitch.tv](https://dev.twitch.tv/console/apps), nella tua app aggiungi:
 
 ```
-OAuth Redirect URL: https://<tuoapp>.up.railway.app/api/auth/twitch/callback
+OAuth Redirect URL: https://streamindai.com/api/auth/twitch/callback
 ```
 
 **6. Deploy**

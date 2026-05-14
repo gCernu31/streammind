@@ -135,7 +135,7 @@ function buildEmailHtml(analysis, username) {
   <div style="background:linear-gradient(135deg,rgba(139,92,246,0.12),rgba(139,92,246,0.04));border:1px solid rgba(139,92,246,0.2);border-radius:16px;padding:28px;margin-top:24px;text-align:center">
     <p style="font-size:16px;font-weight:700;margin:0 0 8px">Vuoi raggiungere questi obiettivi?</p>
     <p style="color:#6b6b6b;font-size:14px;margin:0 0 20px">L'AI che ti aiuta attivamente ogni sera sul tuo canale Twitch.</p>
-    <a href="${process.env.FRONTEND_URL || 'https://streammindai.it'}/login"
+    <a href="${process.env.FRONTEND_URL || 'https://streamindai.com'}/login"
        style="display:inline-block;background:#8B5CF6;color:#fff;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none;font-size:14px">
       Inizia gratis con StreaMindAI →
     </a>

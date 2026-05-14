@@ -37,7 +37,7 @@ const months = [
       { emoji: '📱', text: 'Dashboard responsive mobile' },
       { emoji: '🔒', text: 'Trial gratuito 7 giorni (Starter, Creator, Elite)' },
       { emoji: '📧', text: 'Email automatiche per tutti gli eventi' },
-      { emoji: '🌐', text: 'Dominio ufficiale: streammindai.com' },
+      { emoji: '🌐', text: 'Dominio ufficiale: streamindai.com' },
       { emoji: '⚙️', text: 'Personalizzazione limiti messaggi e song request per piano' },
     ],
   },

@@ -15,7 +15,7 @@
  * Env vars:
  *   TWITCH_BOT_USERNAME
  *   TWITCH_BOT_OAUTH
- *   TWITCH_BOT_USER_ID     — ID Twitch del bot (per channel.follow EventSub)
+ *   TWITCH_BOT_USER_ID     — override opzionale (se omesso, risolto automaticamente all'avvio)
  *   TWITCH_CLIENT_ID       — per EventSub
  *   TWITCH_CLIENT_SECRET   — per EventSub
  *   APP_URL                — URL pubblico per webhook EventSub
@@ -133,7 +133,9 @@ async function getBotUserId() {
     const r = await axios.get(`https://api.twitch.tv/helix/users?login=${encodeURIComponent(uname)}`, {
       headers: { 'Client-ID': cid, Authorization: `Bearer ${token}` },
     });
-    return (_botUserId = r.data?.data?.[0]?.id ?? null);
+    _botUserId = r.data?.data?.[0]?.id ?? null;
+    if (_botUserId) console.log(`[Bot] Twitch bot user ID risolto: ${_botUserId}`);
+    return _botUserId;
   } catch (e) {
     console.error('[EventSub] bot user ID:', e.message);
     return null;
@@ -552,6 +554,11 @@ class BotManager {
       console.error('[Bot] Connessione fallita:', e.message);
       this._scheduleRestart();
       return;
+    }
+
+    // Risolve l'ID Twitch del bot al primo avvio (necessario per channel.follow EventSub)
+    if (process.env.TWITCH_CLIENT_ID) {
+      getBotUserId().catch(e => console.error('[Bot] getBotUserId:', e.message));
     }
 
     // Registra EventSub per tutti i canali attivi

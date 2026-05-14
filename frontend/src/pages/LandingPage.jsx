@@ -127,7 +127,7 @@ const plans = [
   {
     id: 'elite',
     name: 'Elite',
-    price: '39',
+    price: '35',
     desc: 'Il più scelto',
     badge: 'Più popolare',
     features: [
@@ -145,7 +145,7 @@ const plans = [
   {
     id: 'signature',
     name: 'Signature',
-    price: '99',
+    price: '85',
     desc: 'Il massimo, senza limiti',
     features: [
       'Tutto di Elite',

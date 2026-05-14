@@ -89,6 +89,6 @@ export const PLAN_LABELS = {
 export const PLAN_PRICES = {
   starter:   9,
   creator:   19,
-  elite:     39,
-  signature: 99,
+  elite:     35,
+  signature: 85,
 };

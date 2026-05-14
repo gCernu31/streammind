@@ -33,7 +33,7 @@ const PLANS = [
   {
     id: 'elite',
     name: 'Elite',
-    price: 39,
+    price: 35,
     highlight: true,
     badge: 'Più popolare',
     features: [
@@ -49,7 +49,7 @@ const PLANS = [
   {
     id: 'signature',
     name: 'Signature',
-    price: 99,
+    price: 85,
     features: [
       'Tutto di Elite',
       'Setup completamente personalizzato',

@@ -19,23 +19,30 @@ configRoutes.get('/', requireAuth, async (req, res) => {
     const { rows } = await pool.query(
       `SELECT bot_name, bot_personality, creator_name, twitch_username,
               stream_schedule, social_links, custom_commands, members,
-              ai_provider, event_messages
+              ai_provider, event_messages,
+              spotify_client_id, spotify_client_secret,
+              spotify_access_token,
+              discord_bot_token
        FROM bot_configs WHERE streamer_id = $1`,
       [req.user.streamer_id]
     );
 
     const cfg = rows[0] ?? {};
     res.json({
-      bot_name:        cfg.bot_name        ?? 'StreamBot',
-      creator_name:    cfg.creator_name    ?? req.user.display_name ?? '',
-      bot_personality: cfg.bot_personality ?? '',
-      twitch_username: cfg.twitch_username ?? req.user.twitch_username ?? '',
-      stream_schedule: tryParse(cfg.stream_schedule, { days: [], time_start: '21:00', time_end: '00:00' }),
-      social_links:    tryParse(cfg.social_links,    { linktree: '', instagram: '', youtube: '', discord: '' }),
-      custom_commands: tryParse(cfg.custom_commands, []),
-      members:         tryParse(cfg.members,          []),
-      ai_provider:     cfg.ai_provider ?? 'gemini',
-      event_messages:  tryParse(cfg.event_messages,  {}),
+      bot_name:           cfg.bot_name        ?? 'StreamBot',
+      creator_name:       cfg.creator_name    ?? req.user.display_name ?? '',
+      bot_personality:    cfg.bot_personality ?? '',
+      twitch_username:    cfg.twitch_username ?? req.user.twitch_username ?? '',
+      stream_schedule:    tryParse(cfg.stream_schedule, { days: [], time_start: '21:00', time_end: '00:00' }),
+      social_links:       tryParse(cfg.social_links,    { linktree: '', instagram: '', youtube: '', discord: '' }),
+      custom_commands:    tryParse(cfg.custom_commands, []),
+      members:            tryParse(cfg.members,          []),
+      ai_provider:        cfg.ai_provider ?? 'gemini',
+      event_messages:     tryParse(cfg.event_messages,  {}),
+      spotify_client_id:     cfg.spotify_client_id     ?? '',
+      spotify_client_secret: cfg.spotify_client_secret ?? '',
+      spotify_connected:     !!cfg.spotify_access_token,
+      discord_bot_token:     cfg.discord_bot_token      ?? '',
     });
   } catch (err) {
     console.error(err);
@@ -49,36 +56,44 @@ configRoutes.put('/', requireAuth, async (req, res) => {
     bot_name, creator_name, bot_personality, twitch_username,
     stream_schedule, social_links, custom_commands, members, ai_provider,
     event_messages,
+    spotify_client_id, spotify_client_secret,
+    discord_bot_token,
   } = req.body;
 
   try {
     const { rows } = await pool.query(
       `UPDATE bot_configs
-       SET bot_name        = COALESCE($1, bot_name),
-           creator_name    = COALESCE($2, creator_name),
-           bot_personality = COALESCE($3, bot_personality),
-           twitch_username = COALESCE($4, twitch_username),
-           stream_schedule = COALESCE($5, stream_schedule),
-           social_links    = COALESCE($6, social_links),
-           custom_commands = COALESCE($7::jsonb, custom_commands),
-           members         = COALESCE($8::jsonb, members),
-           ai_provider     = COALESCE($9, ai_provider),
-           event_messages  = COALESCE($11::jsonb, event_messages),
-           updated_at      = NOW()
+       SET bot_name               = COALESCE($1,  bot_name),
+           creator_name           = COALESCE($2,  creator_name),
+           bot_personality        = COALESCE($3,  bot_personality),
+           twitch_username        = COALESCE($4,  twitch_username),
+           stream_schedule        = COALESCE($5,  stream_schedule),
+           social_links           = COALESCE($6,  social_links),
+           custom_commands        = COALESCE($7::jsonb,  custom_commands),
+           members                = COALESCE($8::jsonb,  members),
+           ai_provider            = COALESCE($9,  ai_provider),
+           event_messages         = COALESCE($11::jsonb, event_messages),
+           spotify_client_id      = COALESCE($12, spotify_client_id),
+           spotify_client_secret  = COALESCE($13, spotify_client_secret),
+           discord_bot_token      = COALESCE($14, discord_bot_token),
+           updated_at             = NOW()
        WHERE streamer_id = $10
        RETURNING *`,
       [
-        bot_name        ?? null,
-        creator_name    ?? null,
-        bot_personality ?? null,
-        twitch_username ?? null,
-        stream_schedule != null ? toJson(stream_schedule) : null,
-        social_links    != null ? toJson(social_links)    : null,
-        custom_commands != null ? JSON.stringify(custom_commands) : null,
-        members         != null ? JSON.stringify(members)         : null,
-        ai_provider     ?? null,
+        bot_name               ?? null,
+        creator_name           ?? null,
+        bot_personality        ?? null,
+        twitch_username        ?? null,
+        stream_schedule        != null ? toJson(stream_schedule) : null,
+        social_links           != null ? toJson(social_links)    : null,
+        custom_commands        != null ? JSON.stringify(custom_commands)    : null,
+        members                != null ? JSON.stringify(members)            : null,
+        ai_provider            ?? null,
         req.user.streamer_id,
-        event_messages  != null ? JSON.stringify(event_messages) : null,
+        event_messages         != null ? JSON.stringify(event_messages)     : null,
+        spotify_client_id      ?? null,
+        spotify_client_secret  ?? null,
+        discord_bot_token      ?? null,
       ]
     );
 
@@ -86,22 +101,25 @@ configRoutes.put('/', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Configurazione non trovata' });
     }
 
-    // Invalida la cache del prompt dopo ogni modifica
     invalidateBotPromptCache(req.user.streamer_id);
 
     const cfg = rows[0];
     res.json({
-      success:         true,
-      bot_name:        cfg.bot_name,
-      creator_name:    cfg.creator_name,
-      bot_personality: cfg.bot_personality,
-      twitch_username: cfg.twitch_username,
-      stream_schedule: tryParse(cfg.stream_schedule, { days: [], time_start: '21:00', time_end: '00:00' }),
-      social_links:    tryParse(cfg.social_links,    { linktree: '', instagram: '', youtube: '', discord: '' }),
-      custom_commands: tryParse(cfg.custom_commands, []),
-      members:         tryParse(cfg.members,          []),
-      ai_provider:     cfg.ai_provider,
-      event_messages:  tryParse(cfg.event_messages,  {}),
+      success:               true,
+      bot_name:              cfg.bot_name,
+      creator_name:          cfg.creator_name,
+      bot_personality:       cfg.bot_personality,
+      twitch_username:       cfg.twitch_username,
+      stream_schedule:       tryParse(cfg.stream_schedule, { days: [], time_start: '21:00', time_end: '00:00' }),
+      social_links:          tryParse(cfg.social_links,    { linktree: '', instagram: '', youtube: '', discord: '' }),
+      custom_commands:       tryParse(cfg.custom_commands, []),
+      members:               tryParse(cfg.members,          []),
+      ai_provider:           cfg.ai_provider,
+      event_messages:        tryParse(cfg.event_messages,  {}),
+      spotify_client_id:     cfg.spotify_client_id     ?? '',
+      spotify_client_secret: cfg.spotify_client_secret ?? '',
+      spotify_connected:     !!cfg.spotify_access_token,
+      discord_bot_token:     cfg.discord_bot_token      ?? '',
     });
   } catch (err) {
     console.error(err);

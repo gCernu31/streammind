@@ -14,6 +14,7 @@ import { subscriptionRoutes, stripeWebhook } from './routes/subscription.js';
 import { analyticsRoutes } from './routes/analytics.js';
 import { contactRoutes } from './routes/contact.js';
 import { onboardingRoutes } from './routes/onboarding.js';
+import { spotifyRoutes }    from './routes/spotify.js';
 import { botManager, verifyEventSubSignature } from './bot/botManager.js';
 
 dotenv.config();
@@ -130,6 +131,7 @@ app.get('/api/me', authenticateToken, async (req, res) => {
 app.use('/api/analytics',   analyticsRoutes);
 app.use('/api/contact',     contactRoutes);
 app.use('/api/onboarding',  onboardingRoutes);
+app.use('/api/spotify',     spotifyRoutes);
 
 // ── Routes con prefisso ───────────────────────────────────────────────────────
 app.use('/api/auth',         authRoutes);

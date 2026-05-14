@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 
 // ─── Giorni della settimana ───────────────────────────────────────────────────
@@ -123,6 +124,10 @@ const EMPTY = {
   members: [],
   custom_commands: [],
   event_messages: { ...EMPTY_EVENT_MESSAGES },
+  spotify_client_id:     '',
+  spotify_client_secret: '',
+  spotify_connected:     false,
+  discord_bot_token:     '',
 };
 
 let _mid = 1;
@@ -132,10 +137,23 @@ const newCmd    = () => ({ id: _kid++, trigger: '', response: '', active: true }
 
 // ─── Pagina principale ────────────────────────────────────────────────────────
 export default function ConfigPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [config, setConfig]       = useState(null);
   const [saveState, setSaveState] = useState('idle'); // idle | saving | saved | error
   const [banError, setBanError]   = useState(null);
   const [plan, setPlan]           = useState(null);
+  const [spotifyBanner, setSpotifyBanner] = useState(null); // 'connected'|'error'|'denied'|null
+  const [spotifyAuthLoading, setSpotifyAuthLoading] = useState(false);
+  const [discordShowToken, setDiscordShowToken] = useState(false);
+
+  useEffect(() => {
+    const sp = searchParams.get('spotify');
+    if (sp) {
+      setSpotifyBanner(sp);
+      setSearchParams({}, { replace: true });
+      setTimeout(() => setSpotifyBanner(null), 6000);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const token = localStorage.getItem('streammindai_token');
@@ -145,11 +163,15 @@ export default function ConfigPage() {
         setConfig({
           ...EMPTY,
           ...d,
-          stream_schedule: d.stream_schedule ?? EMPTY.stream_schedule,
-          social_links:    d.social_links    ?? EMPTY.social_links,
-          members:         d.members         ?? [],
-          custom_commands: d.custom_commands ?? [],
-          event_messages:  d.event_messages  ?? { ...EMPTY_EVENT_MESSAGES },
+          stream_schedule:       d.stream_schedule       ?? EMPTY.stream_schedule,
+          social_links:          d.social_links          ?? EMPTY.social_links,
+          members:               d.members               ?? [],
+          custom_commands:       d.custom_commands       ?? [],
+          event_messages:        d.event_messages        ?? { ...EMPTY_EVENT_MESSAGES },
+          spotify_client_id:     d.spotify_client_id     ?? '',
+          spotify_client_secret: d.spotify_client_secret ?? '',
+          spotify_connected:     d.spotify_connected     ?? false,
+          discord_bot_token:     d.discord_bot_token     ?? '',
         });
       })
       .catch(() => setConfig({ ...EMPTY }));
@@ -205,6 +227,26 @@ export default function ConfigPage() {
       setSaveState('error');
       setTimeout(() => setSaveState('idle'), 4000);
     }
+  };
+
+  const handleSpotifyAuth = async () => {
+    setSpotifyAuthLoading(true);
+    try {
+      const token = localStorage.getItem('streammindai_token');
+      const r = await axios.get('/api/spotify/auth-url', { headers: { Authorization: `Bearer ${token}` } });
+      window.location.href = r.data.url;
+    } catch (e) {
+      setSpotifyBanner('error');
+      setTimeout(() => setSpotifyBanner(null), 5000);
+    } finally {
+      setSpotifyAuthLoading(false);
+    }
+  };
+
+  const handleSpotifyDisconnect = async () => {
+    const token = localStorage.getItem('streammindai_token');
+    await axios.delete('/api/spotify/disconnect', { headers: { Authorization: `Bearer ${token}` } });
+    setConfig(p => ({ ...p, spotify_connected: false }));
   };
 
   if (!config) {
@@ -532,6 +574,133 @@ export default function ConfigPage() {
         </div>
 
       </div>
+
+        {/* ── SPOTIFY ────────────────────────────────────────────────── */}
+        <div className="card space-y-5">
+          <div className="flex items-center justify-between">
+            <SectionTitle>Song Request — Spotify</SectionTitle>
+            {config.spotify_connected
+              ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" />Account collegato
+                </span>
+              : <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(113,113,122,0.1)', color: '#71717a', border: '1px solid rgba(113,113,122,0.2)' }}>
+                  Non collegato
+                </span>
+            }
+          </div>
+
+          {/* Banner risultato OAuth */}
+          {spotifyBanner === 'connected' && (
+            <div className="flex items-center gap-2 px-4 py-3 rounded-lg border text-sm" style={{ backgroundColor: 'rgba(34,197,94,0.08)', borderColor: 'rgba(34,197,94,0.25)', color: '#4ade80' }}>
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0"><path d="M2.5 8.5l4 4 7-8"/></svg>
+              Spotify collegato con successo!
+            </div>
+          )}
+          {(spotifyBanner === 'error' || spotifyBanner === 'missing_credentials') && (
+            <div className="flex items-center gap-2 px-4 py-3 rounded-lg border text-sm" style={{ backgroundColor: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.25)', color: '#f87171' }}>
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-4 h-4 shrink-0"><path d="M8 6v3M8 11.5v.5M3.3 13h9.4L8 3 3.3 13z"/></svg>
+              {spotifyBanner === 'missing_credentials' ? 'Salva prima Client ID e Client Secret.' : 'Errore durante la connessione. Riprova.'}
+            </div>
+          )}
+          {spotifyBanner === 'denied' && (
+            <div className="flex items-center gap-2 px-4 py-3 rounded-lg border text-sm" style={{ backgroundColor: 'rgba(251,191,36,0.08)', borderColor: 'rgba(251,191,36,0.25)', color: '#fbbf24' }}>
+              Autorizzazione Spotify rifiutata.
+            </div>
+          )}
+
+          <p className="text-xs text-hally-text-muted -mt-1">
+            Crea un'app su <span className="font-medium text-hally-text">developer.spotify.com</span>, aggiungi
+            come Redirect URI: <code className="px-1 py-0.5 rounded text-xs" style={{ backgroundColor: '#1a1a1a', color: '#a78bfa' }}>{window.location.origin}/api/spotify/callback</code>
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Spotify Client ID">
+              <input
+                value={config.spotify_client_id}
+                onChange={e => set('spotify_client_id', e.target.value)}
+                placeholder="1a2b3c4d5e6f..."
+                className="input-base"
+              />
+            </Field>
+            <Field label="Spotify Client Secret">
+              <input
+                type="password"
+                value={config.spotify_client_secret}
+                onChange={e => set('spotify_client_secret', e.target.value)}
+                placeholder="••••••••••••••••"
+                className="input-base"
+              />
+            </Field>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <button
+              type="button"
+              onClick={handleSpotifyAuth}
+              disabled={spotifyAuthLoading || !config.spotify_client_id}
+              className="inline-flex items-center gap-2 font-semibold text-sm px-5 py-2.5 rounded-xl transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ backgroundColor: '#1DB954', color: '#fff' }}
+              onMouseEnter={e => { if (!spotifyAuthLoading) e.currentTarget.style.backgroundColor = '#17a34a'; }}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = '#1DB954'}
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.622.622 0 01-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.622.622 0 01-.277-1.215c3.809-.87 7.076-.496 9.712 1.115a.622.622 0 01.207.857zm1.223-2.722a.779.779 0 01-1.072.257C13.924 12.18 10.51 11.7 7.827 12.51a.78.78 0 01-.453-1.489c3.054-.929 6.847-.479 9.208 1.009a.779.779 0 01.227 1.072zm.105-2.835C14.692 9.15 9.375 8.978 6.297 9.928a.935.935 0 11-.543-1.788c3.532-1.072 9.404-.865 13.115 1.334a.935.935 0 01-.955 1.393z"/></svg>
+              {spotifyAuthLoading ? 'Apertura...' : config.spotify_connected ? 'Riconnetti account' : 'Autorizza Spotify'}
+            </button>
+
+            {config.spotify_connected && (
+              <button
+                type="button"
+                onClick={handleSpotifyDisconnect}
+                className="text-xs font-medium transition-colors duration-150"
+                style={{ color: '#f87171' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                onMouseLeave={e => e.currentTarget.style.color = '#f87171'}
+              >
+                Disconnetti
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ── DISCORD ─────────────────────────────────────────────────── */}
+        <div className="card space-y-5">
+          <SectionTitle>Integrazione Discord</SectionTitle>
+
+          <p className="text-xs text-hally-text-muted -mt-2">
+            Crea un bot su <span className="font-medium text-hally-text">discord.com/developers/applications</span>,
+            copia il <span className="font-medium text-hally-text">Token</span> dalla sezione Bot e incollalo qui.
+          </p>
+
+          <Field label="Discord Bot Token">
+            <div className="relative">
+              <input
+                type={discordShowToken ? 'text' : 'password'}
+                value={config.discord_bot_token}
+                onChange={e => set('discord_bot_token', e.target.value)}
+                placeholder="MTA1NTk0Nj..."
+                className="input-base pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setDiscordShowToken(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-hally-text-muted hover:text-hally-text transition-colors"
+                tabIndex={-1}
+              >
+                {discordShowToken
+                  ? <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/></svg>
+                  : <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd"/><path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.064 7 9.542 7 .847 0 1.669-.105 2.454-.303z"/></svg>
+                }
+              </button>
+            </div>
+          </Field>
+
+          {config.discord_bot_token && (
+            <div className="flex items-center gap-2 text-xs" style={{ color: '#4ade80' }}>
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
+              Token configurato
+            </div>
+          )}
+        </div>
 
       {/* ── SALVA ── */}
       <div className="mt-8 space-y-3">

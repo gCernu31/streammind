@@ -21,8 +21,7 @@
  *   APP_URL                — URL pubblico per webhook EventSub
  *   EVENTSUB_SECRET        — segreto firma webhook
  *   GEMINI_API_KEY
- *   SPOTIFY_CLIENT_ID      — per Song Request
- *   SPOTIFY_CLIENT_SECRET  — per Song Request
+ *   (Spotify/Discord: credenziali per-streamer salvate in bot_configs, non env vars)
  */
 
 import tmi    from 'tmi.js';
@@ -214,12 +213,10 @@ export function verifyEventSubSignature(messageId, timestamp, rawBody, sig) {
 
 // ─── Spotify ──────────────────────────────────────────────────────────────────
 
-async function refreshSpotifyToken(streamerId, refreshToken) {
-  const cid  = process.env.SPOTIFY_CLIENT_ID;
-  const csec = process.env.SPOTIFY_CLIENT_SECRET;
-  if (!cid || !csec) return null;
+async function refreshSpotifyToken(streamerId, refreshToken, clientId, clientSecret) {
+  if (!clientId || !clientSecret) return null;
   try {
-    const basic = Buffer.from(`${cid}:${csec}`).toString('base64');
+    const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
     const r = await axios.post(
       'https://accounts.spotify.com/api/token',
       new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken }).toString(),
@@ -242,7 +239,12 @@ async function getSpotifyToken(streamer) {
   if (!streamer.spotify_access_token) return null;
   const exp = streamer.spotify_token_expires_at;
   if (!exp || Date.now() < Number(exp) - 60_000) return streamer.spotify_access_token;
-  return refreshSpotifyToken(streamer.streamer_id, streamer.spotify_refresh_token);
+  return refreshSpotifyToken(
+    streamer.streamer_id,
+    streamer.spotify_refresh_token,
+    streamer.spotify_client_id,
+    streamer.spotify_client_secret
+  );
 }
 
 async function spotifySearch(query, token) {
@@ -426,9 +428,12 @@ async function loadActiveStreamers() {
       s.subscription_plan,
       s.monthly_message_count,
       s.monthly_reset_date,
+      bc.spotify_client_id,
+      bc.spotify_client_secret,
       bc.spotify_access_token,
       bc.spotify_refresh_token,
       bc.spotify_token_expires_at,
+      bc.discord_bot_token,
       bc.bot_name,
       bc.creator_name,
       bc.bot_personality,

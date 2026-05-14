@@ -162,9 +162,15 @@ BEGIN
 END;
 $$;
 
--- Aggiunge colonne Spotify su bot_configs (token per streamer, idempotente)
+-- Aggiunge colonne Spotify e Discord su bot_configs (per-streamer, idempotente)
 DO $$
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='spotify_client_id') THEN
+    ALTER TABLE bot_configs ADD COLUMN spotify_client_id VARCHAR(200);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='spotify_client_secret') THEN
+    ALTER TABLE bot_configs ADD COLUMN spotify_client_secret VARCHAR(200);
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='spotify_access_token') THEN
     ALTER TABLE bot_configs ADD COLUMN spotify_access_token TEXT;
   END IF;
@@ -173,6 +179,9 @@ BEGIN
   END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='spotify_token_expires_at') THEN
     ALTER TABLE bot_configs ADD COLUMN spotify_token_expires_at BIGINT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='discord_bot_token') THEN
+    ALTER TABLE bot_configs ADD COLUMN discord_bot_token TEXT;
   END IF;
 END;
 $$;

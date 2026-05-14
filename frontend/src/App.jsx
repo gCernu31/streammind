@@ -7,6 +7,7 @@ import ConfigPage from './pages/ConfigPage.jsx';
 import MemoryPage from './pages/MemoryPage.jsx';
 import SubscriptionPage from './pages/SubscriptionPage.jsx';
 import AnalisiPage from './pages/AnalisiPage.jsx';
+import GuidePage from './pages/GuidePage.jsx';
 import Layout from './components/Layout.jsx';
 
 // Disabilita la scroll restoration del browser e torna sempre in cima ad ogni rotta
@@ -114,6 +115,17 @@ export default function App() {
             <ProtectedRoute user={auth.user} loading={auth.loading}>
               <Layout user={auth.user} onLogout={auth.logout}>
                 <SubscriptionPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/guide"
+          element={
+            <ProtectedRoute user={auth.user} loading={auth.loading}>
+              <Layout user={auth.user} onLogout={auth.logout}>
+                <GuidePage />
               </Layout>
             </ProtectedRoute>
           }

@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar.jsx';
 
@@ -10,12 +10,51 @@ const PAGE_TITLES = {
   '/guide':        'Guida',
 };
 
+// Pagine che richiedono un piano attivo per essere usate
+const GATED_PATHS = new Set(['/config', '/memory']);
+
+function PaywallGate({ locked, children }) {
+  if (!locked) return children;
+  return (
+    <div className="relative min-h-[420px]">
+      {/* Contenuto sfocato */}
+      <div style={{ filter: 'blur(8px)', pointerEvents: 'none', userSelect: 'none' }}>
+        {children}
+      </div>
+
+      {/* Card paywall */}
+      <div className="absolute inset-0 flex items-start justify-center pt-16 sm:pt-24 px-4 pointer-events-none">
+        <div
+          className="w-full max-w-sm rounded-2xl border p-8 text-center pointer-events-auto shadow-2xl"
+          style={{ backgroundColor: '#151515', borderColor: '#262626', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}
+        >
+          <div className="text-5xl mb-5">🔒</div>
+          <h2 className="text-xl font-bold text-hally-text mb-3">Funzionalità Premium</h2>
+          <p className="text-sm leading-relaxed mb-6" style={{ color: '#a0a0a0' }}>
+            Questa sezione è disponibile a partire dal piano Starter. Attiva il tuo abbonamento per accedere.
+          </p>
+          <Link
+            to="/subscription"
+            className="inline-flex items-center gap-2 font-bold text-white px-6 py-3 rounded-xl text-sm transition-all duration-150"
+            style={{ backgroundColor: '#8B5CF6' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#7C3AED'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#8B5CF6'}
+          >
+            Vedi i piani →
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Layout({ user, onLogout, children }) {
   const { pathname } = useLocation();
   const title = PAGE_TITLES[pathname] ?? 'StreaMindAI';
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [botName, setBotName] = useState('Il tuo bot');
+  const [hasActivePlan, setHasActivePlan] = useState(null); // null=caricamento, true/false=caricato
 
   // Chiudi drawer al cambio di rotta
   useEffect(() => {
@@ -23,12 +62,19 @@ export default function Layout({ user, onLogout, children }) {
   }, [pathname]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) { setHasActivePlan(false); return; }
     const token = localStorage.getItem('streammindai_token');
     fetch('/api/config', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
       .then(data => setBotName(data?.bot_name || 'Il tuo bot'))
       .catch(() => {});
+    fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        const s = data?.subscription?.status;
+        setHasActivePlan(s === 'active' || s === 'cancelling');
+      })
+      .catch(() => setHasActivePlan(false));
   }, [user]);
 
   return (
@@ -95,7 +141,9 @@ export default function Layout({ user, onLogout, children }) {
         {/* Contenuto pagina */}
         <main className="flex-1 overflow-auto">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 sm:py-7">
-            {children}
+            <PaywallGate locked={GATED_PATHS.has(pathname) && hasActivePlan === false}>
+              {children}
+            </PaywallGate>
           </div>
         </main>
       </div>

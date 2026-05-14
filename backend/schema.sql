@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS bot_configs (
   stream_schedule  TEXT          NOT NULL DEFAULT '',
   social_links     TEXT          NOT NULL DEFAULT '',
   custom_commands  JSONB         NOT NULL DEFAULT '[]',
-  characters       JSONB         NOT NULL DEFAULT '[]',
+  members          JSONB         NOT NULL DEFAULT '[]',
   ai_provider      VARCHAR(50)   NOT NULL DEFAULT 'gemini',
   created_at       TIMESTAMP     NOT NULL DEFAULT NOW(),
   updated_at       TIMESTAMP     NOT NULL DEFAULT NOW(),
@@ -96,6 +96,15 @@ CREATE TABLE IF NOT EXISTS analytics_leads (
 
 CREATE INDEX IF NOT EXISTS idx_analytics_leads_email
   ON analytics_leads (email);
+
+-- Rinomina characters → members (idempotente per DB esistenti)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='characters') THEN
+    ALTER TABLE bot_configs RENAME COLUMN characters TO members;
+  END IF;
+END;
+$$;
 
 -- Aggiunge colonne mancanti se non esistono già (idempotente)
 DO $$

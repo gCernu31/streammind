@@ -120,7 +120,7 @@ const EMPTY = {
   twitch_username: '',
   stream_schedule: { days: [], time_start: '21:00', time_end: '00:00' },
   social_links: { linktree: '', instagram: '', youtube: '', discord: '' },
-  characters: [],
+  members: [],
   custom_commands: [],
   event_messages: { ...EMPTY_EVENT_MESSAGES },
 };
@@ -147,7 +147,7 @@ export default function ConfigPage() {
           ...d,
           stream_schedule: d.stream_schedule ?? EMPTY.stream_schedule,
           social_links:    d.social_links    ?? EMPTY.social_links,
-          characters:      d.characters      ?? [],
+          members:         d.members         ?? [],
           custom_commands: d.custom_commands ?? [],
           event_messages:  d.event_messages  ?? { ...EMPTY_EVENT_MESSAGES },
         });
@@ -163,9 +163,9 @@ export default function ConfigPage() {
   const setNested = (k, sub, v) => setConfig(p => ({ ...p, [k]: { ...p[k], [sub]: v } }));
 
   // Membri
-  const addMember    = ()         => set('characters', [...config.characters, newMember()]);
-  const removeMember = id         => set('characters', config.characters.filter(c => c.id !== id));
-  const updateMember = (id, f, v) => set('characters', config.characters.map(c => c.id === id ? { ...c, [f]: v } : c));
+  const addMember    = ()         => set('members', [...config.members, newMember()]);
+  const removeMember = id         => set('members', config.members.filter(c => c.id !== id));
+  const updateMember = (id, f, v) => set('members', config.members.map(c => c.id === id ? { ...c, [f]: v } : c));
 
   // Commands
   const addCmd    = ()           => set('custom_commands', [...config.custom_commands, newCmd()]);
@@ -187,7 +187,7 @@ export default function ConfigPage() {
         return;
       }
     }
-    for (const m of config.characters ?? []) {
+    for (const m of config.members ?? []) {
       const cat = detectBanned(m.nickname) || detectBanned(m.description);
       if (cat) {
         setBanError(`Un membro contiene ${cat} non consentito dalle linee guida Twitch.`);
@@ -343,12 +343,12 @@ export default function ConfigPage() {
           </p>
 
           <div className="space-y-3 mb-4">
-            {config.characters.length === 0 && (
+            {config.members.length === 0 && (
               <p className="text-sm text-hally-text-muted py-6 text-center border border-dashed border-hally-border rounded-lg">
                 Nessun membro aggiunto ancora.
               </p>
             )}
-            {config.characters.map(member => (
+            {config.members.map(member => (
               <div
                 key={member.id}
                 className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-lg border border-hally-border bg-hally-bg"

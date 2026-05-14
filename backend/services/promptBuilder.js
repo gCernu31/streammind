@@ -65,7 +65,7 @@ export async function generateBotPrompt(streamerId, { forceRefresh = false } = {
        bc.stream_schedule,
        bc.social_links,
        bc.custom_commands,
-       bc.characters,
+       bc.members,
        s.display_name       AS streamer_display_name
      FROM bot_configs bc
      JOIN streamers s ON s.id = bc.streamer_id
@@ -88,7 +88,7 @@ export async function generateBotPrompt(streamerId, { forceRefresh = false } = {
   // Campi JSON (TEXT o JSONB)
   const schedule = tryParse(cfg.stream_schedule, { days: [], time_start: '', time_end: '' });
   const social   = tryParse(cfg.social_links,    { linktree: '', instagram: '', youtube: '', discord: '' });
-  const chars    = tryParse(cfg.characters,      []);
+  const chars    = tryParse(cfg.members,          []);
   const cmds     = tryParse(cfg.custom_commands, []).filter(c => c.active !== false);
 
   // ── 2. Costruzione sezioni ────────────────────────────────────────────────
@@ -138,7 +138,7 @@ export async function generateBotPrompt(streamerId, { forceRefresh = false } = {
     parts.push(`## INFORMAZIONI CANALE\n${channelLines.join('\n')}`);
   }
 
-  // Sezione 4 — Personaggi noti
+  // Sezione 4 — Membri noti
   const validChars = chars.filter(
     c => c.twitch_username?.trim() || c.nickname?.trim()
   );
@@ -155,7 +155,7 @@ export async function generateBotPrompt(streamerId, { forceRefresh = false } = {
     });
 
     parts.push(
-      `## PERSONAGGI NOTI DELLA COMMUNITY\n` +
+      `## MEMBRI NOTI DELLA COMMUNITY\n` +
       `Conosci questi utenti e adatta il tuo comportamento in base alla loro descrizione:\n` +
       charLines.join('\n')
     );

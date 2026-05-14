@@ -18,7 +18,7 @@ configRoutes.get('/', requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT bot_name, bot_personality, creator_name, twitch_username,
-              stream_schedule, social_links, custom_commands, characters,
+              stream_schedule, social_links, custom_commands, members,
               ai_provider, event_messages
        FROM bot_configs WHERE streamer_id = $1`,
       [req.user.streamer_id]
@@ -33,7 +33,7 @@ configRoutes.get('/', requireAuth, async (req, res) => {
       stream_schedule: tryParse(cfg.stream_schedule, { days: [], time_start: '21:00', time_end: '00:00' }),
       social_links:    tryParse(cfg.social_links,    { linktree: '', instagram: '', youtube: '', discord: '' }),
       custom_commands: tryParse(cfg.custom_commands, []),
-      characters:      tryParse(cfg.characters,      []),
+      members:         tryParse(cfg.members,          []),
       ai_provider:     cfg.ai_provider ?? 'gemini',
       event_messages:  tryParse(cfg.event_messages,  {}),
     });
@@ -47,7 +47,7 @@ configRoutes.get('/', requireAuth, async (req, res) => {
 configRoutes.put('/', requireAuth, async (req, res) => {
   const {
     bot_name, creator_name, bot_personality, twitch_username,
-    stream_schedule, social_links, custom_commands, characters, ai_provider,
+    stream_schedule, social_links, custom_commands, members, ai_provider,
     event_messages,
   } = req.body;
 
@@ -61,7 +61,7 @@ configRoutes.put('/', requireAuth, async (req, res) => {
            stream_schedule = COALESCE($5, stream_schedule),
            social_links    = COALESCE($6, social_links),
            custom_commands = COALESCE($7::jsonb, custom_commands),
-           characters      = COALESCE($8::jsonb, characters),
+           members         = COALESCE($8::jsonb, members),
            ai_provider     = COALESCE($9, ai_provider),
            event_messages  = COALESCE($11::jsonb, event_messages),
            updated_at      = NOW()
@@ -75,7 +75,7 @@ configRoutes.put('/', requireAuth, async (req, res) => {
         stream_schedule != null ? toJson(stream_schedule) : null,
         social_links    != null ? toJson(social_links)    : null,
         custom_commands != null ? JSON.stringify(custom_commands) : null,
-        characters      != null ? JSON.stringify(characters)      : null,
+        members         != null ? JSON.stringify(members)         : null,
         ai_provider     ?? null,
         req.user.streamer_id,
         event_messages  != null ? JSON.stringify(event_messages) : null,
@@ -99,7 +99,7 @@ configRoutes.put('/', requireAuth, async (req, res) => {
       stream_schedule: tryParse(cfg.stream_schedule, { days: [], time_start: '21:00', time_end: '00:00' }),
       social_links:    tryParse(cfg.social_links,    { linktree: '', instagram: '', youtube: '', discord: '' }),
       custom_commands: tryParse(cfg.custom_commands, []),
-      characters:      tryParse(cfg.characters,      []),
+      members:         tryParse(cfg.members,          []),
       ai_provider:     cfg.ai_provider,
       event_messages:  tryParse(cfg.event_messages,  {}),
     });

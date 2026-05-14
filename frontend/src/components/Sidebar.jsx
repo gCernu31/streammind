@@ -145,14 +145,26 @@ export default function Sidebar({ user, onLogout, open, onClose }) {
           <div className="my-2 border-t border-hally-border" />
 
           {/* Guida */}
-          <a
-            href="/guide"
+          <NavLink
+            to="/guide"
             onClick={onClose}
-            className="flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-sm font-medium text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover transition-all duration-150"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                isActive
+                  ? 'bg-hally-orange-muted text-hally-orange'
+                  : 'text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover'
+              }`
+            }
           >
-            <IconGuide />
-            Guida
-          </a>
+            {({ isActive }) => (
+              <>
+                <span style={{ color: isActive ? '#8B5CF6' : undefined }}>
+                  <IconGuide />
+                </span>
+                Guida
+              </>
+            )}
+          </NavLink>
 
           {/* Torna al sito */}
           <a

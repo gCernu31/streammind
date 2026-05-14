@@ -103,14 +103,14 @@ export default function Sidebar({ user, onLogout, open, onClose }) {
             <BrainWaveLogo className="w-6 h-6" />
             <span className="font-extrabold text-base tracking-tight text-hally-text">StreaMindAI</span>
           </a>
-          {/* X button — solo mobile */}
+          {/* ← button — solo mobile */}
           <button
             onClick={onClose}
-            className="md:hidden p-1.5 rounded-lg text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover transition-colors flex-shrink-0"
+            className="md:hidden w-11 h-11 flex items-center justify-center rounded-lg text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover transition-colors flex-shrink-0"
             aria-label="Chiudi menu"
           >
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-4 h-4">
-              <path d="M2 2l12 12M14 2L2 14" />
+              <path d="M10 3L4 8l6 5" />
             </svg>
           </button>
         </div>
@@ -194,9 +194,9 @@ export default function Sidebar({ user, onLogout, open, onClose }) {
             <button
               onClick={() => { onLogout(); onClose(); }}
               title="Esci"
-              className="opacity-0 group-hover:opacity-100 transition-opacity text-hally-text-muted hover:text-red-400 p-1"
+              className="w-9 h-9 flex items-center justify-center rounded-lg md:opacity-0 md:group-hover:opacity-100 transition-opacity text-hally-text-muted hover:text-red-400 hover:bg-hally-bg-hover flex-shrink-0"
             >
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3.5 h-3.5">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-4 h-4">
                 <path d="M6 2H2.5A.5.5 0 0 0 2 2.5v11a.5.5 0 0 0 .5.5H6M11 11l3-3-3-3M6 8h8"/>
               </svg>
             </button>

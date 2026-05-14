@@ -109,7 +109,7 @@ export default function Layout({ user, onLogout, children }) {
           <div className="flex items-center gap-3">
             {/* Hamburger — visibile solo mobile */}
             <button
-              className="md:hidden p-2 rounded-lg text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover transition-colors"
+              className="md:hidden w-11 h-11 flex items-center justify-center rounded-lg text-hally-text-muted hover:text-hally-text hover:bg-hally-bg-hover transition-colors"
               onClick={() => setSidebarOpen(true)}
               aria-label="Apri menu"
             >
@@ -157,7 +157,7 @@ export default function Layout({ user, onLogout, children }) {
 
         {/* Contenuto pagina */}
         <main className="flex-1 overflow-auto">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 sm:py-7">
+          <div className="max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-7">
             <PaywallGate locked={GATED_PATHS.has(pathname) && hasActivePlan === false}>
               {children}
             </PaywallGate>

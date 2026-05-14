@@ -74,7 +74,7 @@ function TrialBanner() {
       </div>
       <Link
         to="/subscription"
-        className="self-start sm:self-auto inline-flex items-center gap-2 font-bold text-white text-sm px-5 py-2.5 rounded-xl flex-shrink-0 transition-all duration-150"
+        className="self-start sm:self-auto inline-flex items-center gap-2 font-bold text-white text-sm px-5 py-3 rounded-xl flex-shrink-0 min-h-[44px] transition-all duration-150"
         style={{ backgroundColor: '#8B5CF6' }}
         onMouseEnter={e => e.currentTarget.style.backgroundColor = '#7C3AED'}
         onMouseLeave={e => e.currentTarget.style.backgroundColor = '#8B5CF6'}
@@ -107,7 +107,7 @@ function BotStatusCard({ status, botName, channel }) {
         </span>
       </div>
       <div>
-        <p className="text-xl font-bold text-hally-text truncate">{botName}</p>
+        <p className="text-base sm:text-xl font-bold text-hally-text break-words">{botName}</p>
         <p className="text-xs text-hally-text-muted mt-0.5">#{channel}</p>
       </div>
       {!online && (
@@ -129,7 +129,7 @@ function UsageCard({ value, delta }) {
     <div className="card flex flex-col gap-3">
       <p className="text-hally-text-muted text-xs font-medium uppercase tracking-wider">Utilizzi oggi</p>
       <div>
-        <p className="text-4xl font-extrabold text-hally-text">{value}</p>
+        <p className="text-3xl sm:text-4xl font-extrabold text-hally-text">{value}</p>
         <p className="text-xs text-hally-text-muted mt-1">comandi ricevuti</p>
       </div>
       <div
@@ -157,7 +157,7 @@ function MemoriesCard({ total, thisWeek }) {
     <div className="card flex flex-col gap-3">
       <p className="text-hally-text-muted text-xs font-medium uppercase tracking-wider">Memorie salvate</p>
       <div>
-        <p className="text-4xl font-extrabold text-hally-text">{total}</p>
+        <p className="text-3xl sm:text-4xl font-extrabold text-hally-text">{total}</p>
         <p className="text-xs text-hally-text-muted mt-1">memoria totale</p>
       </div>
       <div
@@ -205,9 +205,9 @@ function SubscriptionCard({ status, plan, daysRemaining, totalDays, expiresAt, m
       {active ? (
         <>
           <div>
-            <p className="text-4xl font-extrabold text-hally-text">
+            <p className="text-3xl sm:text-4xl font-extrabold text-hally-text">
               {daysRemaining}
-              <span className="text-lg font-medium text-hally-text-muted ml-1">gg</span>
+              <span className="text-base sm:text-lg font-medium text-hally-text-muted ml-1">gg</span>
             </p>
             {expiresAt && <p className="text-xs text-hally-text-muted mt-0.5">Scade il {expiresAt}</p>}
           </div>
@@ -221,8 +221,8 @@ function SubscriptionCard({ status, plan, daysRemaining, totalDays, expiresAt, m
             <p className="text-xs text-hally-text-muted">{pctRemaining.toFixed(0)}% rimanente</p>
           </div>
           <div className="border-t border-hally-border pt-2.5 space-y-1.5">
-            <div className="flex justify-between text-xs">
-              <span className="text-hally-text-muted">Messaggi questo mese</span>
+            <div className="flex flex-col gap-0.5 text-xs">
+              <span className="text-hally-text-muted">Messaggi/mese</span>
               <span className="font-medium text-hally-text">
                 {monthlyCount.toLocaleString('it-IT')} / {monthlyLimit.toLocaleString('it-IT')}
               </span>
@@ -297,7 +297,7 @@ function UsageChart({ data }) {
         </span>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: '150px' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto">
         <defs>
           <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%"   stopColor="#8B5CF6" stopOpacity="0.28"/>
@@ -526,7 +526,7 @@ export default function DashboardPage({ user }) {
       </a>
 
       {/* ── Stat cards ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <BotStatusCard
           status={stats?.bot_status ?? 'offline'}
           botName={botName ?? 'Il tuo bot'}
@@ -552,10 +552,10 @@ export default function DashboardPage({ user }) {
 
       {/* ── Grafico + Feed memorie ──────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
-        <div className="card">
+        <div className="card overflow-x-auto">
           <UsageChart data={chartData} />
         </div>
-        <div className="card">
+        <div className="card overflow-x-auto">
           <MemoryFeed memories={memories} />
         </div>
       </div>

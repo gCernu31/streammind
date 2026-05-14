@@ -162,17 +162,17 @@ BEGIN
 END;
 $$;
 
--- Aggiunge colonne Spotify per song request (idempotente)
+-- Aggiunge colonne Spotify su bot_configs (token per streamer, idempotente)
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='streamers' AND column_name='spotify_access_token') THEN
-    ALTER TABLE streamers ADD COLUMN spotify_access_token TEXT;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='spotify_access_token') THEN
+    ALTER TABLE bot_configs ADD COLUMN spotify_access_token TEXT;
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='streamers' AND column_name='spotify_refresh_token') THEN
-    ALTER TABLE streamers ADD COLUMN spotify_refresh_token TEXT;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='spotify_refresh_token') THEN
+    ALTER TABLE bot_configs ADD COLUMN spotify_refresh_token TEXT;
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='streamers' AND column_name='spotify_token_expires_at') THEN
-    ALTER TABLE streamers ADD COLUMN spotify_token_expires_at BIGINT;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='spotify_token_expires_at') THEN
+    ALTER TABLE bot_configs ADD COLUMN spotify_token_expires_at BIGINT;
   END IF;
 END;
 $$;

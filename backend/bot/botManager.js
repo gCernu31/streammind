@@ -13,8 +13,8 @@
  *  - Shoutout automatico post-raid
  *
  * Env vars:
- *   TWITCH_USERNAME / TWITCH_BOT_USERNAME
- *   TWITCH_OAUTH_TOKEN / TWITCH_BOT_OAUTH
+ *   TWITCH_BOT_USERNAME
+ *   TWITCH_BOT_OAUTH
  *   TWITCH_BOT_USER_ID     — ID Twitch del bot (per channel.follow EventSub)
  *   TWITCH_CLIENT_ID       — per EventSub
  *   TWITCH_CLIENT_SECRET   — per EventSub
@@ -127,7 +127,7 @@ async function getBotUserId() {
   if (process.env.TWITCH_BOT_USER_ID) return (_botUserId = process.env.TWITCH_BOT_USER_ID);
   const token = await getAppToken();
   const cid   = process.env.TWITCH_CLIENT_ID;
-  const uname = process.env.TWITCH_USERNAME || process.env.TWITCH_BOT_USERNAME;
+  const uname = process.env.TWITCH_BOT_USERNAME;
   if (!token || !cid || !uname) return null;
   try {
     const r = await axios.get(`https://api.twitch.tv/helix/users?login=${encodeURIComponent(uname)}`, {
@@ -226,7 +226,7 @@ async function refreshSpotifyToken(streamerId, refreshToken) {
     const { access_token, expires_in } = r.data;
     const expiresAt = Date.now() + expires_in * 1000;
     await pool.query(
-      'UPDATE streamers SET spotify_access_token=$1, spotify_token_expires_at=$2 WHERE id=$3',
+      'UPDATE bot_configs SET spotify_access_token=$1, spotify_token_expires_at=$2 WHERE streamer_id=$3',
       [access_token, expiresAt, streamerId]
     );
     return access_token;
@@ -424,9 +424,9 @@ async function loadActiveStreamers() {
       s.subscription_plan,
       s.monthly_message_count,
       s.monthly_reset_date,
-      s.spotify_access_token,
-      s.spotify_refresh_token,
-      s.spotify_token_expires_at,
+      bc.spotify_access_token,
+      bc.spotify_refresh_token,
+      bc.spotify_token_expires_at,
       bc.bot_name,
       bc.creator_name,
       bc.bot_personality,
@@ -472,11 +472,11 @@ class BotManager {
   async start() {
     if (this._restarting) return;
 
-    const username = process.env.TWITCH_USERNAME || process.env.TWITCH_BOT_USERNAME;
-    const oauth    = process.env.TWITCH_OAUTH_TOKEN || process.env.TWITCH_BOT_OAUTH;
+    const username = process.env.TWITCH_BOT_USERNAME;
+    const oauth    = process.env.TWITCH_BOT_OAUTH;
 
     if (!username || !oauth) {
-      console.warn('[Bot] TWITCH_USERNAME / TWITCH_OAUTH_TOKEN mancanti — bot non avviato.');
+      console.warn('[Bot] TWITCH_BOT_USERNAME / TWITCH_BOT_OAUTH mancanti — bot non avviato.');
       return;
     }
 

@@ -6,6 +6,8 @@ import { botManager } from '../bot/botManager.js';
 import {
   sendTrialReminderEmail,
   sendTrialActivatedEmail,
+  sendSubscriptionActivatedEmail,
+  sendRenewalConfirmationEmail,
 } from '../services/emailService.js';
 
 // Piani con trial di 7 giorni
@@ -230,10 +232,20 @@ export async function stripeWebhook(req, res) {
         );
         // Connette immediatamente il bot al canale senza attendere il sync periodico
         const { rows: newUser } = await pool.query(
-          'SELECT twitch_username FROM streamers WHERE id = $1', [streamerId]
+          'SELECT twitch_username, email, display_name FROM streamers WHERE id = $1', [streamerId]
         );
         if (newUser[0]?.twitch_username) {
           botManager.joinChannel(newUser[0].twitch_username).catch(() => {});
+        }
+        // Email conferma attivazione abbonamento
+        if (newUser[0]?.email) {
+          const labels = { starter: 'Starter', creator: 'Creator', elite: 'Elite', signature: 'Signature' };
+          sendSubscriptionActivatedEmail({
+            to:          newUser[0].email,
+            displayName: newUser[0].display_name ?? 'Streamer',
+            planName:    labels[plan] ?? plan,
+            trialEnd:    sub.status === 'trialing' ? sub.trial_end * 1000 : null,
+          }).catch(e => console.error('[Email] subscription-activated:', e.message));
         }
         break;
       }
@@ -304,6 +316,30 @@ export async function stripeWebhook(req, res) {
             planName:    labels[rows[0].subscription_plan] ?? 'StreaMindAI',
             trialEnd:    sub.trial_end * 1000,
           }).catch(e => console.error('[Email] trial-reminder:', e.message));
+        }
+        break;
+      }
+
+      case 'invoice.payment_succeeded': {
+        const inv = event.data.object;
+        // Solo per rinnovi ricorrenti, non per il primo addebito post-trial (già coperto da trial-activated)
+        if (inv.billing_reason === 'subscription_cycle') {
+          const { rows } = await pool.query(
+            'SELECT email, display_name, subscription_plan FROM streamers WHERE stripe_customer_id = $1',
+            [inv.customer]
+          );
+          if (rows[0]?.email) {
+            const labels = { starter: 'Starter', creator: 'Creator', elite: 'Elite', signature: 'Signature' };
+            sendRenewalConfirmationEmail({
+              to:              rows[0].email,
+              displayName:     rows[0].display_name ?? 'Streamer',
+              planName:        labels[rows[0].subscription_plan] ?? rows[0].subscription_plan,
+              amount:          inv.amount_paid,
+              nextBillingDate: inv.lines?.data?.[0]?.period?.end
+                ? inv.lines.data[0].period.end * 1000
+                : Date.now() + 30 * 24 * 60 * 60 * 1000,
+            }).catch(e => console.error('[Email] renewal:', e.message));
+          }
         }
         break;
       }

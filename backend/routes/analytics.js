@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import axios from 'axios';
 import pool from '../db.js';
+import { sendAnalysisReportEmail } from '../services/emailService.js';
 
 export const analyticsRoutes = Router();
 
@@ -228,19 +229,12 @@ analyticsRoutes.post('/analyze', async (req, res) => {
       ]
     );
 
-    // 3. Invia email via Resend (best-effort, non blocca la risposta)
-    if (process.env.RESEND_API_KEY) {
-      axios.post(
-        'https://api.resend.com/emails',
-        {
-          from:    'StreaMindAI <analisi@streammindai.it>',
-          to:      email.trim(),
-          subject: `La tua analisi StreaMindAI${formData.twitch_username ? ` — @${formData.twitch_username}` : ''}`,
-          html:    buildEmailHtml(analysis, formData.twitch_username),
-        },
-        { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` } }
-      ).catch(err => console.error('Resend error:', err.message));
-    }
+    // 3. Invia email con il report (best-effort, non blocca la risposta)
+    sendAnalysisReportEmail({
+      to:             email.trim(),
+      twitchUsername: formData.twitch_username || null,
+      analysis,
+    }).catch(err => console.error('[Email] analysis-report:', err.message));
 
     res.json({ analysis, id: rows[0].id });
 

@@ -2,11 +2,11 @@
  * Servizio email StreaMindAI — usa Nodemailer con SMTP configurabile.
  *
  * Variabili d'ambiente richieste:
- *   SMTP_HOST   — es. smtp.sendgrid.net / mail.privateemail.com
- *   SMTP_PORT   — default 587 (465 per SSL)
- *   SMTP_USER   — username SMTP
- *   SMTP_PASS   — password SMTP
- *   FROM_EMAIL  — mittente, default noreply@streamindai.com
+ *   SMTP_HOST    — es. smtp.sendgrid.net / mail.privateemail.com
+ *   SMTP_PORT    — default 587 (465 per SSL)
+ *   SMTP_USER    — username SMTP
+ *   SMTP_PASS    — password SMTP
+ *   FROM_EMAIL   — mittente, default noreply@streamindai.com
  *   FRONTEND_URL — base URL del frontend per i link nelle email
  */
 
@@ -14,6 +14,7 @@ import nodemailer from 'nodemailer';
 
 const FRONTEND = process.env.FRONTEND_URL ?? 'https://streammindai.com';
 const FROM     = process.env.FROM_EMAIL   ?? 'noreply@streamindai.com';
+const REPLY_TO = 'support@streamindai.com';
 
 function makeTransporter() {
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER) return null;
@@ -32,7 +33,13 @@ export async function sendEmail({ to, subject, html }) {
     console.warn('[Email] SMTP non configurato — email non inviata:', subject, '→', to);
     return;
   }
-  await transporter.sendMail({ from: `StreaMindAI <${FROM}>`, to, subject, html });
+  await transporter.sendMail({
+    from:    `StreaMindAI <${FROM}>`,
+    replyTo: REPLY_TO,
+    to,
+    subject,
+    html,
+  });
 }
 
 // ── Layout HTML comune ────────────────────────────────────────────────────────
@@ -47,21 +54,19 @@ function wrapHtml(bodyContent) {
 <table width="560" cellpadding="0" cellspacing="0"
   style="background:#151515;border:1px solid #262626;border-radius:16px;padding:44px 40px;max-width:560px">
 <tr><td>
-  <!-- Logo -->
   <p style="margin:0 0 4px;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.5px">StreaMindAI</p>
   <p style="margin:0 0 36px;font-size:12px;color:#8B5CF6;letter-spacing:0.5px;text-transform:uppercase">Il tuo bot Twitch intelligente</p>
   ${bodyContent}
-  <!-- Footer -->
   <p style="margin:36px 0 0;font-size:11px;color:#444;border-top:1px solid #262626;padding-top:20px">
     StreaMindAI · <a href="${FRONTEND}" style="color:#6b6b6b;text-decoration:none">${FRONTEND.replace('https://', '')}</a><br>
+    Domande? Rispondi a questa email o scrivi a <a href="mailto:${REPLY_TO}" style="color:#6b6b6b">${REPLY_TO}</a><br>
     Non affiliato con Twitch Interactive, Inc.
   </p>
 </td></tr>
 </table>
 </td></tr>
 </table>
-</body>
-</html>`;
+</body></html>`;
 }
 
 function ctaButton(label, href) {
@@ -75,9 +80,79 @@ function ctaButton(label, href) {
   </td></tr></table>`;
 }
 
-// ── Email: promemoria trial (giorno 5, 2 giorni alla scadenza) ────────────────
-// Stripe invia customer.subscription.trial_will_end di default 3 giorni prima.
-// Configurare in Stripe Dashboard → Settings → Subscriptions a 2 giorni per esattezza.
+function infoRow(label, value) {
+  return `<tr>
+    <td style="padding:10px 14px;background:#1a1a1a;font-size:13px;color:#6b6b6b;font-weight:600;width:160px;vertical-align:top">${label}</td>
+    <td style="padding:10px 14px;background:#1e1e1e;font-size:13px;color:#e0e0e0">${value}</td>
+  </tr>`;
+}
+
+// ── 1. Email: benvenuto dopo registrazione ────────────────────────────────────
+export async function sendWelcomeEmail({ to, displayName }) {
+  await sendEmail({
+    to,
+    subject: `Benvenuto su StreaMindAI, ${displayName}!`,
+    html: wrapHtml(`
+      <h1 style="margin:0 0 14px;font-size:20px;font-weight:700;color:#ffffff">
+        Benvenuto su StreaMindAI 🎮
+      </h1>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#a0a0a0">
+        Ciao <strong style="color:#ffffff">${displayName}</strong>,<br>
+        il tuo account è stato creato con successo. Ora puoi attivare il tuo piano e far decollare
+        il tuo stream con un bot AI che conosce davvero la tua community.
+      </p>
+      <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:0 0 20px;border-radius:10px;overflow:hidden">
+        <tbody>
+          ${infoRow('Personalità custom', 'Il bot parla esattamente come vuoi tu')}
+          ${infoRow('Comandi custom', 'Crea risposte personalizzate per la tua chat')}
+          ${infoRow('Memoria AI', 'Ricorda eventi, inside joke e momenti speciali')}
+        </tbody>
+      </table>
+      <p style="margin:0;font-size:14px;color:#6b6b6b">
+        Inizia subito — hai 7 giorni di prova gratuita senza carta di credito.
+      </p>
+      ${ctaButton('Scopri i piani →', `${FRONTEND}/subscription`)}
+    `),
+  });
+}
+
+// ── 2. Email: conferma attivazione abbonamento ────────────────────────────────
+export async function sendSubscriptionActivatedEmail({ to, displayName, planName, trialEnd }) {
+  const hasTrial = trialEnd != null;
+  const dateStr  = hasTrial
+    ? new Date(trialEnd).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+    : null;
+
+  await sendEmail({
+    to,
+    subject: `Piano ${planName} attivato — benvenuto a bordo!`,
+    html: wrapHtml(`
+      <h1 style="margin:0 0 14px;font-size:20px;font-weight:700;color:#ffffff">
+        Piano <span style="color:#8B5CF6">${planName}</span> attivato ✓
+      </h1>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#a0a0a0">
+        Ciao <strong style="color:#ffffff">${displayName}</strong>,<br>
+        ${hasTrial
+          ? `l'abbonamento è attivo. Hai <strong style="color:#ffffff">7 giorni di prova gratuita</strong> fino al <strong style="color:#ffffff">${dateStr}</strong>. Se non disdici prima, si rinnova automaticamente.`
+          : `l'abbonamento è stato attivato con successo. Il bot è già al lavoro sul tuo canale.`
+        }
+      </p>
+      <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:0 0 20px;border-radius:10px;overflow:hidden">
+        <tbody>
+          ${infoRow('Piano attivato', planName)}
+          ${hasTrial ? infoRow('Prova gratuita fino al', dateStr) : ''}
+          ${infoRow('Prossimo passo', 'Configura personalità, orari e comandi')}
+        </tbody>
+      </table>
+      <p style="margin:0;font-size:14px;color:#6b6b6b">
+        Puoi gestire o cancellare l'abbonamento in qualsiasi momento dal pannello — nessuna penale.
+      </p>
+      ${ctaButton('Configura il tuo bot →', `${FRONTEND}/config`)}
+    `),
+  });
+}
+
+// ── 3. Email: promemoria trial — giorno 5 (2 giorni alla scadenza) ────────────
 export async function sendTrialReminderEmail({ to, displayName, planName, trialEnd }) {
   const daysLeft = Math.max(1, Math.round((trialEnd - Date.now()) / 86_400_000));
   const endStr   = new Date(trialEnd).toLocaleDateString('it-IT', { day: '2-digit', month: 'long' });
@@ -94,7 +169,7 @@ export async function sendTrialReminderEmail({ to, displayName, planName, trialE
         il tuo trial <strong style="color:#8B5CF6">${planName}</strong> scade il
         <strong style="color:#ffffff">${endStr}</strong>.
       </p>
-      <p style="margin:0 0 6px;font-size:15px;line-height:1.65;color:#a0a0a0">
+      <p style="margin:0 0 10px;font-size:15px;line-height:1.65;color:#a0a0a0">
         Hai già completato la configurazione?
       </p>
       <ul style="margin:0 0 20px;padding-left:20px;color:#a0a0a0;font-size:14px;line-height:2">
@@ -111,7 +186,7 @@ export async function sendTrialReminderEmail({ to, displayName, planName, trialE
   });
 }
 
-// ── Email: trial convertito in abbonamento attivo ─────────────────────────────
+// ── 4. Email: fine trial — conferma primo addebito ────────────────────────────
 export async function sendTrialActivatedEmail({ to, displayName, planName, nextBillingDate }) {
   const dateStr = new Date(nextBillingDate).toLocaleDateString('it-IT', {
     day: '2-digit', month: 'long', year: 'numeric',
@@ -119,20 +194,125 @@ export async function sendTrialActivatedEmail({ to, displayName, planName, nextB
 
   await sendEmail({
     to,
-    subject: `🎉 Il tuo abbonamento ${planName} è attivo!`,
+    subject: `Trial terminato — piano ${planName} attivo e addebitato`,
     html: wrapHtml(`
       <h1 style="margin:0 0 14px;font-size:20px;font-weight:700;color:#ffffff">
-        🎉 Abbonamento attivato
+        Trial concluso — abbonamento attivo
       </h1>
-      <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#a0a0a0">
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#a0a0a0">
         Ciao <strong style="color:#ffffff">${displayName}</strong>,<br>
-        il tuo trial è terminato e il piano
-        <strong style="color:#8B5CF6">${planName}</strong> è ora attivo.
+        il tuo periodo di prova è terminato e il piano
+        <strong style="color:#8B5CF6">${planName}</strong> è ora <strong style="color:#ffffff">attivo e a pagamento</strong>.
+        Il primo addebito è stato effettuato.
       </p>
-      <p style="margin:0 0 6px;font-size:15px;line-height:1.65;color:#a0a0a0">
-        Il primo addebito sarà il
-        <strong style="color:#ffffff">${dateStr}</strong>.
+      <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:0 0 20px;border-radius:10px;overflow:hidden">
+        <tbody>
+          ${infoRow('Piano attivo', planName)}
+          ${infoRow('Prossimo rinnovo', dateStr)}
+          ${infoRow('Gestisci piano', 'Dashboard → Abbonamento')}
+        </tbody>
+      </table>
+      <p style="margin:0;font-size:14px;line-height:1.65;color:#6b6b6b">
+        Puoi cancellare in qualsiasi momento — il piano rimane attivo fino alla fine del periodo pagato.
       </p>
+      ${ctaButton('Vai alla Dashboard →', `${FRONTEND}/dashboard`)}
+    `),
+  });
+}
+
+// ── 5. Email: analisi gratuita — report completo ──────────────────────────────
+export async function sendAnalysisReportEmail({ to, twitchUsername, analysis }) {
+  const escapedAnalysis = analysis
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/^### (.+)$/gm, '<h3 style="color:#8B5CF6;margin:20px 0 8px;font-size:14px">$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2 style="color:#e0e0e0;margin:24px 0 10px;font-size:16px">$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#e0e0e0">$1</strong>')
+    .replace(/\n- (.+)/g, '<br>• $1')
+    .replace(/\n/g, '<br>');
+
+  await sendEmail({
+    to,
+    subject: `La tua analisi StreaMindAI${twitchUsername ? ` — @${twitchUsername}` : ''}`,
+    html: wrapHtml(`
+      <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#ffffff">
+        La tua analisi è pronta${twitchUsername ? `, @${twitchUsername}` : ''}! 🎯
+      </h1>
+      <p style="margin:0 0 28px;font-size:14px;color:#6b6b6b">
+        Ecco cosa abbiamo trovato analizzando il tuo canale Twitch.
+      </p>
+      <div style="font-size:15px;line-height:1.7;color:#a0a0a0">
+        ${escapedAnalysis}
+      </div>
+      <div style="margin-top:32px;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:12px;padding:24px;text-align:center">
+        <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#ffffff">Vuoi raggiungere questi obiettivi?</p>
+        <p style="margin:0 0 20px;font-size:14px;color:#6b6b6b">L'AI che ti aiuta attivamente ogni sera sul tuo canale Twitch.</p>
+        ${ctaButton('Inizia gratis con StreaMindAI →', `${FRONTEND}/login`)}
+      </div>
+    `),
+  });
+}
+
+// ── 6. Email: notifica bot offline ────────────────────────────────────────────
+export async function sendBotOfflineEmail({ to, displayName }) {
+  await sendEmail({
+    to,
+    subject: `⚠️ Il tuo bot è offline — stiamo risolvendo`,
+    html: wrapHtml(`
+      <h1 style="margin:0 0 14px;font-size:20px;font-weight:700;color:#ffffff">
+        ⚠️ Il tuo bot è temporaneamente offline
+      </h1>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#a0a0a0">
+        Ciao <strong style="color:#ffffff">${displayName}</strong>,<br>
+        abbiamo rilevato che il tuo bot Hally non è attualmente connesso alla tua chat Twitch.
+        Il nostro team è già al lavoro per ripristinare il servizio.
+      </p>
+      <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-left:3px solid #f59e0b;border-radius:8px;padding:16px 20px;margin:0 0 20px">
+        <p style="margin:0;font-size:14px;color:#a0a0a0;line-height:1.6">
+          <strong style="color:#f59e0b">Cosa sta succedendo:</strong><br>
+          Abbiamo rilevato un'interruzione del servizio e stiamo lavorando attivamente per
+          risolvere il problema nel minor tempo possibile.
+        </p>
+      </div>
+      <p style="margin:0 0 12px;font-size:14px;color:#6b6b6b">
+        Non è necessaria nessuna azione da parte tua. Riceverai una notifica appena il bot sarà di nuovo online.
+      </p>
+      <p style="margin:0;font-size:14px;color:#6b6b6b">
+        Per aggiornamenti urgenti scrivi a
+        <a href="mailto:${REPLY_TO}" style="color:#8B5CF6;text-decoration:none">${REPLY_TO}</a>.
+      </p>
+    `),
+  });
+}
+
+// ── 7. Email: rinnovo mensile — conferma pagamento ────────────────────────────
+export async function sendRenewalConfirmationEmail({ to, displayName, planName, amount, nextBillingDate }) {
+  const dateStr = new Date(nextBillingDate).toLocaleDateString('it-IT', {
+    day: '2-digit', month: 'long', year: 'numeric',
+  });
+  const amountStr = amount != null
+    ? new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(amount / 100)
+    : null;
+
+  await sendEmail({
+    to,
+    subject: `Rinnovo confermato — piano ${planName}`,
+    html: wrapHtml(`
+      <h1 style="margin:0 0 14px;font-size:20px;font-weight:700;color:#ffffff">
+        Rinnovo mensile confermato ✓
+      </h1>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#a0a0a0">
+        Ciao <strong style="color:#ffffff">${displayName}</strong>,<br>
+        il pagamento per il piano <strong style="color:#8B5CF6">${planName}</strong> è andato a buon fine. Grazie!
+      </p>
+      <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:0 0 20px;border-radius:10px;overflow:hidden">
+        <tbody>
+          ${infoRow('Piano', planName)}
+          ${amountStr ? infoRow('Importo addebitato', amountStr) : ''}
+          ${infoRow('Prossimo rinnovo', dateStr)}
+        </tbody>
+      </table>
       <p style="margin:0;font-size:14px;line-height:1.65;color:#6b6b6b">
         Puoi gestire o cancellare il tuo abbonamento in qualsiasi momento dal pannello.
       </p>
@@ -141,10 +321,10 @@ export async function sendTrialActivatedEmail({ to, displayName, planName, nextB
   });
 }
 
-// ── Email: form contatto Signature ───────────────────────────────────────────
+// ── Email: form contatto Signature ────────────────────────────────────────────
 export async function sendContactFormEmail({ nome, twitchUsername, piano, motivo }) {
   await sendEmail({
-    to:      'support@streamindai.com',
+    to:      REPLY_TO,
     subject: `[${piano}] Nuova richiesta da ${nome} (@${twitchUsername})`,
     html: `<!DOCTYPE html>
 <html lang="it">
@@ -154,8 +334,8 @@ export async function sendContactFormEmail({ nome, twitchUsername, piano, motivo
   <p style="margin:0 0 24px;font-size:13px;color:#888">Ricevuta tramite streammindai.com</p>
   <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:14px">
     <tr>
-      <td style="padding:11px 16px;background:#f5f5f5;border-radius:6px 0 0 0;width:130px;color:#666;font-weight:600">Nome</td>
-      <td style="padding:11px 16px;background:#fafafa;border-radius:0 6px 0 0">${nome}</td>
+      <td style="padding:11px 16px;background:#f5f5f5;width:130px;color:#666;font-weight:600">Nome</td>
+      <td style="padding:11px 16px;background:#fafafa">${nome}</td>
     </tr>
     <tr>
       <td style="padding:11px 16px;background:#f0f0f0;color:#666;font-weight:600">Twitch</td>

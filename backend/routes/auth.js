@@ -3,6 +3,7 @@ import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import pool from '../db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { sendWelcomeEmail } from '../services/emailService.js';
 
 export const authRoutes = Router();
 
@@ -71,7 +72,8 @@ authRoutes.get('/twitch/callback', async (req, res) => {
         email           = COALESCE(EXCLUDED.email, streamers.email),
         avatar_url      = EXCLUDED.avatar_url,
         updated_at      = NOW()
-      RETURNING id, subscription_status, subscription_end
+      RETURNING id, subscription_status, subscription_end,
+                (xmax::text::bigint = 0) as is_new
     `;
 
     const { rows } = await pool.query(upsertStreamer, [
@@ -83,6 +85,12 @@ authRoutes.get('/twitch/callback', async (req, res) => {
     ]);
 
     const streamer = rows[0];
+
+    // Email di benvenuto solo alla prima registrazione
+    if (streamer.is_new && tw.email) {
+      sendWelcomeEmail({ to: tw.email, displayName: tw.display_name })
+        .catch(e => console.error('[Email] welcome:', e.message));
+    }
 
     // 4. Crea bot_config di default se è il primo accesso
     await pool.query(

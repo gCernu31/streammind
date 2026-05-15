@@ -852,8 +852,6 @@ export default function ConfigPage() {
         {/* ── CRONOLOGIA ── */}
         <HistoryPanel history={history} onRestore={handleRestore} />
 
-      </div>
-
       {/* ── SALVA ── */}
       <div className="mt-8 space-y-3">
         {/* Banner ripristino versione */}

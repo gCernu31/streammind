@@ -1,9 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import AccountMenu from '../components/AccountMenu.jsx';
 
 const PURPLE = '#8B5CF6';
+
+// Keyframe spin per il loader del PDF
+if (typeof document !== 'undefined' && !document.getElementById('smai-spin')) {
+  const s = document.createElement('style');
+  s.id = 'smai-spin';
+  s.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+  document.head.appendChild(s);
+}
 
 // ─── Parser: markdown → array di slide ────────────────────────────────────────
 function parseSlides(text, username) {
@@ -124,8 +132,10 @@ function SlideCta() {
 
 // ─── Presentazione a slide ────────────────────────────────────────────────────
 function SlideShow({ slides, username, onReset }) {
-  const [idx, setIdx] = useState(0);
-  const total = slides.length;
+  const [idx, setIdx]         = useState(0);
+  const [exporting, setExporting] = useState(false);
+  const cardRef = useRef(null);
+  const total   = slides.length;
 
   const prev = useCallback(() => setIdx(i => Math.max(0, i - 1)), []);
   const next = useCallback(() => setIdx(i => Math.min(total - 1, i + 1)), [total]);
@@ -138,6 +148,44 @@ function SlideShow({ slides, username, onReset }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [prev, next]);
+
+  const downloadPDF = async () => {
+    if (!cardRef.current || exporting) return;
+    setExporting(true);
+    try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+
+      const card   = cardRef.current;
+      const W      = card.offsetWidth;
+      const H      = card.offsetHeight;
+      const pdf    = new jsPDF({ orientation: 'landscape', unit: 'px', format: [W, H] });
+      const saved  = idx;
+
+      for (let i = 0; i < total; i++) {
+        setIdx(i);
+        await new Promise(r => setTimeout(r, 120));
+        const canvas = await html2canvas(card, {
+          backgroundColor: '#111111',
+          scale: 2,
+          useCORS: true,
+          logging: false,
+        });
+        const img = canvas.toDataURL('image/png');
+        if (i > 0) pdf.addPage([W, H], 'landscape');
+        pdf.addImage(img, 'PNG', 0, 0, W, H);
+      }
+
+      pdf.save(`analisi-${username || 'twitch'}-streamindai.pdf`);
+      setIdx(saved);
+    } catch (e) {
+      console.error('PDF export error:', e);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const slide = slides[idx];
 
@@ -160,6 +208,7 @@ function SlideShow({ slides, username, onReset }) {
 
       {/* Card slide */}
       <div
+        ref={cardRef}
         style={{
           background: '#111',
           border: '1px solid #222',
@@ -251,10 +300,44 @@ function SlideShow({ slides, username, onReset }) {
         </button>
       </div>
 
-      {/* Hint tastiera */}
-      <p style={{ textAlign: 'center', fontSize: '12px', color: '#2e2e2e', marginTop: '14px' }}>
-        ← → per navigare tra le slide
-      </p>
+      {/* Pulsante download PDF */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px' }}>
+        <p style={{ fontSize: '12px', color: '#2e2e2e' }}>
+          ← → per navigare tra le slide
+        </p>
+        <button
+          onClick={downloadPDF}
+          disabled={exporting}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            fontSize: '12px', fontWeight: 600,
+            padding: '7px 14px', borderRadius: '8px',
+            border: '1px solid rgba(139,92,246,0.35)',
+            background: exporting ? 'transparent' : 'rgba(139,92,246,0.08)',
+            color: exporting ? '#4a4a4a' : '#a78bfa',
+            cursor: exporting ? 'default' : 'pointer',
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => { if (!exporting) { e.currentTarget.style.background = 'rgba(139,92,246,0.16)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.6)'; }}}
+          onMouseLeave={e => { e.currentTarget.style.background = exporting ? 'transparent' : 'rgba(139,92,246,0.08)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.35)'; }}
+        >
+          {exporting ? (
+            <>
+              <svg style={{ width: '13px', height: '13px', animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round"/>
+              </svg>
+              Generazione PDF…
+            </>
+          ) : (
+            <>
+              <svg style={{ width: '13px', height: '13px' }} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <path d="M8 2v8M5 7l3 3 3-3M2 13h12" />
+              </svg>
+              Scarica PDF
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

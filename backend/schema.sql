@@ -335,6 +335,18 @@ BEGIN
 END;
 $$;
 
+-- Token extra acquistabili (pacchetti one-time Stripe)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='streamers' AND column_name='extra_messages') THEN
+    ALTER TABLE streamers ADD COLUMN extra_messages INTEGER NOT NULL DEFAULT 0;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='streamers' AND column_name='extra_messages_expiry') THEN
+    ALTER TABLE streamers ADD COLUMN extra_messages_expiry DATE;
+  END IF;
+END;
+$$;
+
 -- Finestre di manutenzione programmata
 CREATE TABLE IF NOT EXISTS maintenance_windows (
   id          SERIAL PRIMARY KEY,

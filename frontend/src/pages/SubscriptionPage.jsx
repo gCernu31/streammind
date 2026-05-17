@@ -273,8 +273,21 @@ export default function SubscriptionPage() {
   const [showCancel, setShowCancel]     = useState(false);
   const [cancelling, setCancelling]     = useState(false);
   const [showContact, setShowContact]   = useState(false);
+  const [tokenPackLoading, setTokenPackLoading] = useState(false);
+  const [tokenPackBanner, setTokenPackBanner]   = useState(null); // 'success'|'cancelled'|null
 
   const headers = () => ({ Authorization: `Bearer ${getToken()}` });
+
+  useEffect(() => {
+    // Gestisce feedback post-checkout Token Pack
+    const params = new URLSearchParams(window.location.search);
+    const tp = params.get('token_pack');
+    if (tp) {
+      setTokenPackBanner(tp);
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => setTokenPackBanner(null), 6000);
+    }
+  }, []);
 
   useEffect(() => {
     axios.get('/api/subscription', { headers: headers() })
@@ -315,6 +328,19 @@ export default function SubscriptionPage() {
     }
   };
 
+  const handleTokenPack = async () => {
+    setTokenPackLoading(true);
+    try {
+      const r = await axios.post('/api/subscription/token-pack', {}, { headers: headers() });
+      if (r.data.checkout_url) window.location.href = r.data.checkout_url;
+      else alert(r.data.error ?? 'Errore imprevisto.');
+    } catch (err) {
+      alert(err.response?.data?.error ?? 'Errore imprevisto.');
+    } finally {
+      setTokenPackLoading(false);
+    }
+  };
+
   const handleCancel = async () => {
     setCancelling(true);
     try {
@@ -334,6 +360,12 @@ export default function SubscriptionPage() {
 
   const fmt = (iso) =>
     new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  const fmtShort = (iso) =>
+    new Date(iso).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+
+  const extraTokens = sub?.extra_tokens ?? { count: 0, expiry: null };
+  const hasExtra = extraTokens.count > 0 && extraTokens.expiry != null;
 
   return (
     <div>
@@ -485,6 +517,104 @@ export default function SubscriptionPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* ── Token Pack banner ── */}
+      {tokenPackBanner === 'success' && (
+        <div
+          className="flex items-center gap-3 rounded-xl px-5 py-4 mb-6 border"
+          style={{ background: 'rgba(74,222,128,0.08)', borderColor: 'rgba(74,222,128,0.25)' }}
+        >
+          <span className="text-green-400 text-xl shrink-0">✓</span>
+          <div>
+            <p className="text-sm font-semibold text-hally-text">Token Pack acquistato!</p>
+            <p className="text-xs text-hally-text-muted mt-0.5">5.000 messaggi extra sono stati aggiunti al tuo account. Validi 30 giorni.</p>
+          </div>
+        </div>
+      )}
+      {tokenPackBanner === 'cancelled' && (
+        <div
+          className="flex items-center gap-3 rounded-xl px-5 py-4 mb-6 border"
+          style={{ background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.2)' }}
+        >
+          <span className="text-red-400 text-sm font-medium">Acquisto annullato.</span>
+        </div>
+      )}
+
+      {/* ── Token aggiuntivi ── */}
+      <div className="card mb-8">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="font-semibold">Token aggiuntivi</h2>
+            <p className="text-xs text-hally-text-muted mt-0.5">Messaggi extra oltre il limite mensile del tuo piano</p>
+          </div>
+          {hasExtra && (
+            <div
+              className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border"
+              style={{ background: 'rgba(139,92,246,0.1)', borderColor: 'rgba(139,92,246,0.3)', color: '#8B5CF6' }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: '#8B5CF6' }} />
+              {extraTokens.count.toLocaleString('it-IT')} disponibili
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-5">
+          {/* Card pacchetto */}
+          <div
+            className="flex-1 rounded-xl border p-5 flex flex-col gap-4"
+            style={{ backgroundColor: 'rgba(139,92,246,0.04)', borderColor: 'rgba(139,92,246,0.2)' }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-bold text-hally-text">5.000 messaggi extra</p>
+                <p className="text-xs text-hally-text-muted mt-0.5">Validi 30 giorni dall'acquisto</p>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-2xl font-extrabold" style={{ color: '#8B5CF6' }}>6€</span>
+                <p className="text-xs text-hally-text-muted">una tantum</p>
+              </div>
+            </div>
+            <ul className="space-y-1.5 text-xs text-hally-text-muted">
+              <li className="flex items-center gap-2"><span style={{ color: '#8B5CF6' }}><IconCheck /></span>Attivi subito dopo il pagamento</li>
+              <li className="flex items-center gap-2"><span style={{ color: '#8B5CF6' }}><IconCheck /></span>Si sommano ai token già disponibili</li>
+              <li className="flex items-center gap-2"><span style={{ color: '#8B5CF6' }}><IconCheck /></span>Usati solo quando il piano è esaurito</li>
+            </ul>
+            <button
+              onClick={handleTokenPack}
+              disabled={tokenPackLoading}
+              className="w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-colors duration-150 disabled:opacity-60"
+              style={{ backgroundColor: '#8B5CF6' }}
+              onMouseEnter={e => { if (!tokenPackLoading) e.currentTarget.style.backgroundColor = '#7C3AED'; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#8B5CF6'; }}
+            >
+              {tokenPackLoading ? 'Reindirizzamento…' : 'Acquista — 6€'}
+            </button>
+          </div>
+
+          {/* Stato token correnti */}
+          {hasExtra ? (
+            <div
+              className="sm:w-52 rounded-xl border p-5 flex flex-col justify-center gap-2"
+              style={{ backgroundColor: 'rgba(139,92,246,0.06)', borderColor: 'rgba(139,92,246,0.18)' }}
+            >
+              <p className="text-xs font-medium text-hally-text-muted uppercase tracking-wider">Token attivi</p>
+              <p className="text-3xl font-extrabold text-hally-text">{extraTokens.count.toLocaleString('it-IT')}</p>
+              <p className="text-xs text-hally-text-muted">
+                Scadono il <span className="font-medium text-hally-text">{fmtShort(extraTokens.expiry)}</span>
+              </p>
+            </div>
+          ) : (
+            <div
+              className="sm:w-52 rounded-xl border p-5 flex flex-col justify-center gap-2"
+              style={{ backgroundColor: '#111', borderColor: '#1e1e1e' }}
+            >
+              <p className="text-xs font-medium text-hally-text-muted uppercase tracking-wider">Token attivi</p>
+              <p className="text-2xl font-bold text-hally-text-muted">—</p>
+              <p className="text-xs text-hally-text-muted">Nessun token extra disponibile</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Storico fatture ── */}

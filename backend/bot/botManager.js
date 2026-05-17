@@ -433,6 +433,8 @@ async function loadActiveStreamers() {
       s.chat_messages_count,
       s.event_messages_count,
       s.monthly_reset_date,
+      s.extra_messages,
+      s.extra_messages_expiry,
       bc.spotify_client_id,
       bc.spotify_client_secret,
       bc.spotify_access_token,
@@ -469,6 +471,21 @@ async function resetMonthlyIfNeeded(streamer) {
   streamer.chat_messages_count  = 0;
   streamer.event_messages_count = 0;
   return 0;
+}
+
+// Decrementa un messaggio extra (atomico). Restituisce true se riuscito.
+async function consumeExtraMessage(streamerId, streamer) {
+  if (!streamer.extra_messages || streamer.extra_messages <= 0) return false;
+  const { rows } = await pool.query(
+    `UPDATE streamers
+     SET extra_messages = extra_messages - 1
+     WHERE id = $1 AND extra_messages > 0 AND extra_messages_expiry >= CURRENT_DATE
+     RETURNING extra_messages`,
+    [streamerId]
+  );
+  if (!rows[0]) return false;
+  streamer.extra_messages = rows[0].extra_messages;
+  return true;
 }
 
 // ─── BotManager ───────────────────────────────────────────────────────────────
@@ -777,9 +794,14 @@ class BotManager {
     const monthlyCount = await resetMonthlyIfNeeded(streamer);
 
     // ── Limite mensile canale ────────────────────────────────────────────────
+    let usedExtraMessage = false;
     if (limits.monthlyMessages !== -1 && monthlyCount >= limits.monthlyMessages) {
-      try { await this.client.say(channel, MSG_CHANNEL_LIMIT); } catch {}
-      return;
+      const used = await consumeExtraMessage(streamer.streamer_id, streamer);
+      if (!used) {
+        try { await this.client.say(channel, MSG_CHANNEL_LIMIT); } catch {}
+        return;
+      }
+      usedExtraMessage = true;
     }
 
     // ── Limite sessione canale ───────────────────────────────────────────────
@@ -819,13 +841,14 @@ class BotManager {
 
     // ── Aggiorna contatori ───────────────────────────────────────────────────
     session.count++;
-    await Promise.all([
-      incrementUserDailyCount(streamer.streamer_id, username),
-      pool.query(
+    const counterOps = [incrementUserDailyCount(streamer.streamer_id, username)];
+    if (!usedExtraMessage) {
+      counterOps.push(pool.query(
         'UPDATE streamers SET chat_messages_count = chat_messages_count + 1, monthly_message_count = monthly_message_count + 1 WHERE id = $1',
         [streamer.streamer_id]
-      ),
-    ]);
+      ));
+    }
+    await Promise.all(counterOps);
   }
 
   // ── Song Request ──────────────────────────────────────────────────────────

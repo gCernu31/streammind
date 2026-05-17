@@ -24,6 +24,12 @@ const PRICE_IDS = {
   signature: process.env.STRIPE_PRICE_SIGNATURE,
 };
 
+const TOKEN_PACK = {
+  priceId:  process.env.STRIPE_PRICE_TOKEN_PACK, // prodotto one-time 6€ su Stripe
+  messages: 5_000,
+  days:     30,
+};
+
 function stripeRequired(res) {
   if (!stripe) {
     res.status(503).json({ error: 'Stripe non configurato. Aggiungi STRIPE_SECRET_KEY al .env.' });
@@ -39,16 +45,25 @@ subscriptionRoutes.get('/', requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT subscription_status, subscription_plan, subscription_end,
-              stripe_customer_id, stripe_subscription_id
+              stripe_customer_id, stripe_subscription_id,
+              extra_messages, extra_messages_expiry
        FROM streamers WHERE id = $1`,
       [req.user.streamer_id]
     );
     const s = rows[0] ?? {};
+    const today = new Date().toISOString().slice(0, 10);
+    const extraActive = (s.extra_messages ?? 0) > 0 &&
+                        s.extra_messages_expiry != null &&
+                        s.extra_messages_expiry >= today;
     res.json({
       status:             s.subscription_status  ?? 'inactive',
       plan:               s.subscription_plan    ?? null,
       subscription_end:   s.subscription_end     ?? null,
       stripe_customer_id: s.stripe_customer_id   ?? null,
+      extra_tokens: {
+        count:  extraActive ? (s.extra_messages ?? 0) : 0,
+        expiry: extraActive ? s.extra_messages_expiry : null,
+      },
     });
   } catch (err) {
     console.error(err);
@@ -203,6 +218,51 @@ subscriptionRoutes.post('/cancel', requireAuth, async (req, res) => {
   }
 });
 
+// ── POST /api/subscription/token-pack ────────────────────────────────────────
+subscriptionRoutes.post('/token-pack', requireAuth, async (req, res) => {
+  if (stripeRequired(res)) return;
+  if (!TOKEN_PACK.priceId) {
+    return res.status(503).json({ error: 'Token Pack non ancora configurato. Aggiungi STRIPE_PRICE_TOKEN_PACK al .env.' });
+  }
+  try {
+    const { rows } = await pool.query(
+      'SELECT stripe_customer_id, email, display_name FROM streamers WHERE id = $1',
+      [req.user.streamer_id]
+    );
+    const streamer = rows[0] ?? {};
+
+    let customerId = streamer.stripe_customer_id;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email:    streamer.email        ?? undefined,
+        name:     streamer.display_name ?? undefined,
+        metadata: { streamer_id: String(req.user.streamer_id) },
+      });
+      customerId = customer.id;
+      await pool.query(
+        'UPDATE streamers SET stripe_customer_id = $1 WHERE id = $2',
+        [customerId, req.user.streamer_id]
+      );
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const session = await stripe.checkout.sessions.create({
+      customer:             customerId,
+      mode:                 'payment',
+      payment_method_types: ['card'],
+      line_items:           [{ price: TOKEN_PACK.priceId, quantity: 1 }],
+      success_url:          `${frontendUrl}/subscription?token_pack=success`,
+      cancel_url:           `${frontendUrl}/subscription?token_pack=cancelled`,
+      metadata:             { streamer_id: String(req.user.streamer_id), type: 'token_pack' },
+    });
+
+    res.json({ checkout_url: session.url });
+  } catch (err) {
+    console.error('[TokenPack] checkout:', err.message);
+    res.status(500).json({ error: 'Errore nella creazione del checkout.' });
+  }
+});
+
 // ── POST /api/subscription/webhook e POST /webhooks/stripe ───────────────────
 // Registrato in server.js con express.raw() PRIMA di express.json()
 export async function stripeWebhook(req, res) {
@@ -224,6 +284,26 @@ export async function stripeWebhook(req, res) {
 
       case 'checkout.session.completed': {
         const session = event.data.object;
+
+        // ── Acquisto Token Pack (one-time) ───────────────────────────────────
+        if (session.mode === 'payment' && session.metadata?.type === 'token_pack') {
+          const streamerId = session.metadata?.streamer_id;
+          if (streamerId) {
+            await pool.query(
+              `UPDATE streamers
+               SET extra_messages = CASE
+                     WHEN extra_messages_expiry >= CURRENT_DATE THEN extra_messages + $2
+                     ELSE $2
+                   END,
+                   extra_messages_expiry = CURRENT_DATE + INTERVAL '${TOKEN_PACK.days} days'
+               WHERE id = $1`,
+              [streamerId, TOKEN_PACK.messages]
+            );
+            console.log(`[TokenPack] +${TOKEN_PACK.messages} messaggi extra per streamer_id=${streamerId}`);
+          }
+          break;
+        }
+
         if (session.mode !== 'subscription') break;
         const streamerId = session.metadata?.streamer_id;
         const plan       = session.metadata?.plan;

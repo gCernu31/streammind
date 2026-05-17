@@ -61,6 +61,8 @@ async function loadActiveStreamers() {
       s.subscription_plan,
       s.chat_messages_count,
       s.monthly_reset_date,
+      s.extra_messages,
+      s.extra_messages_expiry,
       bc.bot_name,
       bc.custom_commands
     FROM streamers s
@@ -268,9 +270,23 @@ class TwitchBot {
     const limits = getLimits(streamer.subscription_plan);
 
     // Limite messaggi mensili (solo comandi !nomebot)
+    let usedExtraMessage = false;
     if (limits.monthlyMessages !== -1 &&
         (streamer.chat_messages_count ?? 0) >= limits.monthlyMessages) {
-      return;
+      // Prova a usare messaggi extra acquistati
+      if ((streamer.extra_messages ?? 0) > 0) {
+        const { rows: extraRows } = await pool.query(
+          `UPDATE streamers SET extra_messages = extra_messages - 1
+           WHERE id = $1 AND extra_messages > 0 AND extra_messages_expiry >= CURRENT_DATE
+           RETURNING extra_messages`,
+          [streamer.streamer_id]
+        );
+        if (extraRows[0]) {
+          streamer.extra_messages = extraRows[0].extra_messages;
+          usedExtraMessage = true;
+        }
+      }
+      if (!usedExtraMessage) return;
     }
 
     // Limite per utente al giorno
@@ -309,7 +325,7 @@ class TwitchBot {
     }
 
     // 6. Aggiorna contatori
-    await Promise.all([
+    const ops = [
       pool.query(
         `INSERT INTO bot_daily_usage (streamer_id, username, usage_date, count)
          VALUES ($1, $2, $3, 1)
@@ -317,11 +333,14 @@ class TwitchBot {
          DO UPDATE SET count = bot_daily_usage.count + 1`,
         [streamer.streamer_id, username, today]
       ),
-      pool.query(
+    ];
+    if (!usedExtraMessage) {
+      ops.push(pool.query(
         `UPDATE streamers SET chat_messages_count = chat_messages_count + 1, monthly_message_count = monthly_message_count + 1 WHERE id = $1`,
         [streamer.streamer_id]
-      ),
-    ]);
+      ));
+    }
+    await Promise.all(ops);
   }
 }
 

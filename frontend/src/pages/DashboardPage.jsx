@@ -804,6 +804,7 @@ export default function DashboardPage({ user }) {
   const [monthly, setMonthly]   = useState(null);
   const [subStatus, setSubStatus] = useState(null);
   const [referral, setReferral]   = useState(null);
+  const [extraTokens, setExtraTokens] = useState(null); // { count, expiry } | null
 
   useEffect(() => {
     const token = getToken();
@@ -834,6 +835,8 @@ export default function DashboardPage({ user }) {
             plan:  data.subscription?.plan ?? null,
           });
           setSubStatus(data.subscription?.status ?? 'inactive');
+          const et = data.extra_tokens;
+          if (et && et.count > 0 && et.expiry) setExtraTokens(et);
         }
       })
       .catch(() => {});
@@ -897,6 +900,26 @@ export default function DashboardPage({ user }) {
 
       {/* ── Toggle attiva/disattiva bot ────────────────────────────── */}
       {subStatus !== 'inactive' && <BotToggle user={user} />}
+
+      {/* ── Token extra ────────────────────────────────────────────── */}
+      {extraTokens && (
+        <div
+          className="flex items-center gap-3 rounded-xl border px-4 py-3"
+          style={{ backgroundColor: 'rgba(139,92,246,0.06)', borderColor: 'rgba(139,92,246,0.2)' }}
+        >
+          <span
+            className="w-2 h-2 rounded-full shrink-0"
+            style={{ backgroundColor: '#8B5CF6' }}
+          />
+          <p className="text-sm text-hally-text">
+            <span className="font-semibold">{extraTokens.count.toLocaleString('it-IT')} token extra</span>
+            {' '}rimanenti
+            <span className="text-hally-text-muted ml-1">
+              (scadono il {new Date(extraTokens.expiry).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })})
+            </span>
+          </p>
+        </div>
+      )}
 
       {/* ── Stat cards ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

@@ -101,7 +101,8 @@ app.get('/api/me', authenticateToken, async (req, res) => {
     const { rows } = await pool.query(
       `SELECT id, twitch_username, display_name, email, avatar_url,
               subscription_status, subscription_plan, subscription_end,
-              chat_messages_count, event_messages_count, monthly_reset_date
+              chat_messages_count, event_messages_count, monthly_reset_date,
+              extra_messages, extra_messages_expiry
        FROM streamers WHERE id = $1`,
       [req.user.streamer_id]
     );
@@ -119,9 +120,13 @@ app.get('/api/me', authenticateToken, async (req, res) => {
         end:    u.subscription_end    ?? null,
       },
       monthly_messages: {
-        count:             u.chat_messages_count  ?? 0,
-        event_count:       u.event_messages_count ?? 0,
-        reset_date:        u.monthly_reset_date   ?? null,
+        count:       u.chat_messages_count  ?? 0,
+        event_count: u.event_messages_count ?? 0,
+        reset_date:  u.monthly_reset_date   ?? null,
+      },
+      extra_tokens: {
+        count:  u.extra_messages        ?? 0,
+        expiry: u.extra_messages_expiry ?? null,
       },
     });
   } catch (err) {

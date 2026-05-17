@@ -23,7 +23,8 @@ configRoutes.get('/', requireAuth, async (req, res) => {
               ai_provider, event_messages,
               spotify_client_id, spotify_client_secret,
               spotify_access_token,
-              discord_bot_token, bot_active
+              discord_bot_token, bot_active,
+              last_name_change, name_changes_this_month
        FROM bot_configs WHERE streamer_id = $1`,
       [req.user.streamer_id]
     );
@@ -43,8 +44,10 @@ configRoutes.get('/', requireAuth, async (req, res) => {
       spotify_client_id:     cfg.spotify_client_id     ?? '',
       spotify_client_secret: cfg.spotify_client_secret ?? '',
       spotify_connected:     !!cfg.spotify_access_token,
-      discord_bot_token:     cfg.discord_bot_token      ?? '',
-      bot_active:            cfg.bot_active              ?? true,
+      discord_bot_token:          cfg.discord_bot_token          ?? '',
+      bot_active:                 cfg.bot_active                 ?? true,
+      last_name_change:           cfg.last_name_change           ?? null,
+      name_changes_this_month:    cfg.name_changes_this_month    ?? 0,
     });
   } catch (err) {
     console.error(err);
@@ -112,10 +115,37 @@ configRoutes.put('/', requireAuth, async (req, res) => {
     const snapResult = await pool.query(
       `SELECT bot_name, creator_name, bot_personality, twitch_username,
               stream_schedule, social_links, custom_commands, members,
-              ai_provider, event_messages
+              ai_provider, event_messages,
+              last_name_change, name_changes_this_month
        FROM bot_configs WHERE streamer_id = $1`,
       [req.user.streamer_id]
     );
+
+    // ── Controllo limite cambio nome bot (max 1 volta al mese) ───────────────
+    const currentCfg = snapResult.rows[0] ?? {};
+    const nameChanged = bot_name != null &&
+                        bot_name.trim() !== '' &&
+                        bot_name.trim() !== (currentCfg.bot_name ?? '').trim();
+
+    if (nameChanged) {
+      const lastChange = currentCfg.last_name_change ? new Date(currentCfg.last_name_change) : null;
+      const now        = new Date();
+      const sameMonth  = lastChange &&
+                         lastChange.getMonth()    === now.getMonth() &&
+                         lastChange.getFullYear() === now.getFullYear();
+
+      if (sameMonth && (currentCfg.name_changes_this_month ?? 0) >= 1) {
+        const nextAvailable = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        const formatted = nextAvailable.toLocaleDateString('it-IT', {
+          day: 'numeric', month: 'long', year: 'numeric',
+        });
+        return res.status(400).json({
+          error: `Puoi rinominare il tuo bot solo una volta al mese. Prossima modifica disponibile il ${formatted}.`,
+          code:  'NAME_CHANGE_LIMIT',
+        });
+      }
+    }
+
     if (snapResult.rows[0]) {
       await pool.query(
         `INSERT INTO bot_config_history (streamer_id, config_snapshot) VALUES ($1, $2)`,
@@ -172,6 +202,16 @@ configRoutes.put('/', requireAuth, async (req, res) => {
 
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Configurazione non trovata' });
+    }
+
+    // Aggiorna tracciamento cambio nome se il nome è stato modificato
+    if (nameChanged) {
+      await pool.query(
+        `UPDATE bot_configs
+         SET last_name_change = CURRENT_DATE, name_changes_this_month = 1
+         WHERE streamer_id = $1`,
+        [req.user.streamer_id]
+      );
     }
 
     invalidateBotPromptCache(req.user.streamer_id);

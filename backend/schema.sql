@@ -323,6 +323,18 @@ CREATE TABLE IF NOT EXISTS status_incidents (
 
 CREATE INDEX IF NOT EXISTS idx_status_incidents_service ON status_incidents (service, started_at DESC);
 
+-- Limite cambio nome bot: max 1 volta al mese per account (idempotente)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='last_name_change') THEN
+    ALTER TABLE bot_configs ADD COLUMN last_name_change DATE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='name_changes_this_month') THEN
+    ALTER TABLE bot_configs ADD COLUMN name_changes_this_month INTEGER NOT NULL DEFAULT 0;
+  END IF;
+END;
+$$;
+
 -- Finestre di manutenzione programmata
 CREATE TABLE IF NOT EXISTS maintenance_windows (
   id          SERIAL PRIMARY KEY,

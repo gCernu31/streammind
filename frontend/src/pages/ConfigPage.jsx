@@ -252,6 +252,7 @@ export default function ConfigPage() {
   const [spotifyBanner, setSpotifyBanner] = useState(null); // 'connected'|'error'|'denied'|null
   const [spotifyAuthLoading, setSpotifyAuthLoading] = useState(false);
   const [discordShowToken, setDiscordShowToken] = useState(false);
+  const [nameChangeError, setNameChangeError] = useState(null);
 
   // Stato modifiche non salvate
   const { setDirty } = useConfigDirty();
@@ -346,12 +347,19 @@ export default function ConfigPage() {
       await axios.put('/api/config', config, { headers: { Authorization: `Bearer ${token}` } });
       setSaveState('saved');
       setRestoreNotice(null);
+      setNameChangeError(null);
       fetchHistory();
       clearDirty();
       setTimeout(() => setSaveState('idle'), 3000);
-    } catch {
-      setSaveState('error');
-      setTimeout(() => setSaveState('idle'), 4000);
+    } catch (err) {
+      const data = err?.response?.data;
+      if (data?.code === 'NAME_CHANGE_LIMIT') {
+        setNameChangeError(data.error);
+        setSaveState('idle');
+      } else {
+        setSaveState('error');
+        setTimeout(() => setSaveState('idle'), 4000);
+      }
     }
   };
 
@@ -481,10 +489,21 @@ export default function ConfigPage() {
               <input
                 className="input"
                 value={config.bot_name}
-                onChange={e => { set('bot_name', e.target.value); checkBan('bot_name', e.target.value); }}
+                onChange={e => {
+                  set('bot_name', e.target.value);
+                  checkBan('bot_name', e.target.value);
+                  if (nameChangeError) setNameChangeError(null);
+                }}
                 placeholder="Es. StreamBot"
-                style={banErrors.bot_name ? { borderColor: '#f87171' } : undefined}
+                style={nameChangeError ? { borderColor: '#f87171' } : banErrors.bot_name ? { borderColor: '#f87171' } : undefined}
               />
+              {nameChangeError ? (
+                <p className="text-xs mt-1.5" style={{ color: '#f87171' }}>{nameChangeError}</p>
+              ) : (
+                <p className="text-xs mt-1.5" style={{ color: '#6b7280' }}>
+                  Il nome del bot può essere modificato una volta al mese.
+                </p>
+              )}
             </Field>
 
             <Field label="Come chiami il tuo streamer" hint="Il nome con cui StreaMindAI si riferisce a te in chat.">

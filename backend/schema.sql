@@ -270,6 +270,19 @@ CREATE TABLE IF NOT EXISTS referrals (
 CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals (referrer_id, status);
 
 -- ============================================================
+-- Analisi mensile canale (per abbonati, generata da Gemini)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS dashboard_analyses (
+  id           SERIAL PRIMARY KEY,
+  streamer_id  INTEGER   NOT NULL REFERENCES streamers(id) ON DELETE CASCADE,
+  analysis     TEXT      NOT NULL,
+  generated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_dashboard_analyses_streamer
+  ON dashboard_analyses (streamer_id, generated_at DESC);
+
+-- ============================================================
 -- Pagina /status — monitoraggio servizi
 -- ============================================================
 

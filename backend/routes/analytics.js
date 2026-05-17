@@ -157,6 +157,34 @@ const MAX_NUM     = 9_999_999;
 const NUM_KEYS    = ['avg_viewers', 'hours_per_month', 'total_followers', 'monthly_follower_growth', 'current_subs'];
 const TEXT_KEYS   = ['main_games', 'stream_schedule', 'social_links'];
 
+// ── GET /api/analytics/:id — recupera analisi pubblica per link condivisibile ──
+analyticsRoutes.get('/:id', async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isInteger(id) || id < 1) {
+    return res.status(400).json({ error: 'ID non valido.' });
+  }
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, twitch_username, analysis_generated, created_at
+       FROM analytics_leads WHERE id = $1`,
+      [id]
+    );
+    if (!rows[0] || !rows[0].analysis_generated) {
+      return res.status(404).json({ error: 'Analisi non trovata.' });
+    }
+    res.json({
+      id:              rows[0].id,
+      twitch_username: rows[0].twitch_username,
+      analysis:        rows[0].analysis_generated,
+      created_at:      rows[0].created_at,
+    });
+  } catch (err) {
+    console.error('[Analytics] GET /:id:', err.message);
+    res.status(500).json({ error: "Errore nel recupero dell'analisi." });
+  }
+});
+
+// ── POST /api/analytics/analyze — pubblico, no auth ───────────────────────────
 analyticsRoutes.post('/analyze', async (req, res) => {
   const { email, ...formData } = req.body;
 

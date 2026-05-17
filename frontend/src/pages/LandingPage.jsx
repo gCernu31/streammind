@@ -697,10 +697,13 @@ export default function LandingPage({ user, loading, onLogout }) {
                 </ul>
               </div>
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#6b6b6b' }}>Risorse</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#6b6b6b' }}>Legale</h4>
                 <ul className="space-y-3 text-sm" style={{ color: '#a0a0a0' }}>
-                  <li><Link to="/faq"       className="hover:text-white transition-colors">FAQ</Link></li>
-                  <li><a href="mailto:support@streamindai.com" className="hover:text-white transition-colors">Contatti</a></li>
+                  <li><Link to="/privacy"  className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                  <li><Link to="/termini"  className="hover:text-white transition-colors">Termini di Servizio</Link></li>
+                  <li><Link to="/cookie"   className="hover:text-white transition-colors">Cookie Policy</Link></li>
+                  <li><Link to="/faq"      className="hover:text-white transition-colors">FAQ</Link></li>
+                  <li><Link to="/contatti" className="hover:text-white transition-colors">Contatti</Link></li>
                 </ul>
               </div>
             </div>

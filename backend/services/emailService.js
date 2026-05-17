@@ -382,3 +382,57 @@ export async function sendContactFormEmail({ nome, twitchUsername, piano, motivo
 </html>`,
   });
 }
+
+// ── Email: form contatto generale (/contatti) ─────────────────────────────────
+export async function sendGeneralContactEmail({ nome, email, messaggio }) {
+  // Email a noi
+  await sendEmail({
+    to:      REPLY_TO,
+    subject: `[Contatto] Messaggio da ${nome} <${email}>`,
+    html: `<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"></head>
+<body style="font-family:system-ui,sans-serif;color:#1a1a1a;padding:32px;max-width:600px">
+  <h2 style="margin:0 0 6px;color:#8B5CF6">Nuovo messaggio dal form contatti</h2>
+  <p style="margin:0 0 24px;font-size:13px;color:#888">Ricevuto tramite streamindai.com/contatti</p>
+  <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:14px">
+    <tr>
+      <td style="padding:11px 16px;background:#f5f5f5;width:100px;color:#666;font-weight:600">Nome</td>
+      <td style="padding:11px 16px;background:#fafafa">${nome}</td>
+    </tr>
+    <tr>
+      <td style="padding:11px 16px;background:#f0f0f0;color:#666;font-weight:600">Email</td>
+      <td style="padding:11px 16px;background:#f7f7f7"><a href="mailto:${email}">${email}</a></td>
+    </tr>
+    <tr>
+      <td style="padding:11px 16px;background:#f5f5f5;color:#666;font-weight:600;vertical-align:top">Messaggio</td>
+      <td style="padding:11px 16px;background:#fafafa;line-height:1.7">${messaggio.replace(/\n/g, '<br>')}</td>
+    </tr>
+  </table>
+</body>
+</html>`,
+  });
+
+  // Conferma all'utente
+  await sendEmail({
+    to:      email,
+    subject: `Abbiamo ricevuto il tuo messaggio — StreaMindAI`,
+    html: wrapHtml(`
+      <p style="margin:0 0 20px;font-size:16px;font-weight:700;color:#ffffff">
+        Ciao ${nome}, grazie per averci contattato!
+      </p>
+      <p style="margin:0 0 16px;font-size:14px;color:#a0a0a0;line-height:1.7">
+        Abbiamo ricevuto il tuo messaggio e ti risponderemo all'indirizzo <strong style="color:#e0e0e0">${email}</strong> entro poche ore.
+      </p>
+      <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-left:3px solid #8B5CF6;border-radius:8px;padding:16px 20px;margin:20px 0">
+        <p style="margin:0 0 8px;font-size:12px;color:#6b6b6b;text-transform:uppercase;font-weight:700;letter-spacing:0.5px">Il tuo messaggio</p>
+        <p style="margin:0;font-size:14px;color:#c0c0c0;line-height:1.7">${messaggio.replace(/\n/g, '<br>')}</p>
+      </div>
+      <p style="margin:0;font-size:13px;color:#6b6b6b">
+        Nel frattempo puoi consultare le nostre <a href="${FRONTEND}/faq" style="color:#8B5CF6;text-decoration:none">FAQ</a>
+        o scriverci direttamente su <a href="https://twitch.tv/StreaMindAI" style="color:#8B5CF6;text-decoration:none">Twitch</a>.
+      </p>
+      ${ctaButton('Visita StreaMindAI →', FRONTEND)}
+    `),
+  });
+}

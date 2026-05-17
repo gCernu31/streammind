@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
+import CookieBanner from './components/CookieBanner.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
@@ -11,6 +12,10 @@ import AnalisiPage from './pages/AnalisiPage.jsx';
 import GuidePage from './pages/GuidePage.jsx';
 import ChangelogPage from './pages/ChangelogPage.jsx';
 import FaqPage from './pages/FaqPage.jsx';
+import PrivacyPage from './pages/PrivacyPage.jsx';
+import TerminiPage from './pages/TerminiPage.jsx';
+import CookiePage from './pages/CookiePage.jsx';
+import ContattiPage from './pages/ContattiPage.jsx';
 import RefPage from './pages/RefPage.jsx';
 import StatusPage from './pages/StatusPage.jsx';
 import Layout from './components/Layout.jsx';
@@ -66,6 +71,7 @@ export default function App() {
     <HelmetProvider>
       <BrowserRouter>
         <ScrollToTop />
+        <CookieBanner />
         <Routes>
           <Route path="/" element={<LandingPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
           <Route path="/login"     element={<LoginPage />} />
@@ -73,6 +79,10 @@ export default function App() {
           <Route path="/changelog" element={<ChangelogPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
           <Route path="/status"    element={<StatusPage    user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
           <Route path="/faq"       element={<FaqPage       user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
+          <Route path="/privacy"   element={<PrivacyPage />} />
+          <Route path="/termini"   element={<TerminiPage />} />
+          <Route path="/cookie"    element={<CookiePage />} />
+          <Route path="/contatti"  element={<ContattiPage />} />
           <Route path="/ref/:code" element={<RefPage />} />
 
           {/* Rotte protette */}

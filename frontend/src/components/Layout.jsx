@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar.jsx';
 import OnboardingWizard from './OnboardingWizard.jsx';
 import { getToken } from '../utils/auth.js';
+import { useBotStatus } from '../contexts/BotStatusCtx.jsx';
 
 const PAGE_TITLES = {
   '/dashboard':    'Dashboard',
@@ -59,6 +60,8 @@ export default function Layout({ user, onLogout, children }) {
   const [hasActivePlan, setHasActivePlan] = useState(null); // null=caricamento, true/false=caricato
   const [onboarding, setOnboarding] = useState({ completed: true, step: 0 }); // default true evita flicker
 
+  const { botActive, setBotActive } = useBotStatus();
+
   // Chiudi drawer al cambio di rotta
   useEffect(() => {
     setSidebarOpen(false);
@@ -69,7 +72,11 @@ export default function Layout({ user, onLogout, children }) {
     const token = getToken();
     fetch('/api/config', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(data => setBotName(data?.bot_name || 'Il tuo bot'))
+      .then(data => {
+        if (data == null) return;
+        setBotName(data.bot_name || 'Il tuo bot');
+        setBotActive(data.bot_active === true ? true : data.bot_active === false ? false : null);
+      })
       .catch(() => {});
     fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
@@ -129,7 +136,13 @@ export default function Layout({ user, onLogout, children }) {
               className="hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border"
               style={{ backgroundColor: 'rgba(139,92,246,0.1)', borderColor: 'rgba(139,92,246,0.25)', color: '#8B5CF6' }}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0 transition-colors duration-300"
+                style={{
+                  backgroundColor: botActive === true ? '#4ade80' : botActive === false ? '#f87171' : '#6b7280',
+                }}
+                title={botActive === true ? 'Bot attivo' : botActive === false ? 'Bot inattivo' : 'Bot non configurato'}
+              />
               {botName}
             </div>
 

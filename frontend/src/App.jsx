@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { useEffect, useState } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import { ConfigDirtyProvider } from './contexts/ConfigDirtyCtx.jsx';
+import { BotStatusProvider } from './contexts/BotStatusCtx.jsx';
 import CookieBanner from './components/CookieBanner.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
@@ -71,6 +72,7 @@ export default function App() {
 
   return (
     <HelmetProvider>
+      <BotStatusProvider>
       <ConfigDirtyProvider>
       <BrowserRouter>
         <ScrollToTop />
@@ -100,6 +102,7 @@ export default function App() {
         </Routes>
       </BrowserRouter>
       </ConfigDirtyProvider>
+      </BotStatusProvider>
     </HelmetProvider>
   );
 }

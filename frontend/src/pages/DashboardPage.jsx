@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getToken } from '../utils/auth.js';
+import { useBotStatus } from '../contexts/BotStatusCtx.jsx';
 
 // ── Renderer markdown minimo per analisi mensile ──────────────────────────────
 function AnalysisBody({ text }) {
@@ -116,13 +117,20 @@ function TrialBanner() {
 function BotToggle({ user }) {
   const [active, setActive]     = useState(null); // null = caricamento
   const [loading, setLoading]   = useState(false);
+  const { setBotActive }        = useBotStatus();
 
   useEffect(() => {
     const token = getToken();
     if (!token) return;
     fetch('/api/config', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data != null) setActive(data.bot_active !== false); })
+      .then(data => {
+        if (data != null) {
+          const val = data.bot_active !== false;
+          setActive(val);
+          setBotActive(val);
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -137,7 +145,10 @@ function BotToggle({ user }) {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: newState }),
       });
-      if (r.ok) setActive(newState);
+      if (r.ok) {
+        setActive(newState);
+        setBotActive(newState); // aggiorna pallino navbar in tempo reale
+      }
     } catch {}
     setLoading(false);
   };

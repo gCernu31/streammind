@@ -564,7 +564,7 @@ function ReferralCard({ code, link, activeReferrals, creditsEarned }) {
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-hally-text">Invita streamer</h2>
+        <h2 className="text-sm font-semibold text-hally-text">Invita un amico</h2>
         <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
           style={{ background: 'rgba(139,92,246,0.1)', color: '#8B5CF6', border: '1px solid rgba(139,92,246,0.2)' }}>
           Referral
@@ -599,13 +599,13 @@ function ReferralCard({ code, link, activeReferrals, creditsEarned }) {
             </div>
             <div className="text-center p-3 rounded-lg" style={{ background: '#111', border: '1px solid #1a1a1a' }}>
               <p className="text-2xl font-extrabold" style={{ color: '#8B5CF6' }}>{creditsEarned}</p>
-              <p className="text-xs text-hally-text-muted mt-0.5">Mesi gratis</p>
+              <p className="text-xs text-hally-text-muted mt-0.5">Sconti ottenuti</p>
             </div>
           </div>
 
           <p className="text-xs text-hally-text-muted leading-relaxed" style={{ borderTop: '1px solid #1e1e1e', paddingTop: '12px' }}>
             Chi si abbona tramite il tuo link: riceve <strong className="text-hally-text">14 giorni</strong> di trial.
-            Tu guadagni <strong className="text-hally-text">1 mese gratis</strong> per ogni abbonato attivo.
+            Tu guadagni <strong className="text-hally-text">15% di sconto</strong> sul prossimo rinnovo per ogni abbonato attivo.
           </p>
         </>
       ) : (

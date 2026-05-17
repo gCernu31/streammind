@@ -338,7 +338,7 @@ export async function stripeWebhook(req, res) {
           }).catch(e => console.error('[Email] subscription-activated:', e.message));
         }
 
-        // Processa referral: attiva + premia referrer con coupon Stripe 1 mese gratis
+        // Processa referral: attiva + premia referrer con coupon Stripe 15% sconto prossimo rinnovo
         if (streamerId) {
           const { rows: refActivated } = await pool.query(
             `UPDATE referrals SET status = 'active', activated_at = NOW()
@@ -353,9 +353,9 @@ export async function stripeWebhook(req, res) {
             );
             if (referrerRows[0]?.stripe_subscription_id) {
               stripe.coupons.create({
-                percent_off: 100,
+                percent_off: 15,
                 duration:    'once',
-                name:        'Referral — 1 mese gratis',
+                name:        'Referral — 15% sconto prossimo rinnovo',
               }).then(coupon =>
                 stripe.subscriptions.update(referrerRows[0].stripe_subscription_id, { coupon: coupon.id })
               ).then(() =>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { getToken } from '../utils/auth.js';
 
@@ -210,39 +210,38 @@ function Pagination({ page, totalPages, onChange }) {
 
 // ─── Pagina principale ────────────────────────────────────────────────────────
 export default function MemoryPage() {
-  const [memories, setMemories] = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const [memories, setMemories]   = useState([]);
+  const [total, setTotal]         = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading]     = useState(true);
   const [filterCat, setFilterCat] = useState('');
   const [search, setSearch]       = useState('');
   const [page, setPage]           = useState(1);
   const [deleting, setDeleting]   = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  // Fetch server-side con paginazione, filtro e ricerca
   useEffect(() => {
-    const token = localStorage.getItem('streammindai_token');
-    axios.get('/api/memories', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => setMemories(r.data?.memories ?? r.data ?? []))
-      .catch(() => setMemories([]))
+    const token = getToken();
+    if (!token) { setLoading(false); return; }
+
+    setLoading(true);
+    const params = new URLSearchParams({ page, limit: PAGE_SIZE });
+    if (filterCat) params.set('category', filterCat);
+    if (search.trim()) params.set('search', search.trim());
+
+    axios.get(`/api/memories?${params}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => {
+        setMemories(r.data?.memories ?? []);
+        setTotal(r.data?.total ?? 0);
+        setTotalPages(r.data?.pages ?? 1);
+      })
+      .catch(() => { setMemories([]); setTotal(0); setTotalPages(1); })
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, filterCat, search]);
 
-  // Filtro + ricerca client-side
-  const filtered = useMemo(() => {
-    let list = memories;
-    if (filterCat) list = list.filter(m => m.category === filterCat);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(m =>
-        m.subject?.toLowerCase().includes(q) ||
-        m.content?.toLowerCase().includes(q) ||
-        m.game_context?.toLowerCase().includes(q)
-      );
-    }
-    return list;
-  }, [memories, filterCat, search]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const filtered   = memories;  // il filtraggio è ora server-side
+  const paginated  = memories;
 
   const handleFilterCat = (cat) => { setFilterCat(cat); setPage(1); };
   const handleSearch    = (v)   => { setSearch(v);      setPage(1); };
@@ -311,7 +310,7 @@ export default function MemoryPage() {
         </div>
 
         <span className="text-xs text-hally-text-muted hidden sm:block">
-          {filtered.length} {filtered.length === 1 ? 'memoria' : 'memorie'}
+          {total} {total === 1 ? 'memoria' : 'memorie'}
         </span>
 
         <div className="flex-1 hidden sm:block" />
@@ -354,12 +353,12 @@ export default function MemoryPage() {
       {/* ── Contenuto ── */}
       {loading ? (
         <div className="text-hally-text-muted text-sm py-10 text-center">Caricamento memorie…</div>
-      ) : filtered.length === 0 ? (
+      ) : memories.length === 0 ? (
         <div className="card text-center py-14">
           <p className="text-3xl mb-3">🧠</p>
           <p className="text-hally-text-muted text-sm">
-            {memories.length === 0
-              ? 'Nessuna memoria salvata ancora. StreaMindAI inizierà ad imparare dalla tua chat.'
+            {!filterCat && !search.trim()
+              ? 'Nessuna memoria salvata ancora — il bot inizierà ad imparare durante le tue live.'
               : 'Nessuna memoria corrisponde ai filtri selezionati.'}
           </p>
         </div>
@@ -422,7 +421,7 @@ export default function MemoryPage() {
           {/* Footer paginazione */}
           <div className="flex items-center justify-between mt-4">
             <p className="text-xs text-hally-text-muted">
-              Pagina {page} di {totalPages} — {filtered.length} {filtered.length === 1 ? 'memoria' : 'memorie'}
+              Pagina {page} di {totalPages} — {total} {total === 1 ? 'memoria' : 'memorie'}
             </p>
             <Pagination page={page} totalPages={totalPages} onChange={setPage} />
           </div>

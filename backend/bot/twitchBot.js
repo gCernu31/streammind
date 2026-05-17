@@ -59,7 +59,7 @@ async function loadActiveStreamers() {
       s.id                   AS streamer_id,
       s.twitch_username,
       s.subscription_plan,
-      s.monthly_message_count,
+      s.chat_messages_count,
       s.monthly_reset_date,
       bc.bot_name,
       bc.custom_commands
@@ -259,17 +259,17 @@ class TwitchBot {
                            resetDate.getFullYear() !== now.getFullYear();
     if (differentMonth) {
       await pool.query(
-        `UPDATE streamers SET monthly_message_count = 0, monthly_reset_date = CURRENT_DATE WHERE id = $1`,
+        `UPDATE streamers SET chat_messages_count = 0, event_messages_count = 0, monthly_message_count = 0, monthly_reset_date = CURRENT_DATE WHERE id = $1`,
         [streamer.streamer_id]
       );
-      streamer.monthly_message_count = 0;
+      streamer.chat_messages_count = 0;
     }
 
     const limits = getLimits(streamer.subscription_plan);
 
-    // Limite messaggi mensili
+    // Limite messaggi mensili (solo comandi !nomebot)
     if (limits.monthlyMessages !== -1 &&
-        streamer.monthly_message_count >= limits.monthlyMessages) {
+        (streamer.chat_messages_count ?? 0) >= limits.monthlyMessages) {
       return;
     }
 
@@ -318,7 +318,7 @@ class TwitchBot {
         [streamer.streamer_id, username, today]
       ),
       pool.query(
-        `UPDATE streamers SET monthly_message_count = monthly_message_count + 1 WHERE id = $1`,
+        `UPDATE streamers SET chat_messages_count = chat_messages_count + 1, monthly_message_count = monthly_message_count + 1 WHERE id = $1`,
         [streamer.streamer_id]
       ),
     ]);

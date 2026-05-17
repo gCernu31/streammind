@@ -430,7 +430,8 @@ async function loadActiveStreamers() {
       s.twitch_id,
       s.twitch_username,
       s.subscription_plan,
-      s.monthly_message_count,
+      s.chat_messages_count,
+      s.event_messages_count,
       s.monthly_reset_date,
       bc.spotify_client_id,
       bc.spotify_client_secret,
@@ -460,12 +461,13 @@ async function resetMonthlyIfNeeded(streamer) {
   const now       = new Date();
   const resetDate = streamer.monthly_reset_date ? new Date(streamer.monthly_reset_date) : now;
   const stale     = resetDate.getMonth() !== now.getMonth() || resetDate.getFullYear() !== now.getFullYear();
-  if (!stale) return streamer.monthly_message_count;
+  if (!stale) return streamer.chat_messages_count ?? 0;
   await pool.query(
-    'UPDATE streamers SET monthly_message_count=0, monthly_reset_date=CURRENT_DATE WHERE id=$1',
+    'UPDATE streamers SET chat_messages_count=0, event_messages_count=0, monthly_message_count=0, monthly_reset_date=CURRENT_DATE WHERE id=$1',
     [streamer.streamer_id]
   );
-  streamer.monthly_message_count = 0;
+  streamer.chat_messages_count  = 0;
+  streamer.event_messages_count = 0;
   return 0;
 }
 
@@ -820,7 +822,7 @@ class BotManager {
     await Promise.all([
       incrementUserDailyCount(streamer.streamer_id, username),
       pool.query(
-        'UPDATE streamers SET monthly_message_count = monthly_message_count + 1 WHERE id = $1',
+        'UPDATE streamers SET chat_messages_count = chat_messages_count + 1, monthly_message_count = monthly_message_count + 1 WHERE id = $1',
         [streamer.streamer_id]
       ),
     ]);
@@ -892,6 +894,10 @@ class BotManager {
       q.srCounts.set(username, (q.srCounts.get(username) ?? 0) + 1);
       try {
         await this.client.say(channel, `🎵 ${track.name} - ${track.artist} aggiunta! @${username} sei il numero ${pos} in lista`);
+        pool.query(
+          'UPDATE streamers SET event_messages_count = event_messages_count + 1 WHERE id = $1',
+          [streamer.streamer_id]
+        ).catch(() => {});
       } catch {}
     } else if (result === 'no_device') {
       try { await this.client.say(channel, '🎵 Spotify non attivo al momento. Riprova tra poco!'); } catch {}
@@ -922,7 +928,13 @@ class BotManager {
 
     const msg = await buildEventMessage(streamer, eventType, data);
     if (msg) {
-      try { await this.client.say(channel, msg); } catch {}
+      try {
+        await this.client.say(channel, msg);
+        pool.query(
+          'UPDATE streamers SET event_messages_count = event_messages_count + 1 WHERE id = $1',
+          [streamer.streamer_id]
+        ).catch(() => {});
+      } catch {}
     }
   }
 
@@ -1068,7 +1080,13 @@ class BotManager {
 
     const msg = await buildEventMessage(streamer, planEvent, data);
     if (msg && this.connected) {
-      try { await this.client.say(channel, msg); } catch (e) {
+      try {
+        await this.client.say(channel, msg);
+        pool.query(
+          'UPDATE streamers SET event_messages_count = event_messages_count + 1 WHERE id = $1',
+          [streamer.streamer_id]
+        ).catch(() => {});
+      } catch (e) {
         console.error(`[Bot] EventSub say() #${channel}:`, e.message);
       }
     }

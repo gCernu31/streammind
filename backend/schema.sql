@@ -152,6 +152,19 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='streamers' AND column_name='monthly_reset_date') THEN
     ALTER TABLE streamers ADD COLUMN monthly_reset_date DATE NOT NULL DEFAULT CURRENT_DATE;
   END IF;
+
+  -- chat_messages_count: solo comandi !nomebot (conta nel limite mensile del piano)
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='streamers' AND column_name='chat_messages_count') THEN
+    ALTER TABLE streamers ADD COLUMN chat_messages_count INTEGER NOT NULL DEFAULT 0;
+    -- Migra i dati esistenti da monthly_message_count
+    UPDATE streamers SET chat_messages_count = monthly_message_count WHERE monthly_message_count > 0;
+  END IF;
+
+  -- event_messages_count: eventi automatici (follow, sub, gift, bit, raid, hype train, shoutout, song request)
+  -- Non conta nel limite mensile — solo per statistiche
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='streamers' AND column_name='event_messages_count') THEN
+    ALTER TABLE streamers ADD COLUMN event_messages_count INTEGER NOT NULL DEFAULT 0;
+  END IF;
 END;
 $$;
 

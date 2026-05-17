@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { getToken } from '../utils/auth.js';
+import { useConfigDirty } from '../contexts/ConfigDirtyCtx.jsx';
 
 // ─── Giorni della settimana ───────────────────────────────────────────────────
 const DAYS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
@@ -252,6 +253,17 @@ export default function ConfigPage() {
   const [spotifyAuthLoading, setSpotifyAuthLoading] = useState(false);
   const [discordShowToken, setDiscordShowToken] = useState(false);
 
+  // Stato modifiche non salvate
+  const { setDirty } = useConfigDirty();
+  const [isDirty, setIsDirty]         = useState(false);
+  const [bannerFading, setBannerFading] = useState(false);
+
+  const markDirty = () => { setIsDirty(true); setDirty(true); setBannerFading(false); };
+  const clearDirty = () => {
+    setBannerFading(true);
+    setTimeout(() => { setIsDirty(false); setBannerFading(false); setDirty(false); }, 380);
+  };
+
   useEffect(() => {
     const sp = searchParams.get('spotify');
     if (sp) {
@@ -295,10 +307,10 @@ export default function ConfigPage() {
       .catch(() => setPlan('starter'));
   }, []);
 
-  const set       = (k, v)      => setConfig(p => ({ ...p, [k]: v }));
-  const setNested = (k, sub, v) => setConfig(p => ({ ...p, [k]: { ...p[k], [sub]: v } }));
+  const set       = (k, v)      => { setConfig(p => ({ ...p, [k]: v })); markDirty(); };
+  const setNested = (k, sub, v) => { setConfig(p => ({ ...p, [k]: { ...p[k], [sub]: v } })); markDirty(); };
 
-  // Membri
+  // Membri — markDirty già chiamato da set()
   const addMember    = ()         => set('members', [...config.members, newMember()]);
   const removeMember = id         => set('members', config.members.filter(c => c.id !== id));
   const updateMember = (id, f, v) => set('members', config.members.map(c => c.id === id ? { ...c, [f]: v } : c));
@@ -335,6 +347,7 @@ export default function ConfigPage() {
       setSaveState('saved');
       setRestoreNotice(null);
       fetchHistory();
+      clearDirty();
       setTimeout(() => setSaveState('idle'), 3000);
     } catch {
       setSaveState('error');
@@ -383,6 +396,7 @@ export default function ConfigPage() {
     }));
     setBanErrors({});
     setRestoreNotice(`Versione del ${ts} caricata — clicca "Salva configurazione" per confermare.`);
+    markDirty();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -392,8 +406,67 @@ export default function ConfigPage() {
 
   return (
     <div>
+
+      {/* ── Banner modifiche non salvate ── */}
+      {(isDirty || bannerFading) && (
+        <div
+          style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            padding: '10px 16px',
+            marginLeft: '-12px',
+            marginRight: '-12px',
+            marginTop: '-16px',
+            marginBottom: '20px',
+            backgroundColor: 'rgba(13,13,13,0.97)',
+            backdropFilter: 'blur(12px)',
+            borderBottom: '1px solid rgba(139,92,246,0.35)',
+            opacity: bannerFading ? 0 : 1,
+            transition: 'opacity 0.38s ease',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#f59e0b', flexShrink: 0 }} />
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#f0f0f0' }}>Hai modifiche non salvate</span>
+          </div>
+          <button
+            onClick={handleSave}
+            disabled={saveState === 'saving'}
+            style={{
+              fontSize: '13px',
+              fontWeight: 700,
+              padding: '7px 18px',
+              borderRadius: '8px',
+              border: 'none',
+              backgroundColor: saveState === 'saving' ? 'rgba(139,92,246,0.4)' : '#8B5CF6',
+              color: '#fff',
+              cursor: saveState === 'saving' ? 'default' : 'pointer',
+              flexShrink: 0,
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => { if (saveState !== 'saving') e.currentTarget.style.backgroundColor = '#7C3AED'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = saveState === 'saving' ? 'rgba(139,92,246,0.4)' : '#8B5CF6'; }}
+          >
+            {saveState === 'saving' ? 'Salvataggio…' : 'Salva modifiche'}
+          </button>
+        </div>
+      )}
+
       <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-1">Il Mio Bot</h1>
+        <h1 className="text-2xl font-bold mb-1 flex items-center gap-2">
+          Il Mio Bot
+          {isDirty && (
+            <span
+              style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#f59e0b', flexShrink: 0, marginTop: '2px' }}
+              title="Modifiche non salvate"
+            />
+          )}
+        </h1>
         <p className="text-hally-text-muted text-sm">Personalizza come StreaMindAI si comporta nel tuo canale.</p>
       </div>
 

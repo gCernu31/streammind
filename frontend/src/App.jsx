@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
+import { ConfigDirtyProvider } from './contexts/ConfigDirtyCtx.jsx';
 import CookieBanner from './components/CookieBanner.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
@@ -70,6 +71,7 @@ export default function App() {
 
   return (
     <HelmetProvider>
+      <ConfigDirtyProvider>
       <BrowserRouter>
         <ScrollToTop />
         <CookieBanner />
@@ -97,6 +99,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      </ConfigDirtyProvider>
     </HelmetProvider>
   );
 }

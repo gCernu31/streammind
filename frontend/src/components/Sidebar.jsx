@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useConfigDirty } from '../contexts/ConfigDirtyCtx.jsx';
 
 // ---------------------------------------------------------------------------
 // Icone SVG inline
@@ -87,6 +88,7 @@ const navItems = [
 // ---------------------------------------------------------------------------
 
 export default function Sidebar({ user, onLogout, open, onClose }) {
+  const { dirty } = useConfigDirty();
   return (
     <>
       {/* Overlay mobile (scuro dietro il drawer) */}
@@ -150,7 +152,14 @@ export default function Sidebar({ user, onLogout, open, onClose }) {
                   <span style={{ color: isActive ? '#8B5CF6' : undefined }}>
                     <Icon />
                   </span>
-                  {label}
+                  <span className="flex-1">{label}</span>
+                  {to === '/config' && dirty && (
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: '#f59e0b' }}
+                      title="Modifiche non salvate"
+                    />
+                  )}
                 </>
               )}
             </NavLink>

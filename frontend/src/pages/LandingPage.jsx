@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import AccountMenu from '../components/AccountMenu.jsx';
 
 // ---------------------------------------------------------------------------
@@ -277,6 +278,7 @@ function Header({ user, loading, onLogout }) {
           <a href="#features" className="hover:text-white transition-colors">Funzionalità</a>
           <a href="#how"      className="hover:text-white transition-colors">Come funziona</a>
           <a href="#pricing"  className="hover:text-white transition-colors">Prezzi</a>
+          <Link to="/faq"     className="hover:text-white transition-colors">FAQ</Link>
           <Link to="/analisi" className="hover:text-white transition-colors" style={{ color: PURPLE }}>Analisi Gratis</Link>
         </nav>
 
@@ -291,9 +293,54 @@ function Header({ user, loading, onLogout }) {
 // Landing Page
 // ---------------------------------------------------------------------------
 
+const STRUCTURED_DATA_APP = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'StreaMindAI',
+  description: 'Bot AI personalizzato per chat Twitch. Risponde in chat, ringrazia follower, gestisce song request e impara dalla community.',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  url: 'https://streamindai.com',
+  offers: [
+    { '@type': 'Offer', name: 'Starter', price: '9.00', priceCurrency: 'EUR', description: 'Bot AI base, 4.000 messaggi/mese, trial 7 giorni' },
+    { '@type': 'Offer', name: 'Creator', price: '19.00', priceCurrency: 'EUR', description: 'Song request Spotify, Discord, 12.000 messaggi/mese, trial 7 giorni' },
+    { '@type': 'Offer', name: 'Elite',   price: '35.00', priceCurrency: 'EUR', description: 'Analytics, memoria avanzata, 24.000 messaggi/mese, trial 7 giorni' },
+    { '@type': 'Offer', name: 'Signature', price: '85.00', priceCurrency: 'EUR', description: 'Onboarding 1:1, setup personalizzato, 60.000 messaggi/mese' },
+  ],
+};
+
+const STRUCTURED_DATA_ORG = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'StreaMindAI',
+  url: 'https://streamindai.com',
+  contactPoint: { '@type': 'ContactPoint', contactType: 'customer support', email: 'support@streamindai.com' },
+};
+
 export default function LandingPage({ user, loading, onLogout }) {
   return (
     <div className="min-h-screen font-sans" style={{ backgroundColor: '#0d0d0d', color: '#f0f0f0' }}>
+
+      <Helmet>
+        <title>StreaMindAI — Il Bot AI per la tua Chat Twitch | Prova Gratis</title>
+        <meta name="description" content="Crea il tuo bot AI personalizzato per Twitch in pochi minuti. StreaMindAI impara dalla tua community, risponde in chat e cresce con te. Prova gratis 7 giorni." />
+        <meta name="keywords" content="bot AI Twitch, intelligenza artificiale chat Twitch, chatbot AI personalizzato Twitch, AI per streamer, tool AI streaming, bot AI italiano Twitch, integrare AI chat Twitch" />
+        <link rel="canonical" href="https://streamindai.com/" />
+        <link rel="preconnect" href="https://id.twitch.tv" />
+        <link rel="preconnect" href="https://api.twitch.tv" />
+        <meta property="og:type"        content="website" />
+        <meta property="og:url"         content="https://streamindai.com/" />
+        <meta property="og:title"       content="StreaMindAI — Il Bot AI per la tua Chat Twitch | Prova Gratis" />
+        <meta property="og:description" content="Crea il tuo bot AI personalizzato per Twitch in pochi minuti. StreaMindAI impara dalla tua community, risponde in chat e cresce con te. Prova gratis 7 giorni." />
+        <meta property="og:locale"      content="it_IT" />
+        <meta property="og:site_name"   content="StreaMindAI" />
+        <meta name="twitter:card"        content="summary_large_image" />
+        <meta name="twitter:title"       content="StreaMindAI — Il Bot AI per la tua Chat Twitch" />
+        <meta name="twitter:description" content="Crea il tuo bot AI personalizzato per Twitch in pochi minuti. Prova gratis 7 giorni." />
+        <script type="application/ld+json">{JSON.stringify(STRUCTURED_DATA_APP)}</script>
+        <script type="application/ld+json">{JSON.stringify(STRUCTURED_DATA_ORG)}</script>
+      </Helmet>
+
       <Header user={user} loading={loading} onLogout={onLogout} />
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
@@ -325,12 +372,12 @@ export default function LandingPage({ user, loading, onLogout }) {
               </div>
 
               <h1 className="text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight mb-6">
-                Dai una mente<br />
-                <span style={{ color: PURPLE }}>alla tua stream</span>
+                Il bot AI per Twitch<br />
+                <span style={{ color: PURPLE }}>che impara da te</span>
               </h1>
 
               <p className="text-lg lg:text-xl mb-10 max-w-xl mx-auto lg:mx-0" style={{ color: '#a0a0a0' }}>
-                StreaMindAI risponde in chat, ringrazia i tuoi follower, gestisce le song request e impara dalla tua community — tutto in automatico, tutto personalizzabile.
+                StreaMindAI è il chatbot AI personalizzato per la tua chat Twitch: risponde agli spettatori, ringrazia i follower, gestisce le song request e cresce con la tua community — tutto in automatico, tutto configurabile.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center lg:items-start gap-4 justify-center lg:justify-start">
@@ -600,10 +647,10 @@ export default function LandingPage({ user, loading, onLogout }) {
             <BrainWaveLogo className="w-14 h-14" />
           </div>
           <h2 className="text-4xl font-extrabold mb-4">
-            Dai una mente alla tua stream, oggi
+            Integra l'AI nella tua chat Twitch, oggi
           </h2>
           <p className="text-lg mb-10" style={{ color: '#a0a0a0' }}>
-            Unisciti agli streamer italiani che stanno già usando StreaMindAI per coinvolgere la loro community ogni sera.
+            Unisciti agli streamer italiani che usano già il bot AI StreaMindAI per coinvolgere la community ogni sera con intelligenza artificiale.
           </p>
           <Link
             to="/login"
@@ -650,11 +697,10 @@ export default function LandingPage({ user, loading, onLogout }) {
                 </ul>
               </div>
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#6b6b6b' }}>Legale</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#6b6b6b' }}>Risorse</h4>
                 <ul className="space-y-3 text-sm" style={{ color: '#a0a0a0' }}>
-                  <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                  <li><a href="#" className="hover:text-white transition-colors">Termini di Servizio</a></li>
-                  <li><a href="#" className="hover:text-white transition-colors">Contatti</a></li>
+                  <li><Link to="/faq"       className="hover:text-white transition-colors">FAQ</Link></li>
+                  <li><a href="mailto:support@streamindai.com" className="hover:text-white transition-colors">Contatti</a></li>
                 </ul>
               </div>
             </div>
@@ -662,7 +708,7 @@ export default function LandingPage({ user, loading, onLogout }) {
 
           <div className="pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4" style={{ borderColor: '#1e1e1e' }}>
             <p className="text-xs" style={{ color: '#6b6b6b' }}>
-              © 2025 StreaMindAI — Fatto con ❤️ per gli streamer italiani
+              © 2026 StreaMindAI — Il bot AI per Twitch, fatto per gli streamer italiani
             </p>
             <p className="text-xs" style={{ color: '#6b6b6b' }}>
               Non affiliato con Twitch Interactive, Inc.

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import axios from 'axios';
 import AccountMenu from '../components/AccountMenu.jsx';
 
@@ -441,6 +442,15 @@ export default function AnalisiPage({ user, loading: authLoading, onLogout }) {
 
   return (
     <div className="min-h-screen font-sans" style={{ backgroundColor: '#0d0d0d', color: '#f0f0f0' }}>
+
+      <Helmet>
+        <title>Analisi Gratuita del tuo Canale Twitch | StreaMindAI</title>
+        <meta name="description" content="Scopri i punti di forza del tuo canale Twitch con un'analisi AI gratuita. Piano editoriale personalizzato, proiezione crescita e consigli pratici per streamer italiani." />
+        <link rel="canonical" href="https://streamindai.com/analisi" />
+        <meta property="og:title" content="Analisi Gratuita del tuo Canale Twitch | StreaMindAI" />
+        <meta property="og:description" content="Analisi AI gratuita per il tuo canale Twitch. Piano editoriale personalizzato, crescita follower e consigli strategici in pochi secondi." />
+        <meta property="og:url" content="https://streamindai.com/analisi" />
+      </Helmet>
 
       {/* ── Header ── */}
       <header className="sticky top-0 z-40 border-b" style={{ backgroundColor: 'rgba(13,13,13,0.95)', backdropFilter: 'blur(12px)', borderColor: '#1e1e1e' }}>

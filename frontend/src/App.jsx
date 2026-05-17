@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { HelmetProvider } from 'react-helmet-async';
 import LandingPage from './pages/LandingPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
@@ -9,12 +10,12 @@ import SubscriptionPage from './pages/SubscriptionPage.jsx';
 import AnalisiPage from './pages/AnalisiPage.jsx';
 import GuidePage from './pages/GuidePage.jsx';
 import ChangelogPage from './pages/ChangelogPage.jsx';
+import FaqPage from './pages/FaqPage.jsx';
 import RefPage from './pages/RefPage.jsx';
 import StatusPage from './pages/StatusPage.jsx';
 import Layout from './components/Layout.jsx';
 import { getToken, setToken, clearToken } from './utils/auth.js';
 
-// Disabilita la scroll restoration del browser e torna sempre in cima ad ogni rotta
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -29,40 +30,26 @@ function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Legge token da URL dopo callback OAuth oppure da cookie
     const params = new URLSearchParams(window.location.search);
     const tokenFromUrl = params.get('token');
     if (tokenFromUrl) {
       setToken(tokenFromUrl);
-      localStorage.removeItem('streammindai_ref'); // ref usato, pulizia
+      localStorage.removeItem('streammindai_ref');
       window.history.replaceState({}, '', window.location.pathname);
     }
 
     const token = getToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    if (!token) { setLoading(false); return; }
 
     try {
-      // Decodifica JWT lato client (solo per UI, la validazione è nel backend)
       const payload = JSON.parse(atob(token.split('.')[1]));
-      if (payload.exp * 1000 < Date.now()) {
-        clearToken();
-      } else {
-        setUser(payload);
-      }
-    } catch {
-      clearToken();
-    }
+      if (payload.exp * 1000 < Date.now()) clearToken();
+      else setUser(payload);
+    } catch { clearToken(); }
     setLoading(false);
   }, []);
 
-  const logout = () => {
-    clearToken();
-    setUser(null);
-  };
-
+  const logout = () => { clearToken(); setUser(null); };
   return { user, loading, logout };
 }
 
@@ -76,71 +63,28 @@ export default function App() {
   const auth = useAuth();
 
   return (
-    <BrowserRouter>
-      <ScrollToTop />
-      <Routes>
-        <Route path="/" element={<LandingPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/analisi"   element={<AnalisiPage   user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
-        <Route path="/changelog" element={<ChangelogPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
-        <Route path="/status"    element={<StatusPage   user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
-        <Route path="/ref/:code" element={<RefPage />} />
+    <HelmetProvider>
+      <BrowserRouter>
+        <ScrollToTop />
+        <Routes>
+          <Route path="/" element={<LandingPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
+          <Route path="/login"     element={<LoginPage />} />
+          <Route path="/analisi"   element={<AnalisiPage   user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
+          <Route path="/changelog" element={<ChangelogPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
+          <Route path="/status"    element={<StatusPage    user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
+          <Route path="/faq"       element={<FaqPage       user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
+          <Route path="/ref/:code" element={<RefPage />} />
 
-        {/* Rotte protette con Layout (sidebar + navbar) */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute user={auth.user} loading={auth.loading}>
-              <Layout user={auth.user} onLogout={auth.logout}>
-                <DashboardPage user={auth.user} />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/config"
-          element={
-            <ProtectedRoute user={auth.user} loading={auth.loading}>
-              <Layout user={auth.user} onLogout={auth.logout}>
-                <ConfigPage />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/memory"
-          element={
-            <ProtectedRoute user={auth.user} loading={auth.loading}>
-              <Layout user={auth.user} onLogout={auth.logout}>
-                <MemoryPage />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/subscription"
-          element={
-            <ProtectedRoute user={auth.user} loading={auth.loading}>
-              <Layout user={auth.user} onLogout={auth.logout}>
-                <SubscriptionPage />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
+          {/* Rotte protette */}
+          <Route path="/dashboard"   element={<ProtectedRoute user={auth.user} loading={auth.loading}><Layout user={auth.user} onLogout={auth.logout}><DashboardPage user={auth.user} /></Layout></ProtectedRoute>} />
+          <Route path="/config"      element={<ProtectedRoute user={auth.user} loading={auth.loading}><Layout user={auth.user} onLogout={auth.logout}><ConfigPage /></Layout></ProtectedRoute>} />
+          <Route path="/memory"      element={<ProtectedRoute user={auth.user} loading={auth.loading}><Layout user={auth.user} onLogout={auth.logout}><MemoryPage /></Layout></ProtectedRoute>} />
+          <Route path="/subscription"element={<ProtectedRoute user={auth.user} loading={auth.loading}><Layout user={auth.user} onLogout={auth.logout}><SubscriptionPage /></Layout></ProtectedRoute>} />
+          <Route path="/guide"       element={<ProtectedRoute user={auth.user} loading={auth.loading}><Layout user={auth.user} onLogout={auth.logout}><GuidePage /></Layout></ProtectedRoute>} />
 
-        <Route
-          path="/guide"
-          element={
-            <ProtectedRoute user={auth.user} loading={auth.loading}>
-              <Layout user={auth.user} onLogout={auth.logout}>
-                <GuidePage />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </HelmetProvider>
   );
 }

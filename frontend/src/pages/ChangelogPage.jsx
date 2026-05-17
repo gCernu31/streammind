@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import AccountMenu from '../components/AccountMenu.jsx';
 
 const PURPLE = '#8B5CF6';
@@ -74,6 +75,14 @@ const months = [
 export default function ChangelogPage({ user, loading, onLogout }) {
   return (
     <div style={{ background: '#0a0a0a', minHeight: '100vh', color: '#f0f0f0' }}>
+
+      <Helmet>
+        <title>Changelog — Novità e Aggiornamenti | StreaMindAI</title>
+        <meta name="description" content="Tutte le novità, funzionalità e aggiornamenti di StreaMindAI — il bot AI personalizzato per streamer Twitch italiani." />
+        <link rel="canonical" href="https://streamindai.com/changelog" />
+        <meta property="og:title" content="Changelog — Novità e Aggiornamenti | StreaMindAI" />
+        <meta property="og:url" content="https://streamindai.com/changelog" />
+      </Helmet>
 
       {/* ── Navbar ── */}
       <header style={{ borderBottom: '1px solid #1e1e1e', background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)' }}

@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Sitemap: https://streamindai.com/sitemap.xml
+
+Disallow: /dashboard
+Disallow: /config
+Disallow: /memory
+Disallow: /subscription
+Disallow: /guide
+Disallow: /api/

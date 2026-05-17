@@ -720,6 +720,13 @@ class BotManager {
     const streamer    = this.channelMap[channelName];
     if (!streamer) return;
 
+    // Ignora messaggi da canali ospitati in stream condivise (squad stream):
+    // source-room-id è presente e diverso da room-id solo quando il messaggio
+    // proviene da un altro canale condiviso nella stessa sessione.
+    const sourceRoomId  = tags['source-room-id'];
+    const channelRoomId = tags['room-id'];
+    if (sourceRoomId && channelRoomId && sourceRoomId !== channelRoomId) return;
+
     const msg      = message.trim();
     const username = (tags.username || tags['display-name'] || 'utente').toLowerCase();
     const isSub    = isSubVip(tags);

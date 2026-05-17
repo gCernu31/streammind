@@ -110,6 +110,97 @@ function TrialBanner() {
 }
 
 // ---------------------------------------------------------------------------
+// Bottone Attiva/Disattiva Bot
+// ---------------------------------------------------------------------------
+
+function BotToggle({ user }) {
+  const [active, setActive]     = useState(null); // null = caricamento
+  const [loading, setLoading]   = useState(false);
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+    fetch('/api/config', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data != null) setActive(data.bot_active !== false); })
+      .catch(() => {});
+  }, []);
+
+  const toggle = async () => {
+    if (loading || active === null) return;
+    const newState = !active;
+    setLoading(true);
+    try {
+      const token = getToken();
+      const r = await fetch('/api/config/bot-active', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: newState }),
+      });
+      if (r.ok) setActive(newState);
+    } catch {}
+    setLoading(false);
+  };
+
+  if (active === null) return null;
+
+  return (
+    <button
+      onClick={toggle}
+      disabled={loading}
+      className="w-full flex items-center justify-between gap-4 rounded-2xl px-6 py-5 transition-all duration-200"
+      style={{
+        backgroundColor: active ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
+        border: `1px solid ${active ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+        cursor: loading ? 'default' : 'pointer',
+        opacity: loading ? 0.75 : 1,
+      }}
+      onMouseEnter={e => {
+        if (!loading) e.currentTarget.style.backgroundColor = active ? 'rgba(34,197,94,0.14)' : 'rgba(239,68,68,0.14)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.backgroundColor = active ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)';
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: active ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)' }}
+        >
+          {loading ? (
+            <div className="w-5 h-5 rounded-full border-2 animate-spin"
+              style={{ borderColor: active ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)', borderTopColor: active ? '#4ade80' : '#f87171' }} />
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+              className="w-5 h-5" style={{ color: active ? '#4ade80' : '#f87171' }}>
+              <path d="M18.36 6.64A9 9 0 1 1 5.64 6.64" />
+              <line x1="12" y1="2" x2="12" y2="12" />
+            </svg>
+          )}
+        </div>
+        <div className="text-left">
+          <p className="font-bold text-hally-text text-sm">
+            {active ? 'Bot Attivo' : 'Bot Inattivo'}
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: active ? '#4ade80' : '#f87171' }}>
+            {active ? 'Clicca per disattivare' : 'Clicca per attivare'}
+          </p>
+        </div>
+      </div>
+      <div
+        className="flex-shrink-0 w-12 h-6 rounded-full relative transition-colors duration-200"
+        style={{ backgroundColor: active ? '#22c55e' : '#ef4444' }}
+      >
+        <div
+          className="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-200"
+          style={{ left: active ? '26px' : '4px' }}
+        />
+      </div>
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Card: Bot Status
 // ---------------------------------------------------------------------------
 
@@ -792,6 +883,9 @@ export default function DashboardPage({ user }) {
 
       {/* ── Banner trial ───────────────────────────────────────────── */}
       {subStatus === 'inactive' && <TrialBanner />}
+
+      {/* ── Toggle attiva/disattiva bot ────────────────────────────── */}
+      {subStatus !== 'inactive' && <BotToggle user={user} />}
 
       {/* ── Stat cards ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

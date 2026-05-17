@@ -2,6 +2,7 @@ import { Router } from 'express';
 import pool from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { invalidateBotPromptCache } from '../services/promptBuilder.js';
+import { botManager } from '../bot/botManager.js';
 
 export const configRoutes = Router();
 
@@ -22,7 +23,7 @@ configRoutes.get('/', requireAuth, async (req, res) => {
               ai_provider, event_messages,
               spotify_client_id, spotify_client_secret,
               spotify_access_token,
-              discord_bot_token
+              discord_bot_token, bot_active
        FROM bot_configs WHERE streamer_id = $1`,
       [req.user.streamer_id]
     );
@@ -43,10 +44,39 @@ configRoutes.get('/', requireAuth, async (req, res) => {
       spotify_client_secret: cfg.spotify_client_secret ?? '',
       spotify_connected:     !!cfg.spotify_access_token,
       discord_bot_token:     cfg.discord_bot_token      ?? '',
+      bot_active:            cfg.bot_active              ?? true,
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Errore nel recupero della configurazione' });
+  }
+});
+
+// ── PATCH /api/config/bot-active — attiva/disattiva bot ──────────────────────
+configRoutes.patch('/bot-active', requireAuth, async (req, res) => {
+  const { active } = req.body;
+  if (typeof active !== 'boolean') {
+    return res.status(400).json({ error: 'Il campo "active" deve essere un booleano.' });
+  }
+  try {
+    await pool.query(
+      'UPDATE bot_configs SET bot_active = $1 WHERE streamer_id = $2',
+      [active, req.user.streamer_id]
+    );
+
+    const twitchUsername = req.user.twitch_username;
+    if (twitchUsername) {
+      if (active) {
+        await botManager.enableBot(twitchUsername);
+      } else {
+        await botManager.disableBot(twitchUsername);
+      }
+    }
+
+    res.json({ success: true, bot_active: active });
+  } catch (err) {
+    console.error('[Config] PATCH /bot-active:', err.message);
+    res.status(500).json({ error: 'Errore nel salvataggio.' });
   }
 });
 

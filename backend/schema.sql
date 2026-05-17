@@ -126,6 +126,11 @@ BEGIN
     ALTER TABLE bot_configs ADD COLUMN discord_video_channel VARCHAR(100);
   END IF;
 
+  -- bot_active: abilita/disabilita il bot manualmente
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='bot_active') THEN
+    ALTER TABLE bot_configs ADD COLUMN bot_active BOOLEAN NOT NULL DEFAULT TRUE;
+  END IF;
+
   -- bot_configs: limiti per utente configurabili dallo streamer (null = usa default del piano)
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='bot_configs' AND column_name='user_msg_nonsub') THEN
     ALTER TABLE bot_configs ADD COLUMN user_msg_nonsub INTEGER;

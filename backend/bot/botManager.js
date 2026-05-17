@@ -451,6 +451,7 @@ async function loadActiveStreamers() {
     WHERE s.subscription_status IN ('active', 'trialing', 'cancelling')
       AND s.twitch_username IS NOT NULL
       AND s.twitch_username <> ''
+      AND (bc.bot_active IS NULL OR bc.bot_active = TRUE)
   `);
   return rows;
 }
@@ -673,6 +674,42 @@ class BotManager {
       }
     } catch (e) {
       console.error(`[Bot] joinChannel #${ch}:`, e.message);
+    }
+  }
+
+  // Disattiva bot per un canale (chiamato dal toggle dashboard)
+  async disableBot(twitchUsername) {
+    const ch = twitchUsername.toLowerCase();
+    if (!this.channelMap[ch]) return;
+    try {
+      if (this.connected && this.client) await this.client.part(ch);
+    } catch (e) {
+      console.warn(`[Bot] disableBot part #${ch}:`, e.message);
+    }
+    delete this.channelMap[ch];
+    console.log(`[Bot] Bot disattivato per #${ch}`);
+  }
+
+  // Riattiva bot per un canale (chiamato dal toggle dashboard)
+  async enableBot(twitchUsername) {
+    if (!this.connected || !this.client) return;
+    const ch = twitchUsername.toLowerCase();
+    if (this.channelMap[ch]) return; // già attivo
+    try {
+      const streamers = await loadActiveStreamers();
+      const s = streamers.find(x => x.twitch_username.toLowerCase() === ch);
+      if (!s) return;
+      await this.client.join(ch);
+      this.channelMap[ch] = s;
+      if (!songQueues.has(s.streamer_id)) {
+        songQueues.set(s.streamer_id, { enabled: true, songs: [], srCounts: new Map() });
+      }
+      console.log(`[Bot] Bot riattivato per #${ch}`);
+      if (s.twitch_id && process.env.TWITCH_CLIENT_ID && process.env.APP_URL) {
+        registerEventSub(s.twitch_id, s).catch(() => {});
+      }
+    } catch (e) {
+      console.error(`[Bot] enableBot #${ch}:`, e.message);
     }
   }
 

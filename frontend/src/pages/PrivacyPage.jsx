@@ -53,7 +53,7 @@ StreaMindAI ("noi", "nostro", "la piattaforma") è un servizio SaaS che permette
 Non vendiamo i tuoi dati. Li condividiamo solo con:
 - **Stripe:** per la gestione dei pagamenti (sede USA, con garanzie adeguate)
 - **Twitch:** tramite API per il funzionamento del bot
-- **Google (Gemini):** per la generazione delle risposte AI (dati anonimizzati)
+- **Tecnologia AI proprietaria StreaMindAI:** per la generazione delle risposte (dati anonimizzati)
 - **Resend:** per l'invio di email transazionali
 - **Railway:** per l'hosting dell'infrastruttura (sede USA, clausole SCCs)
 

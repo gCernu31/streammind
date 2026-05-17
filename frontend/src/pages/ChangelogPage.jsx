@@ -51,7 +51,7 @@ const months = [
       { emoji: '🗄️', text: 'Database PostgreSQL con memoria' },
       { emoji: '🔐', text: 'Autenticazione Twitch OAuth 2.0' },
       { emoji: '💳', text: 'Integrazione Stripe pagamenti ricorrenti' },
-      { emoji: '🤖', text: 'Integrazione Gemini 2.5 Flash' },
+      { emoji: '🤖', text: 'Motore AI proprietario StreaMindAI' },
       { emoji: '📋', text: 'Pannello configurazione bot' },
       { emoji: '🎃', text: 'Prima versione Hally — bot demo di gCernu' },
     ],

@@ -57,7 +57,7 @@ async function callGemini(prompt) {
 function buildPrompt(data) {
   const {
     twitch_username,
-    total_followers, avg_viewers, main_games, years_active,
+    total_followers, avg_viewers, main_games,
     current_subs,
     hours_per_week, hours_per_month,   // hours_per_month = legacy
     main_goal, has_socials, social_links, stream_schedule,
@@ -70,10 +70,6 @@ function buildPrompt(data) {
     ? `${hours_per_month} ore al mese`
     : 'non specificato';
 
-  const yearsStr = years_active != null
-    ? `${years_active} ${Number(years_active) === 1 ? 'anno' : 'anni'}`
-    : 'non specificato';
-
   const socialsStr = has_socials === true || has_socials === 'true'
     ? `Sì${social_links ? ` — ${social_links}` : ''}`
     : has_socials === false || has_socials === 'false'
@@ -84,7 +80,6 @@ function buildPrompt(data) {
 
 ## DATI STREAMER
 - Username Twitch: ${twitch_username || 'non specificato'}
-- Anni di attività su Twitch: ${yearsStr}
 - Follower totali: ${total_followers || 0}
 - Spettatori medi per live: ${avg_viewers || 'non specificato'}
 - Sub attuali: ${current_subs || 0}

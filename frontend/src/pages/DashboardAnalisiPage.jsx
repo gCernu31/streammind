@@ -11,7 +11,6 @@ const EMPTY_FORM = {
   total_followers:  '',
   avg_viewers:      '',
   main_games:       '',
-  years_active:     '',
   current_subs:     '',
   hours_per_week:   '',
   main_goal:        '',
@@ -135,7 +134,6 @@ export default function DashboardAnalisiPage({ user }) {
             const fetched  = {};
             if (tw?.total_followers != null) { prefills.total_followers = String(tw.total_followers); fetched.total_followers = true; }
             if (tw?.main_games)              { prefills.main_games      = tw.main_games;              fetched.main_games      = true; }
-            if (tw?.years_active != null)    { prefills.years_active    = String(tw.years_active);    fetched.years_active    = true; }
             if (tw?.avg_viewers  != null)    { prefills.avg_viewers     = String(tw.avg_viewers);     fetched.avg_viewers     = true; }
             setForm(prev => ({ ...prev, ...prefills }));
             setFetchedFields(fetched);
@@ -192,10 +190,6 @@ export default function DashboardAnalisiPage({ user }) {
 
         <Field label="Giochi principali (ultimi 5)" badge={fetchedFields.main_games}>
           <TextInput value={form.main_games} onChange={e => set('main_games', e.target.value)} placeholder="Es. Valorant, Minecraft, GTA V" />
-        </Field>
-
-        <Field label="Anni di attività su Twitch" badge={fetchedFields.years_active}>
-          <TextInput type="number" value={form.years_active} onChange={e => set('years_active', e.target.value)} placeholder="Es. 3" />
         </Field>
       </div>
 

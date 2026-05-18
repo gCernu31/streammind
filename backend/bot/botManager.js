@@ -349,6 +349,8 @@ function bufferChatMessage(streamerId, username, message) {
   return buf.length;
 }
 
+const MEMORY_ROW_LIMIT = 500;
+
 async function maybeAnalyzeMemory(streamerId, streamer) {
   const buf = memoryBuffers.get(streamerId) ?? [];
   if (buf.length < MEMORY_BATCH_SIZE) return;
@@ -358,9 +360,24 @@ async function maybeAnalyzeMemory(streamerId, streamer) {
   if (!limits.memory) return;
 
   const system = `Sei un sistema di memoria per un bot Twitch.
-Analizza questi ${MEMORY_BATCH_SIZE} messaggi di chat e identifica 0-3 informazioni memorabili (inside joke, promesse, eventi, info su utenti, gioco in corso).
-Rispondi SOLO con JSON array: [{"category":"utente|inside_joke|evento|promessa|gioco","subject":"breve","content":"descrizione","game_context":null}]
-Se non ci sono informazioni rilevanti rispondi con [].`;
+Analizza questi ${MEMORY_BATCH_SIZE} messaggi di chat e identifica 0-3 informazioni memorabili.
+
+Salva SOLO informazioni che soddisfano questi criteri:
+- Informazioni specifiche e uniche su un utente o evento (es. "Dexter ha vinto il torneo di Rocket League")
+- Inside joke o riferimenti ricorrenti della community
+- Promesse o impegni presi dallo streamer
+- Eventi significativi della live (vittorie, sconfitte epiche, momenti virali)
+- Caratteristiche distintive degli utenti abituali
+
+NON salvare:
+- Conversazioni generiche o di saluto
+- Commenti sul gioco non rilevanti
+- Messaggi di spam o bot
+- Informazioni già ovvie o generiche
+- Fatti banali senza valore per la community
+
+Rispondi SOLO con JSON array: [{"category":"utente|inside_joke|evento|promessa|nome_gioco","subject":"breve","content":"descrizione specifica","game_context":null}]
+Se non ci sono informazioni di qualità sufficiente rispondi con [].`;
 
   try {
     const raw = await gemini(system, snapshot.join('\n'), 512, 256);
@@ -368,7 +385,7 @@ Se non ci sono informazioni rilevanti rispondi con [].`;
     const match = raw.match(/\[[\s\S]*\]/);
     if (!match) return;
     const memories = JSON.parse(match[0]);
-    if (!Array.isArray(memories)) return;
+    if (!Array.isArray(memories) || memories.length === 0) return;
 
     for (const m of memories) {
       if (!m.content?.trim()) continue;
@@ -379,9 +396,83 @@ Se non ci sono informazioni rilevanti rispondi con [].`;
       );
       console.log(`🧠 Memoria salvata: [${m.category}] ${m.subject} (streamer: ${streamer.twitch_username})`);
     }
+
+    // Applica limite massimo 500 righe per streamer (elimina le più vecchie)
+    const { rowCount: trimmed } = await pool.query(
+      `DELETE FROM bot_memories
+       WHERE streamer_id = $1
+         AND id NOT IN (
+           SELECT id FROM bot_memories WHERE streamer_id = $1
+           ORDER BY created_at DESC LIMIT $2
+         )`,
+      [streamerId, MEMORY_ROW_LIMIT]
+    );
+    if (trimmed > 0) {
+      console.log(`🧹 Limite memoria: eliminate ${trimmed} righe vecchie per @${streamer.twitch_username}`);
+    }
   } catch (e) {
     console.error('[Bot] Memory analysis:', e.message);
   }
+}
+
+// ─── Pulizia mensile memorie (1° del mese) ────────────────────────────────────
+
+async function runMonthlyMemoryCleanup() {
+  console.log('🧹 Avvio pulizia mensile memorie...');
+  try {
+    // Snapshot duplicati per streamer (per log) — eseguito PRIMA della DELETE
+    const { rows: dupInfo } = await pool.query(`
+      SELECT s.twitch_username,
+             COUNT(*) - COUNT(DISTINCT m.content) AS dup_count
+      FROM bot_memories m
+      JOIN streamers s ON s.id = m.streamer_id
+      GROUP BY m.streamer_id, s.twitch_username
+      HAVING COUNT(*) > COUNT(DISTINCT m.content)
+    `);
+
+    // 1. Elimina memorie più vecchie di 90 giorni
+    const { rowCount: oldDeleted } = await pool.query(
+      `DELETE FROM bot_memories WHERE created_at < NOW() - INTERVAL '90 days'`
+    );
+
+    // 2. Elimina memorie con categoria 'generico'
+    const { rowCount: genDeleted } = await pool.query(
+      `DELETE FROM bot_memories WHERE category = 'generico'`
+    );
+
+    // 3. Elimina duplicati esatti per streamer (tieni il più recente)
+    const { rowCount: dupDeleted } = await pool.query(`
+      DELETE FROM bot_memories
+      WHERE id IN (
+        SELECT id FROM (
+          SELECT id,
+            ROW_NUMBER() OVER (PARTITION BY streamer_id, content ORDER BY created_at DESC) AS rn
+          FROM bot_memories
+        ) sub WHERE rn > 1
+      )
+    `);
+
+    for (const { twitch_username, dup_count } of dupInfo) {
+      if (dup_count > 0) {
+        console.log(`🧹 Pulizia memoria: eliminate ${dup_count} righe ridondanti per streamer ${twitch_username}`);
+      }
+    }
+
+    const total = (oldDeleted ?? 0) + (genDeleted ?? 0) + (dupDeleted ?? 0);
+    console.log(`🧹 Pulizia completata: ${oldDeleted ?? 0} scadute, ${genDeleted ?? 0} generiche, ${dupDeleted ?? 0} duplicate — totale ${total}`);
+  } catch (e) {
+    console.error('[Bot] monthly cleanup:', e.message);
+  }
+}
+
+function scheduleMonthlyCleanup() {
+  const runIfFirstOfMonth = () => {
+    if (new Date().getDate() === 1) {
+      runMonthlyMemoryCleanup().catch(() => {});
+    }
+  };
+  runIfFirstOfMonth(); // esegui subito in caso di riavvio il 1° del mese
+  setInterval(runIfFirstOfMonth, 24 * 60 * 60_000);
 }
 
 // ─── Messaggi evento ──────────────────────────────────────────────────────────
@@ -618,6 +709,7 @@ class BotManager {
 
     setInterval(() => this._syncChannels(), 5 * 60_000);
     this._startMonitor();
+    scheduleMonthlyCleanup();
   }
 
   _scheduleRestart(delayMs = 30_000) {

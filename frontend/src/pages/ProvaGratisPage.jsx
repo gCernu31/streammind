@@ -6,58 +6,120 @@ import SlideShow, { parseSlides } from '../components/SlideShow.jsx';
 import { getToken } from '../utils/auth.js';
 
 const PURPLE = '#8B5CF6';
+const GREEN  = '#4ade80';
 
 const EMPTY_FORM = {
-  twitch_username: '',
-  avg_viewers: '', hours_per_month: '', total_followers: '',
-  monthly_follower_growth: '', current_subs: '',
-  main_games: '', stream_schedule: '', social_links: '',
+  twitch_username:  '',
+  total_followers:  '',
+  avg_viewers:      '',
+  main_games:       '',
+  years_active:     '',
+  current_subs:     '',
+  hours_per_week:   '',
+  main_goal:        '',
+  has_socials:      false,
+  social_links:     '',
+  stream_schedule:  '',
 };
 
-const NUM_FIELDS = [
-  { key: 'avg_viewers',             label: 'Spettatori medi per live',  placeholder: 'Es. 50' },
-  { key: 'hours_per_month',         label: 'Ore stremate al mese',       placeholder: 'Es. 40' },
-  { key: 'total_followers',         label: 'Follower totali',            placeholder: 'Es. 500' },
-  { key: 'monthly_follower_growth', label: 'Crescita follower mensile',  placeholder: 'Es. 30' },
-  { key: 'current_subs',            label: 'Sub attuali',                placeholder: 'Es. 10' },
-];
+// ── Componenti UI ─────────────────────────────────────────────────────────────
 
-const TEXT_FIELDS = [
-  { key: 'main_games',      label: 'Giochi principali', placeholder: 'Es. Valorant, Minecraft, GTA V' },
-  { key: 'stream_schedule', label: 'Orari delle live',  placeholder: 'Es. Venerdì e Sabato dalle 21:00' },
-  { key: 'social_links',    label: 'Social / Link',     placeholder: 'Es. Instagram @mionome' },
-];
-
-function FocusInput({ type = 'text', value, onChange, placeholder, error, readOnly }) {
+function TwitchBadge() {
   return (
-    <>
-      <input
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        readOnly={readOnly}
-        style={{
-          width: '100%',
-          padding: '10px 14px',
-          borderRadius: '8px',
-          backgroundColor: readOnly ? '#0a0a0a' : '#0d0d0d',
-          color: '#f0f0f0',
-          fontSize: '14px',
-          outline: 'none',
-          transition: 'border-color 0.15s',
-          boxSizing: 'border-box',
-          border: `1px solid ${error ? '#f87171' : '#2a2a2a'}`,
-          cursor: readOnly ? 'default' : 'text',
-        }}
-        onFocus={e => { if (!readOnly) e.target.style.borderColor = error ? '#f87171' : PURPLE; }}
-        onBlur={e  => { if (!readOnly) e.target.style.borderColor = error ? '#f87171' : '#2a2a2a'; }}
-      />
-      {error && <p style={{ color: '#f87171', fontSize: '12px', marginTop: '6px' }}>{error}</p>}
-    </>
+    <span
+      className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
+      style={{ backgroundColor: 'rgba(74,222,128,0.12)', color: GREEN, border: '1px solid rgba(74,222,128,0.25)' }}
+    >
+      ✓ Twitch
+    </span>
   );
 }
 
+function Field({ label, children, badge }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-1">
+        <label className="block text-sm font-medium">{label}</label>
+        {badge && <TwitchBadge />}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function TextInput({ type = 'text', value, onChange, placeholder, readOnly }) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      readOnly={readOnly}
+      style={{
+        width: '100%', padding: '10px 14px', borderRadius: '8px',
+        backgroundColor: readOnly ? '#0a0a0a' : '#0d0d0d',
+        color: '#f0f0f0', fontSize: '14px', outline: 'none',
+        transition: 'border-color 0.15s', boxSizing: 'border-box',
+        border: '1px solid #2a2a2a',
+        cursor: readOnly ? 'default' : 'text',
+      }}
+      onFocus={e => { if (!readOnly) e.target.style.borderColor = PURPLE; }}
+      onBlur={e  => { if (!readOnly) e.target.style.borderColor = '#2a2a2a'; }}
+    />
+  );
+}
+
+function SelectInput({ value, onChange, children }) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <select
+        value={value}
+        onChange={onChange}
+        style={{
+          width: '100%', padding: '10px 36px 10px 14px', borderRadius: '8px',
+          backgroundColor: '#0d0d0d',
+          color: value ? '#f0f0f0' : '#6b6b6b',
+          fontSize: '14px', border: '1px solid #2a2a2a',
+          outline: 'none', cursor: 'pointer', appearance: 'none',
+          boxSizing: 'border-box',
+        }}
+        onFocus={e => (e.target.style.borderColor = PURPLE)}
+        onBlur={e  => (e.target.style.borderColor = '#2a2a2a')}
+      >
+        {children}
+      </select>
+      <svg viewBox="0 0 16 16" fill="none" stroke="#6b6b6b" strokeWidth="1.5" strokeLinecap="round"
+        style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', width: '14px', height: '14px', pointerEvents: 'none' }}>
+        <path d="M4 6l4 4 4-4" />
+      </svg>
+    </div>
+  );
+}
+
+function Toggle({ value, onChange }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!value)}
+      style={{
+        flexShrink: 0, width: '44px', height: '24px', borderRadius: '12px',
+        backgroundColor: value ? PURPLE : '#2a2a2a',
+        transition: 'background-color 0.2s', border: 'none', cursor: 'pointer',
+        position: 'relative',
+      }}
+      aria-pressed={value}
+    >
+      <span style={{
+        position: 'absolute', top: '3px',
+        left: value ? '23px' : '3px',
+        width: '18px', height: '18px', borderRadius: '9px',
+        backgroundColor: '#fff', transition: 'left 0.2s',
+      }} />
+    </button>
+  );
+}
+
+// Preview sfocata per stato A
 function BlurredPreview() {
   return (
     <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', border: '1px solid #222', marginBottom: '32px' }}>
@@ -69,20 +131,20 @@ function BlurredPreview() {
         </p>
         <p style={{ color: PURPLE, fontWeight: 700, fontSize: '15px', marginBottom: '12px' }}>🎯 Punteggio Canale</p>
         <div style={{ color: '#a0a0a0', fontSize: '14px', lineHeight: '2.2' }}>
-          <p><strong style={{ color: '#f0f0f0' }}>Community</strong>: 7/10 — La tua community è coinvolta e attiva</p>
-          <p><strong style={{ color: '#f0f0f0' }}>Monetizzazione</strong>: 5/10 — Potenziale non ancora sfruttato appieno</p>
+          <p><strong style={{ color: '#f0f0f0' }}>Community</strong>: 7/10 — Community coinvolta e attiva</p>
+          <p><strong style={{ color: '#f0f0f0' }}>Monetizzazione</strong>: 5/10 — Potenziale non ancora sfruttato</p>
           <p><strong style={{ color: '#f0f0f0' }}>Discovery</strong>: 8/10 — Ottima visibilità nella categoria</p>
-          <p><strong style={{ color: '#f0f0f0' }}>Costanza</strong>: 6/10 — Lo schedule può essere ottimizzato</p>
+          <p><strong style={{ color: '#f0f0f0' }}>Costanza</strong>: 6/10 — Schedule migliorabile</p>
         </div>
-        <p style={{ color: PURPLE, fontWeight: 700, fontSize: '15px', margin: '20px 0 10px' }}>⚡ Quick Wins (Settimana 1)</p>
+        <p style={{ color: PURPLE, fontWeight: 700, fontSize: '15px', margin: '20px 0 10px' }}>🚀 Roadmap di Crescita</p>
         <p style={{ color: '#a0a0a0', fontSize: '14px', lineHeight: '1.7' }}>
-          Streamare il martedì sera tra le 20:00 e le 23:00 potrebbe aumentare gli spettatori medi del 18% in 2 settimane...
+          30 giorni: +120 follower con ottimizzazione orari. 60 giorni: primo host collaborativo...
         </p>
       </div>
       <div style={{
         position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: 'linear-gradient(to bottom, rgba(13,13,13,0.5) 0%, rgba(13,13,13,0.92) 100%)',
+        background: 'linear-gradient(to bottom, rgba(13,13,13,0.5), rgba(13,13,13,0.92))',
       }}>
         <div style={{ fontSize: '40px', marginBottom: '10px' }}>🔒</div>
         <p style={{ color: '#f0f0f0', fontWeight: 700, fontSize: '17px', marginBottom: '4px' }}>Analisi bloccata</p>
@@ -92,17 +154,19 @@ function BlurredPreview() {
   );
 }
 
+// ── Pagina principale ─────────────────────────────────────────────────────────
+
 export default function ProvaGratisPage({ user, loading: authLoading, onLogout }) {
   const navigate = useNavigate();
-  const [pageState, setPageState] = useState('loading'); // loading | A | B | C
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [fieldErrors, setFieldErrors] = useState({});
-  const [slides, setSlides] = useState(null);
-  const [analysisId, setAnalysisId] = useState(null);
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState(null);
+  const [pageState, setPageState]     = useState('loading'); // loading | A | B | C
+  const [form, setForm]               = useState(EMPTY_FORM);
+  const [fetchedFields, setFetchedFields] = useState({});   // campi auto-compilati da Twitch
+  const [slides, setSlides]           = useState(null);
+  const [analysisId, setAnalysisId]   = useState(null);
+  const [generating, setGenerating]   = useState(false);
+  const [error, setError]             = useState(null);
   const [prefillLoading, setPrefillLoading] = useState(false);
-  const [prefilled, setPrefilled] = useState(false);
+  const [isLive, setIsLive]           = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -112,6 +176,7 @@ export default function ProvaGratisPage({ user, loading: authLoading, onLogout }
       return;
     }
 
+    // Abbonati → dashboard analisi
     const ss = user.subscription_status;
     if (ss === 'active' || ss === 'trialing' || ss === 'cancelling') {
       navigate('/analisi', { replace: true });
@@ -137,13 +202,15 @@ export default function ProvaGratisPage({ user, loading: authLoading, onLogout }
         })
           .then(r => r.ok ? r.json() : null)
           .then(tw => {
-            const prefills = {
-              twitch_username: tw?.twitch_username ?? user.twitch_username ?? '',
-            };
-            if (tw?.total_followers != null) prefills.total_followers = String(tw.total_followers);
-            if (tw?.main_games) prefills.main_games = tw.main_games;
+            const prefills  = { twitch_username: tw?.twitch_username ?? user.twitch_username ?? '' };
+            const fetched   = {};
+            if (tw?.total_followers != null) { prefills.total_followers = String(tw.total_followers); fetched.total_followers = true; }
+            if (tw?.main_games)              { prefills.main_games      = tw.main_games;              fetched.main_games      = true; }
+            if (tw?.years_active != null)    { prefills.years_active    = String(tw.years_active);    fetched.years_active    = true; }
+            if (tw?.avg_viewers  != null)    { prefills.avg_viewers     = String(tw.avg_viewers);     fetched.avg_viewers     = true; }
+            if (tw?.is_live)                 setIsLive(true);
             setForm(prev => ({ ...prev, ...prefills }));
-            if (tw?.total_followers != null || tw?.main_games) setPrefilled(true);
+            setFetchedFields(fetched);
             setPageState('B');
           })
           .catch(() => {
@@ -159,24 +226,17 @@ export default function ProvaGratisPage({ user, loading: authLoading, onLogout }
       });
   }, [authLoading, user]);
 
-  const set = (k, v) => {
-    setForm(p => ({ ...p, [k]: v }));
-    if (fieldErrors[k]) setFieldErrors(p => ({ ...p, [k]: undefined }));
-  };
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setGenerating(true);
     setError(null);
-    setFieldErrors({});
     const token = getToken();
     try {
       const r = await fetch('/api/analytics/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form),
       });
       const data = await r.json();
@@ -195,20 +255,14 @@ export default function ProvaGratisPage({ user, loading: authLoading, onLogout }
     <div className="min-h-screen font-sans" style={{ backgroundColor: '#0d0d0d', color: '#f0f0f0' }}>
       <Helmet>
         <title>Analisi Gratuita Canale Twitch | StreaMindAI</title>
-        <meta name="description" content="Ottieni un'analisi strategica gratuita del tuo canale Twitch con StreaMindAI. Piano di crescita personalizzato, roadmap 90 giorni e consigli pratici per streamer italiani." />
+        <meta name="description" content="Ottieni un'analisi strategica gratuita del tuo canale Twitch. Roadmap 90 giorni, punteggio canale e piano settimanale personalizzato — in meno di 60 secondi." />
         <link rel="canonical" href="https://streamindai.com/prova-gratis" />
-        <meta property="og:title" content="Analisi Gratuita Canale Twitch | StreaMindAI" />
-        <meta property="og:description" content="Analisi AI gratuita per il tuo canale Twitch. Roadmap 90 giorni, punteggio canale e piano settimanale personalizzato." />
-        <meta property="og:url" content="https://streamindai.com/prova-gratis" />
       </Helmet>
 
       {/* Header */}
       <header className="sticky top-0 z-40 border-b" style={{ backgroundColor: 'rgba(13,13,13,0.95)', backdropFilter: 'blur(12px)', borderColor: '#1e1e1e' }}>
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link
-            to="/"
-            className="flex items-center gap-2 text-sm font-semibold transition-colors"
-            style={{ color: '#6b6b6b' }}
+          <Link to="/" className="flex items-center gap-2 text-sm font-semibold transition-colors" style={{ color: '#6b6b6b' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#f0f0f0')}
             onMouseLeave={e => (e.currentTarget.style.color = '#6b6b6b')}
           >
@@ -223,21 +277,19 @@ export default function ProvaGratisPage({ user, loading: authLoading, onLogout }
 
       <div className="max-w-3xl mx-auto px-6 py-12">
 
-        {/* ── Loading iniziale ── */}
+        {/* ── Loading ── */}
         {pageState === 'loading' && (
           <div className="py-24 flex justify-center">
             <div className="w-12 h-12 rounded-full border-2 animate-spin" style={{ borderColor: '#262626', borderTopColor: PURPLE }} />
           </div>
         )}
 
-        {/* ── State A: non loggato ── */}
+        {/* ── Stato A: non loggato ── */}
         {pageState === 'A' && (
           <>
             <div className="text-center mb-10">
-              <div
-                className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border mb-6"
-                style={{ borderColor: 'rgba(139,92,246,0.4)', backgroundColor: 'rgba(139,92,246,0.08)', color: PURPLE }}
-              >
+              <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border mb-6"
+                style={{ borderColor: 'rgba(139,92,246,0.4)', backgroundColor: 'rgba(139,92,246,0.08)', color: PURPLE }}>
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: PURPLE }} />
                 Motore AI StreaMindAI &nbsp;·&nbsp; Completamente gratuito
               </div>
@@ -246,10 +298,9 @@ export default function ProvaGratisPage({ user, loading: authLoading, onLogout }
                 <span style={{ color: PURPLE }}>canale Twitch</span>
               </h1>
               <p className="text-base max-w-xl mx-auto mb-8" style={{ color: '#a0a0a0' }}>
-                StreaMindAI analizza il tuo canale e genera un report con 12 sezioni — punti di forza,
-                gap da colmare, giochi consigliati e un piano d'azione in 90 giorni.
+                StreaMindAI recupera automaticamente i dati dal tuo profilo Twitch e genera
+                un report strategico con 12 sezioni — in meno di 60 secondi.
               </p>
-
               <a
                 href="/api/auth/twitch?redirect_to=/prova-gratis"
                 className="inline-flex items-center gap-3 font-bold text-white px-8 py-4 rounded-xl text-base transition-all duration-150"
@@ -270,19 +321,10 @@ export default function ProvaGratisPage({ user, loading: authLoading, onLogout }
             <BlurredPreview />
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {[
-                ['📊', 'Situazione attuale'],
-                ['🎯', 'Punteggio canale'],
-                ['💪', 'Asset strategici'],
-                ['⚠️', 'Gap da colmare'],
-                ['🚀', 'Roadmap 90 giorni'],
-                ['💡', 'Piano settimanale'],
-              ].map(([icon, label]) => (
-                <div
-                  key={label}
-                  className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm"
-                  style={{ backgroundColor: '#111', border: '1px solid #1e1e1e', color: '#6b6b6b' }}
-                >
+              {[['📊','Situazione attuale'],['🎯','Punteggio canale'],['💪','Asset strategici'],
+                ['⚠️','Gap da colmare'],['🚀','Roadmap 90 giorni'],['💡','Piano settimanale']].map(([icon, label]) => (
+                <div key={label} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm"
+                  style={{ backgroundColor: '#111', border: '1px solid #1e1e1e', color: '#6b6b6b' }}>
                   <span>{icon}</span> {label}
                 </div>
               ))}
@@ -290,7 +332,7 @@ export default function ProvaGratisPage({ user, loading: authLoading, onLogout }
           </>
         )}
 
-        {/* ── State B: form con pre-fill ── */}
+        {/* ── Stato B: form ── */}
         {pageState === 'B' && (
           <>
             {generating ? (
@@ -304,87 +346,142 @@ export default function ProvaGratisPage({ user, loading: authLoading, onLogout }
             ) : (
               <>
                 <div className="mb-8">
-                  <div
-                    className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border mb-4"
-                    style={{ borderColor: 'rgba(139,92,246,0.4)', backgroundColor: 'rgba(139,92,246,0.08)', color: PURPLE }}
-                  >
+                  <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border mb-4"
+                    style={{ borderColor: 'rgba(139,92,246,0.4)', backgroundColor: 'rgba(139,92,246,0.08)', color: PURPLE }}>
                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: PURPLE }} />
                     {user?.display_name ? `Ciao, ${user.display_name}!` : 'Ciao!'}
                   </div>
                   <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight mb-3">
-                    Completa i dati del tuo canale
+                    Completa e genera la tua analisi
                   </h1>
                   <p style={{ color: '#a0a0a0', fontSize: '15px' }}>
-                    StreaMindAI genera un'analisi personalizzata basata sui tuoi dati reali.
-                    {prefilled && ' Alcuni campi sono stati pre-compilati automaticamente da Twitch.'}
+                    I campi con il badge <TwitchBadge /> sono stati recuperati automaticamente dal tuo profilo Twitch.
+                    Puoi modificarli se necessario.
                   </p>
                 </div>
 
                 {prefillLoading && (
-                  <div className="flex items-center gap-2 text-sm mb-4" style={{ color: '#6b6b6b' }}>
+                  <div className="flex items-center gap-2 text-sm mb-5" style={{ color: '#6b6b6b' }}>
                     <div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: '#333', borderTopColor: PURPLE }} />
                     Recupero dati da Twitch...
                   </div>
                 )}
 
-                {prefilled && !prefillLoading && (
-                  <div
-                    className="flex items-center gap-2 text-sm px-4 py-3 rounded-lg border mb-5"
-                    style={{ backgroundColor: 'rgba(139,92,246,0.06)', borderColor: 'rgba(139,92,246,0.18)', color: '#a0a0a0' }}
-                  >
-                    <span style={{ color: PURPLE }}>✓</span>
-                    <span>Dati parziali estratti da Twitch — completa i campi mancanti per un'analisi più precisa</span>
-                  </div>
-                )}
+                <form onSubmit={handleSubmit} className="space-y-4">
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                  {/* Sezione 1: Dati Twitch */}
                   <div className="rounded-2xl border p-6 sm:p-8 space-y-5" style={{ backgroundColor: '#111', borderColor: '#222' }}>
-                    <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#4a4a4a' }}>Dati canale</p>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Username Twitch</label>
-                      <FocusInput
-                        value={form.twitch_username}
-                        onChange={e => set('twitch_username', e.target.value)}
-                        placeholder="Il tuo username"
-                        readOnly={!!user?.twitch_username}
-                        error={fieldErrors.twitch_username}
-                      />
-                    </div>
+                    <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#4a4a4a' }}>Dati estratti da Twitch</p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {NUM_FIELDS.map(f => (
-                        <div key={f.key}>
-                          <label className="block text-sm font-medium mb-1">{f.label}</label>
-                          <FocusInput
-                            type="number"
-                            value={form[f.key]}
-                            onChange={e => set(f.key, e.target.value)}
-                            placeholder={f.placeholder}
-                            error={fieldErrors[f.key]}
-                          />
-                        </div>
-                      ))}
+                      <Field label="Follower totali" badge={fetchedFields.total_followers}>
+                        <TextInput
+                          type="number"
+                          value={form.total_followers}
+                          onChange={e => set('total_followers', e.target.value)}
+                          placeholder="Es. 500"
+                        />
+                      </Field>
+
+                      <Field label={isLive ? 'Spettatori live ora' : 'Spettatori medi per live'} badge={fetchedFields.avg_viewers}>
+                        <TextInput
+                          type="number"
+                          value={form.avg_viewers}
+                          onChange={e => set('avg_viewers', e.target.value)}
+                          placeholder="Es. 30"
+                        />
+                        {!fetchedFields.avg_viewers && (
+                          <p className="text-xs mt-1.5" style={{ color: '#4a4a4a' }}>
+                            Inserisci la tua media approssimativa
+                          </p>
+                        )}
+                      </Field>
                     </div>
 
-                    {TEXT_FIELDS.map(f => (
-                      <div key={f.key}>
-                        <label className="block text-sm font-medium mb-1">{f.label}</label>
-                        <FocusInput
-                          value={form[f.key]}
-                          onChange={e => set(f.key, e.target.value)}
-                          placeholder={f.placeholder}
-                          error={fieldErrors[f.key]}
+                    <Field label="Giochi principali (ultimi 5)" badge={fetchedFields.main_games}>
+                      <TextInput
+                        value={form.main_games}
+                        onChange={e => set('main_games', e.target.value)}
+                        placeholder="Es. Valorant, Minecraft, GTA V"
+                      />
+                    </Field>
+
+                    <Field label="Anni di attività su Twitch" badge={fetchedFields.years_active}>
+                      <TextInput
+                        type="number"
+                        value={form.years_active}
+                        onChange={e => set('years_active', e.target.value)}
+                        placeholder="Es. 3"
+                      />
+                    </Field>
+                  </div>
+
+                  {/* Sezione 2: Dati manuali */}
+                  <div className="rounded-2xl border p-6 sm:p-8 space-y-5" style={{ backgroundColor: '#111', borderColor: '#222' }}>
+                    <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#4a4a4a' }}>Completa il profilo</p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Field label="Sub attuali">
+                        <TextInput
+                          type="number"
+                          value={form.current_subs}
+                          onChange={e => set('current_subs', e.target.value)}
+                          placeholder="Es. 10"
                         />
+                      </Field>
+
+                      <Field label="Ore live a settimana">
+                        <SelectInput value={form.hours_per_week} onChange={e => set('hours_per_week', e.target.value)}>
+                          <option value="" disabled>Seleziona...</option>
+                          <option value="1-2 ore">1-2 ore</option>
+                          <option value="3-5 ore">3-5 ore</option>
+                          <option value="6-9 ore">6-9 ore</option>
+                          <option value="10-19 ore">10-19 ore</option>
+                          <option value="20+ ore">20+ ore</option>
+                        </SelectInput>
+                      </Field>
+                    </div>
+
+                    <Field label="Obiettivo principale">
+                      <SelectInput value={form.main_goal} onChange={e => set('main_goal', e.target.value)}>
+                        <option value="" disabled>Seleziona...</option>
+                        <option value="Crescere i follower">Crescere i follower</option>
+                        <option value="Aumentare i sub">Aumentare i sub</option>
+                        <option value="Monetizzare il canale">Monetizzare il canale</option>
+                        <option value="Costruire una community">Costruire una community solida</option>
+                      </SelectInput>
+                    </Field>
+
+                    <div className="flex items-center justify-between py-1">
+                      <div>
+                        <p className="text-sm font-medium">Usi i social per promuovere le live?</p>
+                        <p className="text-xs mt-0.5" style={{ color: '#6b6b6b' }}>TikTok, Instagram, Twitter/X, YouTube Shorts…</p>
                       </div>
-                    ))}
+                      <Toggle value={form.has_socials} onChange={v => set('has_socials', v)} />
+                    </div>
+
+                    {form.has_socials && (
+                      <Field label="Link social / Linktree (opzionale)">
+                        <TextInput
+                          value={form.social_links}
+                          onChange={e => set('social_links', e.target.value)}
+                          placeholder="Es. linktr.ee/mionome o @mionome"
+                        />
+                      </Field>
+                    )}
+
+                    <Field label="Orari di streaming (opzionale)">
+                      <TextInput
+                        value={form.stream_schedule}
+                        onChange={e => set('stream_schedule', e.target.value)}
+                        placeholder="Es. Venerdì e Sabato dalle 21:00"
+                      />
+                    </Field>
                   </div>
 
                   {error && (
-                    <p
-                      className="text-sm px-4 py-3 rounded-lg border"
-                      style={{ color: '#f87171', backgroundColor: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.2)' }}
-                    >
+                    <p className="text-sm px-4 py-3 rounded-lg border"
+                      style={{ color: '#f87171', backgroundColor: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.2)' }}>
                       {error}
                     </p>
                   )}
@@ -407,22 +504,13 @@ export default function ProvaGratisPage({ user, loading: authLoading, onLogout }
           </>
         )}
 
-        {/* ── State C: risultati + banner upgrade ── */}
+        {/* ── Stato C: risultati + banner upgrade ── */}
         {pageState === 'C' && slides && (
           <>
-            <SlideShow
-              slides={slides}
-              username={user?.twitch_username ?? ''}
-              analysisId={analysisId}
-            />
+            <SlideShow slides={slides} username={user?.twitch_username ?? ''} analysisId={analysisId} />
 
-            <div
-              className="mt-8 rounded-2xl border p-8 text-center"
-              style={{
-                background: 'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(139,92,246,0.04))',
-                borderColor: 'rgba(139,92,246,0.25)',
-              }}
-            >
+            <div className="mt-8 rounded-2xl border p-8 text-center"
+              style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(139,92,246,0.04))', borderColor: 'rgba(139,92,246,0.25)' }}>
               <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: PURPLE }}>
                 Porta la tua crescita al livello successivo
               </p>
@@ -431,8 +519,7 @@ export default function ProvaGratisPage({ user, loading: authLoading, onLogout }
                 Il bot AI risponde alla tua chat in tempo reale, ricorda gli utenti abituali e ottimizza
                 il coinvolgimento automaticamente. L'analisi si rigenera ogni mese con i tuoi dati aggiornati.
               </p>
-              <Link
-                to="/subscription"
+              <Link to="/subscription"
                 className="inline-flex items-center gap-2 font-bold text-white px-7 py-3.5 rounded-xl text-sm transition-all duration-150"
                 style={{ backgroundColor: PURPLE }}
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#7C3AED')}
@@ -440,9 +527,7 @@ export default function ProvaGratisPage({ user, loading: authLoading, onLogout }
               >
                 Inizia la prova gratuita 7 giorni →
               </Link>
-              <p className="text-xs mt-3" style={{ color: '#4a4a4a' }}>
-                Annulla quando vuoi · Nessun addebito oggi
-              </p>
+              <p className="text-xs mt-3" style={{ color: '#4a4a4a' }}>Annulla quando vuoi · Nessun addebito oggi</p>
             </div>
           </>
         )}

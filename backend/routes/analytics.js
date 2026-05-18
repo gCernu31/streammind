@@ -56,23 +56,43 @@ async function callGemini(prompt) {
 
 function buildPrompt(data) {
   const {
-    twitch_username, avg_viewers, hours_per_month,
-    total_followers, monthly_follower_growth, current_subs,
-    main_games, stream_schedule, social_links,
+    twitch_username,
+    total_followers, avg_viewers, main_games, years_active,
+    current_subs,
+    hours_per_week, hours_per_month,   // hours_per_month = legacy
+    main_goal, has_socials, social_links, stream_schedule,
+    monthly_follower_growth,           // legacy
   } = data;
+
+  const hoursStr = hours_per_week
+    ? `${hours_per_week} ore a settimana`
+    : hours_per_month
+    ? `${hours_per_month} ore al mese`
+    : 'non specificato';
+
+  const yearsStr = years_active != null
+    ? `${years_active} ${Number(years_active) === 1 ? 'anno' : 'anni'}`
+    : 'non specificato';
+
+  const socialsStr = has_socials === true || has_socials === 'true'
+    ? `Sì${social_links ? ` — ${social_links}` : ''}`
+    : has_socials === false || has_socials === 'false'
+    ? 'No'
+    : social_links || 'non specificato';
 
   return `Scrivi come un consulente esperto di crescita su Twitch con 10 anni di esperienza. Usa un tono diretto, autorevole ma accessibile. Ogni affermazione deve essere supportata da un dato numerico concreto. Usa paragrafi brevi (massimo 3-4 righe). Evita frasi generiche — ogni consiglio deve essere specifico per questo streamer. Usa la seconda persona singolare (tu, il tuo canale) per rendere l'analisi personale.
 
 ## DATI STREAMER
 - Username Twitch: ${twitch_username || 'non specificato'}
-- Spettatori medi per live: ${avg_viewers || 0}
-- Ore stremate al mese: ${hours_per_month || 0}
+- Anni di attività su Twitch: ${yearsStr}
 - Follower totali: ${total_followers || 0}
-- Crescita follower mensile: ${monthly_follower_growth || 0}
+- Spettatori medi per live: ${avg_viewers || 'non specificato'}
 - Sub attuali: ${current_subs || 0}
 - Giochi principali: ${main_games || 'non specificato'}
-- Orari delle live: ${stream_schedule || 'non specificato'}
-- Social/Link: ${social_links || 'non specificato'}
+- Ore di live: ${hoursStr}
+- Obiettivo principale dello streamer: ${main_goal || 'non specificato'}
+- Presenza sui social: ${socialsStr}
+- Orari delle live: ${stream_schedule || 'non specificato'}${monthly_follower_growth ? `\n- Crescita follower mensile: ${monthly_follower_growth}` : ''}
 
 ## ISTRUZIONI
 Genera un'analisi strutturata con esattamente le seguenti sezioni in Markdown. Ogni sezione inizia con ### (tre hashtag). Non aggiungere sezioni extra né introduzioni. Ogni affermazione deve includere un numero concreto.
@@ -199,9 +219,22 @@ analyticsRoutes.get('/twitch-data', requireAuth, async (req, res) => {
       'Client-ID': process.env.TWITCH_CLIENT_ID,
       Authorization: `Bearer ${token}`,
     };
-    const [followersResult, channelResult] = await Promise.allSettled([
+
+    const [followersR, videosR, userR, streamR, channelR] = await Promise.allSettled([
       axios.get('https://api.twitch.tv/helix/channels/followers', {
         params: { broadcaster_id: twitch_id, first: 1 },
+        headers, timeout: 8_000,
+      }),
+      axios.get('https://api.twitch.tv/helix/videos', {
+        params: { user_id: twitch_id, type: 'archive', first: 20 },
+        headers, timeout: 8_000,
+      }),
+      axios.get('https://api.twitch.tv/helix/users', {
+        params: { login: twitch_username },
+        headers, timeout: 8_000,
+      }),
+      axios.get('https://api.twitch.tv/helix/streams', {
+        params: { user_id: twitch_id },
         headers, timeout: 8_000,
       }),
       axios.get('https://api.twitch.tv/helix/channels', {
@@ -209,14 +242,46 @@ analyticsRoutes.get('/twitch-data', requireAuth, async (req, res) => {
         headers, timeout: 8_000,
       }),
     ]);
-    const totalFollowers = followersResult.status === 'fulfilled'
-      ? (followersResult.value.data?.total ?? null) : null;
-    const gameData = channelResult.status === 'fulfilled'
-      ? channelResult.value.data?.data?.[0] : null;
+
+    // Follower totali
+    const totalFollowers = followersR.status === 'fulfilled'
+      ? (followersR.value.data?.total ?? null) : null;
+
+    // Ultimi 5 giochi unici dagli archivi
+    const videos = videosR.status === 'fulfilled' ? (videosR.value.data?.data ?? []) : [];
+    const seenGames = new Set();
+    const recentGames = [];
+    for (const v of videos) {
+      if (v.game_name && !seenGames.has(v.game_name) && recentGames.length < 5) {
+        recentGames.push(v.game_name);
+        seenGames.add(v.game_name);
+      }
+    }
+    // Fallback: gioco corrente del canale
+    if (recentGames.length === 0 && channelR.status === 'fulfilled') {
+      const gameName = channelR.value.data?.data?.[0]?.game_name;
+      if (gameName) recentGames.push(gameName);
+    }
+
+    // Anni di attività dalla data creazione account
+    const userData = userR.status === 'fulfilled' ? (userR.value.data?.data?.[0] ?? null) : null;
+    let yearsActive = null;
+    if (userData?.created_at) {
+      const ms = Date.now() - new Date(userData.created_at).getTime();
+      const y  = ms / (365.25 * 24 * 60 * 60 * 1000);
+      yearsActive = y >= 1 ? Math.floor(y) : parseFloat(y.toFixed(1));
+    }
+
+    // Spettatori attuali (solo se in live)
+    const liveStream = streamR.status === 'fulfilled' ? (streamR.value.data?.data?.[0] ?? null) : null;
+
     res.json({
       twitch_username,
       total_followers: totalFollowers,
-      main_games: gameData?.game_name ?? null,
+      main_games:      recentGames.length > 0 ? recentGames.join(', ') : null,
+      years_active:    yearsActive,
+      avg_viewers:     liveStream?.viewer_count ?? null,
+      is_live:         liveStream != null,
     });
   } catch (err) {
     console.error('[Analytics] twitch-data:', err.message);

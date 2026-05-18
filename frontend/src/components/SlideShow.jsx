@@ -37,21 +37,76 @@ function fmt(text) {
 
 // ── Render contenuto sezione ───────────────────────────────────────────────────
 function SlideBody({ content }) {
+  // Raggruppa righe consecutive di tabella in blocchi distinti
+  const lines = content.split('\n');
+  const blocks = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (lines[i].trim().startsWith('|')) {
+      const tableLines = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({ type: 'table', lines: tableLines });
+    } else {
+      blocks.push({ type: 'line', content: lines[i] });
+      i++;
+    }
+  }
+
   return (
     <div style={{ fontSize: '15px', lineHeight: '1.85', color: '#b0b0b0' }}>
-      {content.split('\n').map((line, i) => {
+      {blocks.map((block, bi) => {
+        if (block.type === 'table') {
+          const isSep = l => /^\|[-| :]+\|$/.test(l.trim());
+          const rows = block.lines
+            .filter(l => !isSep(l))
+            .map(l => l.trim().split('|').slice(1, -1).map(c => c.trim()));
+          if (rows.length === 0) return null;
+          const [header, ...body] = rows;
+          const cellStyle = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 0 };
+          return (
+            <div key={bi} style={{ margin: '12px 0', overflowX: 'hidden' }}>
+              <table style={{ tableLayout: 'fixed', width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <thead>
+                  <tr>
+                    {header.map((cell, ci) => (
+                      <th key={ci} style={{ ...cellStyle, padding: '5px 7px', borderBottom: '1px solid #333', color: PURPLE, fontWeight: 600, textAlign: 'left' }}>
+                        {cell}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {body.map((row, ri) => (
+                    <tr key={ri}>
+                      {row.map((cell, ci) => (
+                        <td key={ci} style={{ ...cellStyle, padding: '4px 7px', borderBottom: '1px solid #1e1e1e', color: '#a0a0a0' }}>
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        }
+
+        const line = block.content;
         if (line.startsWith('## '))
-          return <h3 key={i} style={{ color: '#f0f0f0', fontWeight: 700, fontSize: '15px', margin: '16px 0 6px' }}>{fmt(line.slice(3))}</h3>;
+          return <h3 key={bi} style={{ color: '#f0f0f0', fontWeight: 700, fontSize: '15px', margin: '16px 0 6px' }}>{fmt(line.slice(3))}</h3>;
         if (line.startsWith('- ') || line.startsWith('* '))
           return (
-            <div key={i} style={{ display: 'flex', gap: '10px', margin: '7px 0' }}>
+            <div key={bi} style={{ display: 'flex', gap: '10px', margin: '7px 0' }}>
               <span style={{ color: PURPLE, flexShrink: 0, marginTop: '2px', fontSize: '16px' }}>•</span>
               <span>{fmt(line.slice(2))}</span>
             </div>
           );
-        if (line === '---') return <hr key={i} style={{ border: 'none', borderTop: '1px solid #2a2a2a', margin: '16px 0' }} />;
-        if (!line.trim()) return <div key={i} style={{ height: '8px' }} />;
-        return <p key={i} style={{ margin: '4px 0' }}>{fmt(line)}</p>;
+        if (line === '---') return <hr key={bi} style={{ border: 'none', borderTop: '1px solid #2a2a2a', margin: '16px 0' }} />;
+        if (!line.trim()) return <div key={bi} style={{ height: '8px' }} />;
+        return <p key={bi} style={{ margin: '4px 0' }}>{fmt(line)}</p>;
       })}
     </div>
   );
@@ -72,9 +127,9 @@ function SlideCover({ username }) {
           Generata da StreaMindAI — naviga con le frecce o i tasti ← →
         </p>
       </div>
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '8px' }}>
-        {['💪 Punti di forza', '🎯 Miglioramenti', '⏰ Orari', '🎮 Giochi', '📅 Piano 90gg', '📈 Crescita'].map(s => (
-          <span key={s} style={{ fontSize: '12px', padding: '4px 12px', borderRadius: '20px', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)', color: '#a78bfa' }}>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '8px' }}>
+        {['📊 Situazione', '🎯 Punteggio', '💪 Asset', '⚠️ Gap', '🔍 Concorrenza', '⚡ Quick Wins', '❌ Errori', '⏰ Orari', '🎮 Giochi', '🚀 Roadmap', '📈 Crescita', '💡 Piano'].map(s => (
+          <span key={s} style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)', color: '#a78bfa' }}>
             {s}
           </span>
         ))}

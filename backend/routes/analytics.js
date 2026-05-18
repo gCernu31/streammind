@@ -45,8 +45,8 @@ async function callGemini(prompt) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
   const r = await axios.post(url, {
     contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
-  }, { timeout: 60_000 });
+    generationConfig: { temperature: 0.7, maxOutputTokens: 12288 },
+  }, { timeout: 90_000 });
 
   const text = r.data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error('Risposta Gemini vuota');
@@ -60,7 +60,7 @@ function buildPrompt(data) {
     main_games, stream_schedule, social_links,
   } = data;
 
-  return `Sei un esperto di crescita per streamer Twitch italiani. Analizza il seguente profilo e genera un'analisi strategica dettagliata.
+  return `Scrivi come un consulente esperto di crescita su Twitch con 10 anni di esperienza. Usa un tono diretto, autorevole ma accessibile. Ogni affermazione deve essere supportata da un dato numerico concreto. Usa paragrafi brevi (massimo 3-4 righe). Evita frasi generiche — ogni consiglio deve essere specifico per questo streamer. Usa la seconda persona singolare (tu, il tuo canale) per rendere l'analisi personale.
 
 ## DATI STREAMER
 - Username Twitch: ${twitch_username || 'non specificato'}
@@ -74,30 +74,59 @@ function buildPrompt(data) {
 - Social/Link: ${social_links || 'non specificato'}
 
 ## ISTRUZIONI
-Genera un'analisi strutturata con le seguenti sezioni in Markdown:
+Genera un'analisi strutturata con esattamente le seguenti sezioni in Markdown. Ogni sezione inizia con ### (tre hashtag). Non aggiungere sezioni extra né introduzioni. Ogni affermazione deve includere un numero concreto.
 
-### 💪 Punti di forza
-Identifica 2-3 punti di forza specifici basati sui dati.
+### 📊 Situazione Attuale del Canale
+Analisi oggettiva dei dati forniti. Contestualizza ogni metrica rispetto alle medie Twitch per la categoria (es. media italiana, media categoria). Evidenzia il dato più rilevante con un numero preciso.
 
-### 🎯 Aree di miglioramento
-Identifica 2-3 aree concrete dove lo streamer può crescere.
+### 🎯 Punteggio Canale
+Assegna un voto su 10 a ciascuna area con una riga di spiegazione specifica per questo streamer:
+- **Community**: X/10 — [motivazione basata sui dati]
+- **Monetizzazione**: X/10 — [motivazione basata sui dati]
+- **Discovery**: X/10 — [motivazione basata sui dati]
+- **Costanza**: X/10 — [motivazione basata sui dati]
 
-### ⏰ Orario ottimale per streamare
-Analizza gli orari attuali e suggerisci quelli migliori con motivazione.
+### 💪 Asset Strategici
+Identifica 2-3 punti di forza reali basati sui numeri forniti. Per ognuno cita il dato specifico che lo supporta e spiega perché è un vantaggio competitivo.
 
-### 🎮 Giochi consigliati per crescere
-Suggerisci 3-4 giochi strategici in base al profilo attuale.
+### ⚠️ Gap da Colmare
+Identifica 2-3 aree concrete dove il canale perde opportunità di crescita. Quantifica il potenziale mancato con un numero (es. "stai perdendo circa X follower/mese rispetto a canali simili").
 
-### 📅 Piano d'azione 30/60/90 giorni
-- **Primi 30 giorni**: azioni immediate
-- **60 giorni**: obiettivi intermedi
-- **90 giorni**: traguardi a lungo termine
+### 🔍 Analisi della Concorrenza
+Cita 2-3 streamer italiani simili per dimensione (follower e spettatori medi) e categoria. Per ognuno indica una cosa specifica che fanno meglio e come puoi replicarla nel tuo contesto.
 
-### 📈 Stima crescita follower
-Fornisci una stima realistica di crescita follower nei prossimi 3 mesi con diverse strategie.
+### ⚡ Quick Wins
+Elenca esattamente 3 azioni concrete che puoi implementare entro 7 giorni. Ogni azione deve avere un risultato atteso quantificato (es. "+X% retention", "+Y follower/settimana").
+
+### ❌ Errori Comuni
+Descrivi 2-3 errori tipici degli streamer con ${total_followers || 0} follower e ${avg_viewers || 0} spettatori medi. Per ognuno spiega la causa e la soluzione pratica.
+
+### ⏰ Orario Ottimale per Streamare
+Analizza gli orari attuali e suggerisci quelli migliori con dati di traffico Twitch per la categoria. Indica il guadagno stimato in spettatori medi passando agli orari consigliati.
+
+### 🎮 Giochi Consigliati per Crescere
+Suggerisci 3-4 giochi strategici. Per ognuno indica: stima canali attivi nella categoria su Twitch e numero di spettatori potenzialmente raggiungibili con la tua dimensione attuale.
+
+### 🚀 Roadmap di Crescita
+Piano d'azione dettagliato con KPI misurabili:
+- **Primi 30 giorni**: 2-3 azioni immediate con target numerico
+- **60 giorni**: obiettivi intermedi con numeri target
+- **90 giorni**: traguardo principale con proiezione follower realistica
+
+### 📈 Stima Crescita Follower
+Fornisci una stima realistica con 3 scenari e le condizioni necessarie per ciascuno:
+- **Scenario conservativo**: X follower in 90 giorni (condizioni: ...)
+- **Scenario moderato**: X follower in 90 giorni (condizioni: ...)
+- **Scenario ottimistico**: X follower in 90 giorni (condizioni: ...)
+
+### 💡 Piano d'Azione Immediato
+Tabella settimanale del piano editoriale. Usa il formato tabella Markdown con queste colonne esatte: Giorno, Gioco, Tipo, Obiettivo. Ogni cella deve avere massimo 30 caratteri — abbrevia se necessario. Includi 7 righe (una per giorno della settimana).
 
 ---
-Rispondi **esclusivamente in italiano**, tono professionale ma amichevole, sii specifico e pratico.`;
+Questa analisi è stata generata da StreaMindAI sulla base dei dati forniti. Per una consulenza approfondita e personalizzata, contatta il team di StreaMindAI su support@streamindai.com
+
+---
+Rispondi **esclusivamente in italiano**. Non aggiungere testo prima della prima sezione ### né dopo l'ultima riga ---.`;
 }
 
 // ── HTML email con l'analisi ──────────────────────────────────────────────────
@@ -107,7 +136,7 @@ function buildEmailHtml(analysis, username) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     // Converti Markdown base in HTML per l'email
-    .replace(/^### (.+)$/gm, '<h3 style="color:#8B5CF6;margin:20px 0 8px">$1</h3>')
+    .replace(/^### (.+)$/gm, '<h3 style="color:#8B5CF6;margin:20px 0 8px;font-size:15px">$1</h3>')
     .replace(/^## (.+)$/gm, '<h2 style="color:#f0f0f0;margin:24px 0 12px">$2</h2>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n- (.+)/g, '<br>• $1')

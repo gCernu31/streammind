@@ -2,6 +2,7 @@ import { Router } from 'express';
 import axios from 'axios';
 import pool from '../db.js';
 import { sendAnalysisReportEmail } from '../services/emailService.js';
+import { requireAuth } from '../middleware/auth.js';
 
 export const analyticsRoutes = Router();
 
@@ -185,6 +186,131 @@ const DANGEROUS   = /<[^>]*>|javascript:|on\w+=/i;
 const MAX_NUM     = 9_999_999;
 const NUM_KEYS    = ['avg_viewers', 'hours_per_month', 'total_followers', 'monthly_follower_growth', 'current_subs'];
 const TEXT_KEYS   = ['main_games', 'stream_schedule', 'social_links'];
+
+// ── GET /api/analytics/twitch-data — dati Twitch per l'utente loggato ────────
+analyticsRoutes.get('/twitch-data', requireAuth, async (req, res) => {
+  const { twitch_id, twitch_username } = req.user;
+  if (!process.env.TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) {
+    return res.json({ twitch_username });
+  }
+  try {
+    const token = await getTwitchAppToken();
+    const headers = {
+      'Client-ID': process.env.TWITCH_CLIENT_ID,
+      Authorization: `Bearer ${token}`,
+    };
+    const [followersResult, channelResult] = await Promise.allSettled([
+      axios.get('https://api.twitch.tv/helix/channels/followers', {
+        params: { broadcaster_id: twitch_id, first: 1 },
+        headers, timeout: 8_000,
+      }),
+      axios.get('https://api.twitch.tv/helix/channels', {
+        params: { broadcaster_id: twitch_id },
+        headers, timeout: 8_000,
+      }),
+    ]);
+    const totalFollowers = followersResult.status === 'fulfilled'
+      ? (followersResult.value.data?.total ?? null) : null;
+    const gameData = channelResult.status === 'fulfilled'
+      ? channelResult.value.data?.data?.[0] : null;
+    res.json({
+      twitch_username,
+      total_followers: totalFollowers,
+      main_games: gameData?.game_name ?? null,
+    });
+  } catch (err) {
+    console.error('[Analytics] twitch-data:', err.message);
+    res.json({ twitch_username });
+  }
+});
+
+// ── GET /api/analytics/my-analysis — analisi esistente per utente loggato ────
+analyticsRoutes.get('/my-analysis', requireAuth, async (req, res) => {
+  const { twitch_id } = req.user;
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, twitch_username, analysis_generated, generated_at, next_generation_at, form_data
+       FROM analytics_leads WHERE twitch_id = $1`,
+      [twitch_id]
+    );
+    if (!rows[0] || !rows[0].analysis_generated) {
+      return res.json({ analysis: null });
+    }
+    res.json({
+      id:                 rows[0].id,
+      analysis:           rows[0].analysis_generated,
+      generated_at:       rows[0].generated_at,
+      next_generation_at: rows[0].next_generation_at,
+      form_data:          rows[0].form_data,
+    });
+  } catch (err) {
+    console.error('[Analytics] my-analysis:', err.message);
+    res.status(500).json({ error: "Errore nel recupero dell'analisi." });
+  }
+});
+
+// ── POST /api/analytics/generate — genera/rigenera analisi per utente loggato ─
+analyticsRoutes.post('/generate', requireAuth, async (req, res) => {
+  const { twitch_id, twitch_username: jwtUsername, streamer_id } = req.user;
+  const formData = req.body;
+
+  for (const key of TEXT_KEYS) {
+    if (formData[key] && DANGEROUS.test(formData[key])) {
+      return res.status(400).json({ error: 'Contenuto non consentito nei campi testo.' });
+    }
+  }
+
+  const { rows: existing } = await pool.query(
+    `SELECT id, next_generation_at FROM analytics_leads WHERE twitch_id = $1`,
+    [twitch_id]
+  );
+  if (existing[0]?.next_generation_at && new Date(existing[0].next_generation_at) > new Date()) {
+    const d = new Date(existing[0].next_generation_at).toLocaleDateString('it-IT', {
+      day: 'numeric', month: 'long', year: 'numeric',
+    });
+    return res.status(429).json({
+      error: `Puoi rigenerare l'analisi a partire dal ${d}.`,
+      next_generation_at: existing[0].next_generation_at,
+    });
+  }
+
+  try {
+    const usernameForPrompt = formData.twitch_username?.trim() || jwtUsername;
+    const analysis = await callGemini(buildPrompt({ ...formData, twitch_username: usernameForPrompt }));
+    const nextGen = new Date(Date.now() + 30 * 24 * 60 * 60_000);
+
+    let id;
+    if (existing[0]) {
+      const { rows } = await pool.query(
+        `UPDATE analytics_leads
+         SET analysis_generated=$1, generated_at=NOW(), next_generation_at=$2, form_data=$3
+         WHERE twitch_id=$4 RETURNING id`,
+        [analysis, nextGen, JSON.stringify(formData), twitch_id]
+      );
+      id = rows[0].id;
+    } else {
+      const { rows: sRows } = await pool.query(
+        `SELECT email FROM streamers WHERE id = $1`, [streamer_id]
+      );
+      const email = sRows[0]?.email ?? null;
+      const { rows } = await pool.query(
+        `INSERT INTO analytics_leads
+           (twitch_id, twitch_username, email, form_data, analysis_generated, generated_at, next_generation_at)
+         VALUES ($1,$2,$3,$4,$5,NOW(),$6) RETURNING id`,
+        [twitch_id, usernameForPrompt, email, JSON.stringify(formData), analysis, nextGen]
+      );
+      id = rows[0].id;
+    }
+
+    res.json({ analysis, id });
+  } catch (err) {
+    console.error('[Analytics] generate:', err.message);
+    if (err.response?.status === 429) {
+      return res.status(503).json({ error: 'Servizio temporaneamente sovraccarico. Riprova tra qualche minuto.' });
+    }
+    res.status(500).json({ error: "Errore durante la generazione dell'analisi. Riprova." });
+  }
+});
 
 // ── GET /api/analytics/:id — recupera analisi pubblica per link condivisibile ──
 analyticsRoutes.get('/:id', async (req, res) => {

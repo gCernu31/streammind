@@ -356,3 +356,22 @@ CREATE TABLE IF NOT EXISTS maintenance_windows (
   ends_at     TIMESTAMP NOT NULL,
   active      BOOLEAN NOT NULL DEFAULT true
 );
+
+-- Analisi autenticate: collega analytics_leads a un utente Twitch loggato
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='analytics_leads' AND column_name='twitch_id') THEN
+    ALTER TABLE analytics_leads ADD COLUMN twitch_id VARCHAR(100);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='analytics_leads' AND column_name='generated_at') THEN
+    ALTER TABLE analytics_leads ADD COLUMN generated_at TIMESTAMP;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='analytics_leads' AND column_name='next_generation_at') THEN
+    ALTER TABLE analytics_leads ADD COLUMN next_generation_at TIMESTAMP;
+  END IF;
+END;
+$$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_analytics_leads_twitch_id
+  ON analytics_leads (twitch_id)
+  WHERE twitch_id IS NOT NULL;

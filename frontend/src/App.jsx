@@ -12,6 +12,8 @@ import MemoryPage from './pages/MemoryPage.jsx';
 import SubscriptionPage from './pages/SubscriptionPage.jsx';
 import AnalisiPage from './pages/AnalisiPage.jsx';
 import SharedAnalisiPage from './pages/SharedAnalisiPage.jsx';
+import ProvaGratisPage from './pages/ProvaGratisPage.jsx';
+import DashboardAnalisiPage from './pages/DashboardAnalisiPage.jsx';
 import GuidePage from './pages/GuidePage.jsx';
 import ChangelogPage from './pages/ChangelogPage.jsx';
 import FaqPage from './pages/FaqPage.jsx';
@@ -80,8 +82,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LandingPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
           <Route path="/login"     element={<LoginPage />} />
-          <Route path="/analisi"     element={<AnalisiPage       user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
+          <Route path="/prova-gratis" element={<ProvaGratisPage   user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
           <Route path="/analisi/:id" element={<SharedAnalisiPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
+          <Route path="/analisi-pubblica" element={<AnalisiPage  user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
           <Route path="/changelog" element={<ChangelogPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
           <Route path="/status"    element={<StatusPage    user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
           <Route path="/faq"       element={<FaqPage       user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
@@ -92,6 +95,7 @@ export default function App() {
           <Route path="/ref/:code" element={<RefPage />} />
 
           {/* Rotte protette */}
+          <Route path="/analisi"     element={<ProtectedRoute user={auth.user} loading={auth.loading}><Layout user={auth.user} onLogout={auth.logout}><DashboardAnalisiPage user={auth.user} /></Layout></ProtectedRoute>} />
           <Route path="/dashboard"   element={<ProtectedRoute user={auth.user} loading={auth.loading}><Layout user={auth.user} onLogout={auth.logout}><DashboardPage user={auth.user} /></Layout></ProtectedRoute>} />
           <Route path="/config"      element={<ProtectedRoute user={auth.user} loading={auth.loading}><Layout user={auth.user} onLogout={auth.logout}><ConfigPage /></Layout></ProtectedRoute>} />
           <Route path="/memory"      element={<ProtectedRoute user={auth.user} loading={auth.loading}><Layout user={auth.user} onLogout={auth.logout}><MemoryPage /></Layout></ProtectedRoute>} />

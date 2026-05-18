@@ -279,7 +279,7 @@ function Header({ user, loading, onLogout }) {
           <a href="#how"      className="hover:text-white transition-colors">Come funziona</a>
           <a href="#pricing"  className="hover:text-white transition-colors">Prezzi</a>
           <Link to="/faq"     className="hover:text-white transition-colors">FAQ</Link>
-          <Link to="/analisi" className="hover:text-white transition-colors" style={{ color: PURPLE }}>Analisi Gratis</Link>
+          <Link to="/prova-gratis" className="hover:text-white transition-colors" style={{ color: PURPLE }}>Analisi Gratis</Link>
         </nav>
 
         {/* Account */}
@@ -690,7 +690,7 @@ export default function LandingPage({ user, loading, onLogout }) {
                   <li><a href="#features" className="hover:text-white transition-colors">Funzionalità</a></li>
                   <li><a href="#pricing"  className="hover:text-white transition-colors">Prezzi</a></li>
                   <li><a href="#how"      className="hover:text-white transition-colors">Come funziona</a></li>
-                  <li><Link to="/analisi"   className="hover:text-white transition-colors">Analisi Gratis</Link></li>
+                  <li><Link to="/prova-gratis" className="hover:text-white transition-colors">Analisi Gratis</Link></li>
                   <li><Link to="/changelog" className="hover:text-white transition-colors">Changelog</Link></li>
                   <li><Link to="/status"    className="hover:text-white transition-colors">Status</Link></li>
                   <li><Link to="/login"    className="hover:text-white transition-colors">Accedi</Link></li>

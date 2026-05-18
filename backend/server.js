@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import { join, dirname } from 'path';
+import { readFileSync } from 'fs';
 import pool from './db.js';
 import { authenticateToken } from './middleware/auth.js';
 import { authRoutes } from './routes/auth.js';
@@ -172,8 +173,20 @@ app.use((err, req, res, _next) => {
 });
 
 // ── Avvio ─────────────────────────────────────────────────────────────────────
+async function runMigrations() {
+  try {
+    const sql = readFileSync(join(__dirname, 'schema.sql'), 'utf8');
+    await pool.query(sql);
+    console.log('   Migrazioni: applicate');
+  } catch (err) {
+    console.error('⚠️  Migrazione schema parzialmente fallita:', err.message);
+    // Non blocca l'avvio — la maggior parte delle tabelle esiste già
+  }
+}
+
 pool.query('SELECT 1')
-  .then(() => {
+  .then(async () => {
+    await runMigrations();
     app.listen(PORT, () => {
       console.log(`🟣 StreaMindAI API avviata su http://localhost:${PORT}`);
       console.log(`   Ambiente: ${process.env.NODE_ENV ?? 'development'}`);

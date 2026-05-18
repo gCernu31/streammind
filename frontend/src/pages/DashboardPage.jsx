@@ -114,25 +114,12 @@ function TrialBanner() {
 // Bottone Attiva/Disattiva Bot
 // ---------------------------------------------------------------------------
 
-function BotToggle({ user }) {
-  const [active, setActive]     = useState(null); // null = caricamento
-  const [loading, setLoading]   = useState(false);
-  const { setBotActive }        = useBotStatus();
+function BotToggle() {
+  const { botActive, setBotActive } = useBotStatus();
+  const [loading, setLoading]       = useState(false);
 
-  useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-    fetch('/api/config', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data != null) {
-          const val = data.bot_active !== false;
-          setActive(val);
-          setBotActive(val);
-        }
-      })
-      .catch(() => {});
-  }, []);
+  // Legge lo stato dal context (inizializzato da Layout al mount)
+  const active = botActive;
 
   const toggle = async () => {
     if (loading || active === null) return;
@@ -146,8 +133,7 @@ function BotToggle({ user }) {
         body: JSON.stringify({ active: newState }),
       });
       if (r.ok) {
-        setActive(newState);
-        setBotActive(newState); // aggiorna pallino navbar in tempo reale
+        setBotActive(newState);
       }
     } catch {}
     setLoading(false);
@@ -900,7 +886,7 @@ export default function DashboardPage({ user }) {
       {subStatus === 'inactive' && <TrialBanner />}
 
       {/* ── Toggle attiva/disattiva bot ────────────────────────────── */}
-      {subStatus !== 'inactive' && <BotToggle user={user} />}
+      {subStatus !== 'inactive' && <BotToggle />}
 
       {/* ── Token extra ────────────────────────────────────────────── */}
       {extraTokens && (

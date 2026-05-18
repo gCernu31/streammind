@@ -635,7 +635,7 @@ export default function LandingPage({ user, loading, onLogout }) {
           </div>
 
           <p className="text-center mt-8 text-sm" style={{ color: '#6b6b6b' }}>
-            Hai dubbi? Scrivici su Discord — rispondiamo entro poche ore.
+            Hai dubbi? Scrivici a <a href="mailto:support@streamindai.com" style={{ color: '#8B5CF6', textDecoration: 'none' }}>support@streamindai.com</a> — rispondiamo entro poche ore.
           </p>
         </div>
       </section>

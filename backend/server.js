@@ -153,6 +153,35 @@ app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/referral',    referralRoutes);
 app.use('/api/status',      statusRoutes);
 
+// ── ENDPOINT TEMPORANEO — rimuovere dopo il test ─────────────────────────────
+app.post('/api/admin/reset-test', async (req, res) => {
+  if (req.headers.authorization !== 'Bearer RESET_SECRET_2026') {
+    return res.status(403).json({ error: 'Non autorizzato' });
+  }
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, twitch_id FROM streamers WHERE LOWER(twitch_username) = 'gcernu' LIMIT 1`
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Utente non trovato' });
+    const { id, twitch_id } = rows[0];
+
+    await pool.query(
+      `UPDATE streamers SET subscription_status = 'inactive', subscription_plan = NULL, subscription_end = NULL WHERE id = $1`,
+      [id]
+    );
+
+    const { rowCount } = await pool.query(
+      `DELETE FROM analytics_leads WHERE twitch_id = $1`,
+      [twitch_id]
+    );
+
+    res.json({ success: true, message: 'Account resettato', analytics_deleted: rowCount });
+  } catch (err) {
+    console.error('[reset-test]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── React Router catch-all (produzione) ──────────────────────────────────────
 // DEVE stare dopo tutte le route API
 if (isProd) {

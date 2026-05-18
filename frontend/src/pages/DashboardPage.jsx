@@ -215,8 +215,9 @@ function BotToggle({ user }) {
 // Card: Bot Status
 // ---------------------------------------------------------------------------
 
-function BotStatusCard({ status, botName, channel }) {
-  const online = status === 'online';
+function BotStatusCard({ botName, channel }) {
+  const { botActive } = useBotStatus();
+  const online = botActive === true;
   return (
     <div className="card flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -924,7 +925,6 @@ export default function DashboardPage({ user }) {
       {/* ── Stat cards ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <BotStatusCard
-          status={stats?.bot_status ?? 'offline'}
           botName={botName ?? 'Il tuo bot'}
           channel={user?.twitch_username ?? '—'}
         />

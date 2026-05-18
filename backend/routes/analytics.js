@@ -46,7 +46,11 @@ async function callGemini(prompt) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
   const r = await axios.post(url, {
     contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.7, maxOutputTokens: 12288 },
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 8192,
+      thinkingConfig: { thinkingBudget: 2048 },
+    },
   }, { timeout: 90_000 });
 
   const text = r.data?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -57,11 +61,13 @@ async function callGemini(prompt) {
 function buildPrompt(data) {
   const {
     twitch_username,
-    total_followers, avg_viewers, main_games,
+    total_followers, avg_viewers, main_games, total_views, created_at, is_live,
     current_subs,
-    hours_per_week, hours_per_month,   // hours_per_month = legacy
+    hours_per_week, hours_per_month,
     main_goal, has_socials, social_links, stream_schedule,
-    monthly_follower_growth,           // legacy
+    audience_age, language, has_collaborated, main_weakness,
+    previous_analysis, analysis_count,
+    monthly_follower_growth,
   } = data;
 
   const hoursStr = hours_per_week
@@ -72,74 +78,100 @@ function buildPrompt(data) {
 
   const socialsStr = has_socials === true || has_socials === 'true'
     ? `Sì${social_links ? ` — ${social_links}` : ''}`
-    : has_socials === false || has_socials === 'false'
-    ? 'No'
+    : (has_socials === false || has_socials === 'false') ? 'No'
     : social_links || 'non specificato';
 
-  return `Scrivi come un consulente esperto di crescita su Twitch con 10 anni di esperienza. Usa un tono diretto, autorevole ma accessibile. Ogni affermazione deve essere supportata da un dato numerico concreto. Usa paragrafi brevi (massimo 3-4 righe). Evita frasi generiche — ogni consiglio deve essere specifico per questo streamer. Usa la seconda persona singolare (tu, il tuo canale) per rendere l'analisi personale.
+  const collaboratedStr = has_collaborated === true || has_collaborated === 'true' ? 'Sì'
+    : (has_collaborated === false || has_collaborated === 'false') ? 'No'
+    : 'non specificato';
 
-## DATI STREAMER
-- Username Twitch: ${twitch_username || 'non specificato'}
+  let yearsActiveStr = 'non specificato';
+  if (created_at) {
+    const ms = Date.now() - new Date(created_at).getTime();
+    const y  = ms / (365.25 * 24 * 60 * 60 * 1000);
+    yearsActiveStr = y >= 1 ? `${Math.floor(y)} anni` : `${parseFloat(y.toFixed(1))} anni`;
+  }
+
+  const isRegen = Number(analysis_count) > 1;
+  const prevSection = isRegen ? `
+
+### 🔄 Confronto con Analisi Precedente
+${previous_analysis
+  ? `Confronta i dati attuali con l'analisi precedente. Identifica cosa è migliorato, cosa è peggiorato e cosa è rimasto invariato — usa numeri concreti per ogni punto. Riconosci esplicitamente i progressi dove ci sono. Se qualcosa è peggiorato, indica la causa probabile e la correzione.
+
+**Analisi precedente (solo come riferimento, non citare letteralmente):**
+${previous_analysis.substring(0, 1500)}${previous_analysis.length > 1500 ? '…' : ''}`
+  : `Questa è una rigenerazione dell'analisi. Non è disponibile il testo precedente per un confronto diretto. Ricorda allo streamer di confrontare i nuovi target KPI con i progressi effettivi raggiunti dall'analisi precedente e di tenere traccia delle metriche chiave nel tempo.`}` : '';
+
+  return `Sei Marco, un consulente esperto di crescita su Twitch con 10 anni di esperienza nel mercato italiano dello streaming. Hai accompagnato oltre 200 creator dalla fase 0 fino all'Affiliate e al Partner. Il tuo stile è diretto, concreto e senza filtri — dici le cose come stanno, anche quando non piacciono. Ogni affermazione è supportata da almeno un dato numerico. Scrivi in seconda persona singolare (tu, il tuo canale) per rendere ogni analisi personale e immediata.
+
+## DATI CANALE
+- Username: ${twitch_username || 'non specificato'}
 - Follower totali: ${total_followers || 0}
-- Spettatori medi per live: ${avg_viewers || 'non specificato'}
+- Visualizzazioni totali canale: ${total_views ? Number(total_views).toLocaleString('it-IT') : 'non disponibile'}
+- Canale attivo da: ${yearsActiveStr}
+- Spettatori medi: ${avg_viewers || 'non specificato'}${is_live ? ' *(rilevato in diretta)*' : ''}
 - Sub attuali: ${current_subs || 0}
 - Giochi principali: ${main_games || 'non specificato'}
-- Ore di live: ${hoursStr}
-- Obiettivo principale dello streamer: ${main_goal || 'non specificato'}
-- Presenza sui social: ${socialsStr}
-- Orari delle live: ${stream_schedule || 'non specificato'}${monthly_follower_growth ? `\n- Crescita follower mensile: ${monthly_follower_growth}` : ''}
+- Ore di streaming: ${hoursStr}
+- Obiettivo principale: ${main_goal || 'non specificato'}
+- Social media: ${socialsStr}
+- Orari delle live: ${stream_schedule || 'non specificato'}
+- Età media pubblico: ${audience_age || 'non specificato'}
+- Lingua delle live: ${language || 'non specificato'}
+- Collaborazioni con altri streamer: ${collaboratedStr}
+- Principale debolezza percepita: ${main_weakness || 'non specificata'}${monthly_follower_growth ? `\n- Crescita follower mensile: ${monthly_follower_growth}` : ''}
 
 ## ISTRUZIONI
-Genera un'analisi strutturata con esattamente le seguenti sezioni in Markdown. Ogni sezione inizia con ### (tre hashtag). Non aggiungere sezioni extra né introduzioni. Ogni affermazione deve includere un numero concreto.
+Genera un'analisi strutturata con esattamente le seguenti sezioni in Markdown. Ogni sezione inizia con ### (tre hashtag). Non aggiungere testo prima della prima sezione né dopo l'ultima riga ---. Ogni paragrafo massimo 3-4 righe. Ogni affermazione deve includere almeno un dato numerico concreto.
 
-### 📊 Situazione Attuale del Canale
-Analisi oggettiva dei dati forniti. Contestualizza ogni metrica rispetto alle medie Twitch per la categoria (es. media italiana, media categoria). Evidenzia il dato più rilevante con un numero preciso.
+### 📊 Fotografia del Canale
+Analisi oggettiva della situazione attuale. Calcola e commenta il viewer ratio (spettatori÷follower×100) — la media italiana è ~1-3%, buono >3%, ottimo >5%. Confronta ogni metrica con le medie Twitch italiane per la categoria. Identifica il dato più critico e il dato migliore con numeri precisi.
 
-### 🎯 Punteggio Canale
-Assegna un voto su 10 a ciascuna area con una riga di spiegazione specifica per questo streamer:
-- **Community**: X/10 — [motivazione basata sui dati]
-- **Monetizzazione**: X/10 — [motivazione basata sui dati]
-- **Discovery**: X/10 — [motivazione basata sui dati]
-- **Costanza**: X/10 — [motivazione basata sui dati]
+### 🎯 Score per Area
+Valuta ogni area con punteggio su 10 e indicatore emoji (🟢 ≥7, 🟡 4-6, 🔴 ≤3). Una riga di motivazione concreta per ognuna:
+- **Community**: X/10 🟢/🟡/🔴 — [motivazione specifica con dato]
+- **Monetizzazione**: X/10 🟢/🟡/🔴 — [motivazione specifica con dato]
+- **Discovery**: X/10 🟢/🟡/🔴 — [motivazione specifica con dato]
+- **Costanza**: X/10 🟢/🟡/🔴 — [motivazione specifica con dato]
+- **Contenuto**: X/10 🟢/🟡/🔴 — [motivazione specifica con dato]
+
+### 🔍 Analisi Competitor
+Cita 2-3 streamer italiani reali di dimensioni simili (±30% follower) nella stessa categoria o categorie correlate. Per ognuno: follower approssimativi, una cosa specifica che fanno meglio, e come puoi replicare quella strategia nel tuo contesto senza copiarla.
 
 ### 💪 Asset Strategici
-Identifica 2-3 punti di forza reali basati sui numeri forniti. Per ognuno cita il dato specifico che lo supporta e spiega perché è un vantaggio competitivo.
+Identifica 2-3 punti di forza reali di questo canale basati esclusivamente sui dati forniti. Per ognuno: cita il dato numerico che lo dimostra e spiega perché è un vantaggio competitivo concreto rispetto ai canali della stessa dimensione.
 
 ### ⚠️ Gap da Colmare
-Identifica 2-3 aree concrete dove il canale perde opportunità di crescita. Quantifica il potenziale mancato con un numero (es. "stai perdendo circa X follower/mese rispetto a canali simili").
+Identifica 2-3 aree dove stai lasciando crescita sul tavolo. Per ognuna: quantifica il potenziale non sfruttato con un numero (es. "+X follower/mese se risolto"), identifica la causa principale, indica la soluzione diretta e implementabile.
 
-### 🔍 Analisi della Concorrenza
-Cita 2-3 streamer italiani simili per dimensione (follower e spettatori medi) e categoria. Per ognuno indica una cosa specifica che fanno meglio e come puoi replicarla nel tuo contesto.
+### ⚡ Quick Wins — 7 Giorni
+Esattamente 3 azioni ad alto impatto e basso sforzo, implementabili questa settimana. Per ognuna: cosa fare esattamente (non generico), quanto tempo richiede, risultato atteso quantificato.
 
-### ⚡ Quick Wins
-Elenca esattamente 3 azioni concrete che puoi implementare entro 7 giorni. Ogni azione deve avere un risultato atteso quantificato (es. "+X% retention", "+Y follower/settimana").
+### 🎮 Strategia Giochi
+Analizza i giochi attuali in termini di viewer/channel ratio su Twitch. Suggerisci 3-4 giochi strategici per questa dimensione di canale. Per ognuno: stima canali attivi, viewer pool potenziale, perché è adatto ora. Includi almeno un "hidden gem" con viewer/channel ratio elevato.
 
-### ❌ Errori Comuni
-Descrivi 2-3 errori tipici degli streamer con ${total_followers || 0} follower e ${avg_viewers || 0} spettatori medi. Per ognuno spiega la causa e la soluzione pratica.
+### 📅 Piano Editoriale — 4 Settimane
+Piano settimanale con focus tematico, tipo contenuto e obiettivo misurabile:
+**Settimana 1 — [Focus]:** [descrizione concisa + obiettivo numerico]
+**Settimana 2 — [Focus]:** [descrizione concisa + obiettivo numerico]
+**Settimana 3 — [Focus]:** [descrizione concisa + obiettivo numerico]
+**Settimana 4 — [Focus]:** [descrizione concisa + obiettivo numerico]
 
-### ⏰ Orario Ottimale per Streamare
-Analizza gli orari attuali e suggerisci quelli migliori con dati di traffico Twitch per la categoria. Indica il guadagno stimato in spettatori medi passando agli orari consigliati.
+### 🚀 Roadmap 30/60/90 Giorni
+Piano con KPI specifici e azioni concrete:
+- **30 giorni** — Target [metrica]: [2-3 azioni specifiche da fare]
+- **60 giorni** — Target [metrica]: [2-3 azioni di follow-up specifiche]
+- **90 giorni** — Target [metrica]: [obiettivo principale con proiezione numerica realistica]
 
-### 🎮 Giochi Consigliati per Crescere
-Suggerisci 3-4 giochi strategici. Per ognuno indica: stima canali attivi nella categoria su Twitch e numero di spettatori potenzialmente raggiungibili con la tua dimensione attuale.
-
-### 🚀 Roadmap di Crescita
-Piano d'azione dettagliato con KPI misurabili:
-- **Primi 30 giorni**: 2-3 azioni immediate con target numerico
-- **60 giorni**: obiettivi intermedi con numeri target
-- **90 giorni**: traguardo principale con proiezione follower realistica
-
-### 📈 Stima Crescita Follower
-Fornisci una stima realistica con 3 scenari e le condizioni necessarie per ciascuno:
-- **Scenario conservativo**: X follower in 90 giorni (condizioni: ...)
-- **Scenario moderato**: X follower in 90 giorni (condizioni: ...)
-- **Scenario ottimistico**: X follower in 90 giorni (condizioni: ...)
-
-### 💡 Piano d'Azione Immediato
-Tabella settimanale del piano editoriale. Usa il formato tabella Markdown con queste colonne esatte: Giorno, Gioco, Tipo, Obiettivo. Ogni cella deve avere massimo 30 caratteri — abbrevia se necessario. Includi 7 righe (una per giorno della settimana).
-
+### 📈 Proiezione Crescita
+3 scenari di crescita realistici e differenziati basati sui dati attuali:
+- **Scenario conservativo** (stesse abitudini): +X follower in 90 giorni — [perché]
+- **Scenario moderato** (implementi 50% consigli): +X follower in 90 giorni — [perché]
+- **Scenario ottimistico** (implementi tutto): +X follower in 90 giorni — [perché]
+${prevSection}
 ---
-Questa analisi è stata generata da StreaMindAI sulla base dei dati forniti. Per una consulenza approfondita e personalizzata, contatta il team di StreaMindAI su support@streamindai.com
+Analisi generata da StreaMindAI · streamindai.com
 
 ---
 Rispondi **esclusivamente in italiano**. Non aggiungere testo prima della prima sezione ### né dopo l'ultima riga ---.`;
@@ -273,6 +305,8 @@ analyticsRoutes.get('/twitch-data', requireAuth, async (req, res) => {
     res.json({
       twitch_username,
       total_followers: totalFollowers,
+      total_views:     userData?.view_count ?? null,
+      created_at:      userData?.created_at ?? null,
       main_games:      recentGames.length > 0 ? recentGames.join(', ') : null,
       years_active:    yearsActive,
       avg_viewers:     liveStream?.viewer_count ?? null,
@@ -321,7 +355,7 @@ analyticsRoutes.post('/generate', requireAuth, async (req, res) => {
   }
 
   const { rows: existing } = await pool.query(
-    `SELECT id, next_generation_at FROM analytics_leads WHERE twitch_id = $1`,
+    `SELECT id, next_generation_at, analysis_generated FROM analytics_leads WHERE twitch_id = $1`,
     [twitch_id]
   );
   if (existing[0]?.next_generation_at && new Date(existing[0].next_generation_at) > new Date()) {
@@ -336,7 +370,13 @@ analyticsRoutes.post('/generate', requireAuth, async (req, res) => {
 
   try {
     const usernameForPrompt = formData.twitch_username?.trim() || jwtUsername;
-    const analysis = await callGemini(buildPrompt({ ...formData, twitch_username: usernameForPrompt }));
+    const isRegen = !!(existing[0]?.analysis_generated);
+    const analysis = await callGemini(buildPrompt({
+      ...formData,
+      twitch_username:   usernameForPrompt,
+      previous_analysis: isRegen ? existing[0].analysis_generated : null,
+      analysis_count:    isRegen ? 2 : 1,
+    }));
     const nextGen = new Date(Date.now() + 30 * 24 * 60 * 60_000);
 
     let id;

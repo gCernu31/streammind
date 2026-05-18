@@ -17,6 +17,13 @@ const EMPTY_FORM = {
   has_socials:      false,
   social_links:     '',
   stream_schedule:  '',
+  audience_age:     '',
+  language:         '',
+  has_collaborated: false,
+  main_weakness:    '',
+  total_views:      '',
+  created_at:       '',
+  is_live:          false,
 };
 
 // ── Componenti UI ─────────────────────────────────────────────────────────────
@@ -135,6 +142,9 @@ export default function DashboardAnalisiPage({ user }) {
             if (tw?.total_followers != null) { prefills.total_followers = String(tw.total_followers); fetched.total_followers = true; }
             if (tw?.main_games)              { prefills.main_games      = tw.main_games;              fetched.main_games      = true; }
             if (tw?.avg_viewers  != null)    { prefills.avg_viewers     = String(tw.avg_viewers);     fetched.avg_viewers     = true; }
+            if (tw?.total_views  != null)    { prefills.total_views     = String(tw.total_views); }
+            if (tw?.created_at)              { prefills.created_at      = tw.created_at; }
+            if (tw?.is_live)                 { prefills.is_live         = true; }
             setForm(prev => ({ ...prev, ...prefills }));
             setFetchedFields(fetched);
             setPageState('noAnalysis');
@@ -221,6 +231,43 @@ export default function DashboardAnalisiPage({ user }) {
             <option value="Monetizzare il canale">Monetizzare il canale</option>
             <option value="Costruire una community">Costruire una community solida</option>
           </SelectInput>
+        </Field>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Età media del pubblico">
+            <SelectInput value={form.audience_age} onChange={e => set('audience_age', e.target.value)}>
+              <option value="" disabled>Seleziona...</option>
+              <option value="Prevalentemente under 18">Prevalentemente under 18</option>
+              <option value="18-24 anni">18-24 anni</option>
+              <option value="25-34 anni">25-34 anni</option>
+              <option value="35+ anni">35+ anni</option>
+              <option value="Misto">Misto / Non so</option>
+            </SelectInput>
+          </Field>
+          <Field label="Lingua delle live">
+            <SelectInput value={form.language} onChange={e => set('language', e.target.value)}>
+              <option value="" disabled>Seleziona...</option>
+              <option value="Italiano">Italiano</option>
+              <option value="Inglese">Inglese</option>
+              <option value="Entrambe">Entrambe</option>
+            </SelectInput>
+          </Field>
+        </div>
+
+        <div className="flex items-center justify-between py-1">
+          <div>
+            <p className="text-sm font-medium">Hai mai collaborato con altri streamer?</p>
+            <p className="text-xs mt-0.5" style={{ color: '#6b6b6b' }}>Host, raid condivisi, stream in duo o collab ufficiali</p>
+          </div>
+          <Toggle value={form.has_collaborated} onChange={v => set('has_collaborated', v)} />
+        </div>
+
+        <Field label="Principale debolezza del canale (opzionale)">
+          <TextInput
+            value={form.main_weakness}
+            onChange={e => set('main_weakness', e.target.value)}
+            placeholder="Es. Poca costanza, chat poco attiva, no social…"
+          />
         </Field>
 
         <div className="flex items-center justify-between py-1">

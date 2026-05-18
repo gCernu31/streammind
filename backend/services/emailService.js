@@ -109,7 +109,7 @@ export async function sendWelcomeEmail({ to, displayName }) {
         </tbody>
       </table>
       <p style="margin:0;font-size:14px;color:#6b6b6b">
-        Inizia subito — hai 7 giorni di prova gratuita senza carta di credito.
+        Inizia subito — hai 7 giorni di prova gratuita. Annulla quando vuoi.
       </p>
       ${ctaButton('Scopri i piani →', `${FRONTEND}/subscription`)}
     `),

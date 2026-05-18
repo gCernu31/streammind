@@ -114,7 +114,7 @@ function SlideCta() {
         </svg>
       </Link>
       <p style={{ fontSize: '12px', color: '#3a3a3a' }}>
-        Trial 7 giorni gratis · Nessuna carta richiesta · Cancelli quando vuoi
+        Prova gratis 7 giorni · Annulla quando vuoi
       </p>
     </div>
   );

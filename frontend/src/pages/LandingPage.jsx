@@ -405,7 +405,7 @@ export default function LandingPage({ user, loading, onLogout }) {
               </div>
 
               <p className="mt-6 text-sm" style={{ color: '#6b6b6b' }}>
-                Nessuna carta di credito · Cancelli quando vuoi
+                7 giorni di prova — nessun addebito oggi · Annulla quando vuoi
               </p>
             </div>
 

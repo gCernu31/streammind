@@ -295,6 +295,19 @@ export default function MemoryPage() {
         </p>
       </div>
 
+      {/* ── Info privacy memoria ── */}
+      <div
+        className="flex gap-3 rounded-xl border px-4 py-3.5 mb-5"
+        style={{ backgroundColor: 'rgba(139,92,246,0.06)', borderColor: 'rgba(139,92,246,0.18)' }}
+      >
+        <span className="text-base shrink-0 mt-0.5">ℹ️</span>
+        <p className="text-xs leading-relaxed" style={{ color: '#a0a0a0' }}>
+          StreaMindAI analizza i messaggi pubblici della tua chat Twitch per migliorare le risposte del tuo bot e costruire la sua memoria.
+          I messaggi vengono elaborati automaticamente ogni 20 messaggi e conservati per <strong style={{ color: '#c4b5fd' }}>90 giorni</strong>, dopodiché vengono eliminati.
+          Puoi visualizzare e cancellare le memorie salvate in qualsiasi momento da questa pagina.
+        </p>
+      </div>
+
       {/* ── Toolbar ── */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <div className="relative flex-1 min-w-[180px] max-w-xs">

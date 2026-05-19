@@ -268,7 +268,8 @@ export default function SubscriptionPage() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [invLoading, setInvLoading] = useState(true);
-  const [checkingOut, setCheckingOut] = useState(null);
+  const [checkingOut, setCheckingOut]             = useState(null);
+  const [checkingOutPayPal, setCheckingOutPayPal] = useState(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [showCancel, setShowCancel]     = useState(false);
   const [cancelling, setCancelling]     = useState(false);
@@ -311,16 +312,16 @@ export default function SubscriptionPage() {
       .catch(() => {});
   }, []);
 
-  const handleCheckout = async (planId) => {
-    setCheckingOut(planId);
+  const handleCheckout = async (planId, paypal = false) => {
+    paypal ? setCheckingOutPayPal(planId) : setCheckingOut(planId);
     try {
-      const r = await axios.post('/api/subscription/checkout', { plan: planId }, { headers: headers() });
+      const r = await axios.post('/api/subscription/checkout', { plan: planId, paypal }, { headers: headers() });
       if (r.data.checkout_url) window.location.href = r.data.checkout_url;
       else alert(r.data.error ?? 'Pagamenti non ancora configurati.');
     } catch (err) {
       alert(err.response?.data?.error ?? 'Errore imprevisto.');
     } finally {
-      setCheckingOut(null);
+      paypal ? setCheckingOutPayPal(null) : setCheckingOut(null);
     }
   };
 
@@ -508,26 +509,56 @@ export default function SubscriptionPage() {
                   Contattaci
                 </button>
               ) : plan.highlight ? (
-                <div>
+                <div className="space-y-2">
                   <button
                     onClick={() => handleCheckout(plan.id)}
-                    disabled={!!checkingOut}
+                    disabled={!!checkingOut || !!checkingOutPayPal}
                     className="w-full text-sm font-semibold py-2.5 rounded-lg transition-colors duration-150 disabled:opacity-60 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
                   >
                     {checkingOut === plan.id ? 'Reindirizzamento…' : `Inizia Trial — ${plan.name}`}
                   </button>
-                  <p className="text-center text-xs text-hally-text-muted mt-2">7 giorni gratis · carta richiesta</p>
+                  <p className="text-center text-xs text-hally-text-muted">7 giorni gratis · carta richiesta</p>
+                  <button
+                    onClick={() => handleCheckout(plan.id, true)}
+                    disabled={!!checkingOut || !!checkingOutPayPal}
+                    className="w-full flex items-center justify-center gap-2 text-sm font-semibold py-2.5 rounded-lg border transition-colors duration-150 disabled:opacity-60"
+                    style={{ borderColor: '#1e3a5f', backgroundColor: '#003087', color: '#fff' }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#002a75'; }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#003087'; }}
+                  >
+                    {checkingOutPayPal === plan.id ? 'Reindirizzamento…' : (
+                      <>
+                        <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c1.379 2.909.86 5.679-1.496 7.332-1.975 1.388-4.886 1.644-7.497 1.644H9.952l-1.12 7.107H14.1c.524 0 .968-.382 1.05-.9l.044-.277.87-5.507.056-.304c.082-.518.526-.9 1.05-.9h.662c4.3 0 7.664-1.748 8.648-6.797.412-2.117.2-3.885-.908-5.057z"/></svg>
+                        PayPal — senza trial
+                      </>
+                    )}
+                  </button>
                 </div>
               ) : (
-                <div>
+                <div className="space-y-2">
                   <button
                     onClick={() => handleCheckout(plan.id)}
-                    disabled={!!checkingOut}
+                    disabled={!!checkingOut || !!checkingOutPayPal}
                     className="btn-secondary w-full text-sm font-semibold disabled:opacity-60"
                   >
                     {checkingOut === plan.id ? 'Reindirizzamento…' : `Inizia Trial — ${plan.name}`}
                   </button>
-                  <p className="text-center text-xs text-hally-text-muted mt-2">7 giorni gratis · carta richiesta</p>
+                  <p className="text-center text-xs text-hally-text-muted">7 giorni gratis · carta richiesta</p>
+                  <button
+                    onClick={() => handleCheckout(plan.id, true)}
+                    disabled={!!checkingOut || !!checkingOutPayPal}
+                    className="w-full flex items-center justify-center gap-2 text-sm font-semibold py-2.5 rounded-lg border transition-colors duration-150 disabled:opacity-60"
+                    style={{ borderColor: '#1e3a5f', backgroundColor: '#003087', color: '#fff' }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#002a75'; }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#003087'; }}
+                  >
+                    {checkingOutPayPal === plan.id ? 'Reindirizzamento…' : (
+                      <>
+                        <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c1.379 2.909.86 5.679-1.496 7.332-1.975 1.388-4.886 1.644-7.497 1.644H9.952l-1.12 7.107H14.1c.524 0 .968-.382 1.05-.9l.044-.277.87-5.507.056-.304c.082-.518.526-.9 1.05-.9h.662c4.3 0 7.664-1.748 8.648-6.797.412-2.117.2-3.885-.908-5.057z"/></svg>
+                        PayPal — senza trial
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
             </div>

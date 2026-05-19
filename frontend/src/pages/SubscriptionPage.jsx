@@ -275,6 +275,8 @@ export default function SubscriptionPage() {
   const [showContact, setShowContact]   = useState(false);
   const [tokenPackLoading, setTokenPackLoading] = useState(false);
   const [tokenPackBanner, setTokenPackBanner]   = useState(null); // 'success'|'cancelled'|null
+  const [referral, setReferral]                 = useState(null);
+  const [refCopied, setRefCopied]               = useState(false);
 
   const headers = () => ({ Authorization: `Bearer ${getToken()}` });
 
@@ -302,6 +304,12 @@ export default function SubscriptionPage() {
       .catch(() => setInvoices([]))
       .finally(() => setInvLoading(false));
   }, [sub?.status]);
+
+  useEffect(() => {
+    axios.get('/api/referral', { headers: headers() })
+      .then(r => setReferral(r.data))
+      .catch(() => {});
+  }, []);
 
   const handleCheckout = async (planId) => {
     setCheckingOut(planId);
@@ -339,6 +347,14 @@ export default function SubscriptionPage() {
     } finally {
       setTokenPackLoading(false);
     }
+  };
+
+  const handleCopyRef = () => {
+    if (!referral?.link) return;
+    navigator.clipboard.writeText(referral.link).then(() => {
+      setRefCopied(true);
+      setTimeout(() => setRefCopied(false), 2000);
+    });
   };
 
   const handleCancel = async () => {
@@ -615,6 +631,53 @@ export default function SubscriptionPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* ── Porta un amico ── */}
+      <div className="card mb-8">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <h2 className="font-semibold">Porta un amico</h2>
+            <p className="text-xs text-hally-text-muted mt-0.5">Condividi il tuo link e guadagna sconti</p>
+          </div>
+          {referral?.active_referrals > 0 && (
+            <div
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border shrink-0"
+              style={{ background: 'rgba(74,222,128,0.08)', borderColor: 'rgba(74,222,128,0.25)', color: '#4ade80' }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: '#4ade80' }} />
+              {referral.active_referrals} {referral.active_referrals === 1 ? 'amico' : 'amici'} attivati
+            </div>
+          )}
+        </div>
+
+        <p className="text-sm text-hally-text-muted mb-5 leading-relaxed">
+          Porta un amico su StreaMindAI e ottieni il{' '}
+          <span className="font-semibold text-hally-text">15% di sconto</span> sul tuo prossimo rinnovo.
+          Il tuo amico riceve{' '}
+          <span className="font-semibold text-hally-text">14 giorni di trial gratuito</span> invece di 7.
+          Il bonus si attiva solo quando il tuo amico sottoscrive un piano.
+        </p>
+
+        {referral?.link ? (
+          <div className="flex gap-2">
+            <div
+              className="flex-1 px-3 py-2.5 rounded-lg border text-sm font-mono truncate select-all"
+              style={{ backgroundColor: 'rgba(139,92,246,0.04)', borderColor: 'rgba(139,92,246,0.2)', color: '#8B5CF6' }}
+            >
+              {referral.link}
+            </div>
+            <button
+              onClick={handleCopyRef}
+              className="btn-secondary text-sm px-4 whitespace-nowrap shrink-0 transition-colors"
+              style={refCopied ? { color: '#4ade80', borderColor: 'rgba(74,222,128,0.3)' } : {}}
+            >
+              {refCopied ? '✓ Copiato' : 'Copia link'}
+            </button>
+          </div>
+        ) : (
+          <div className="h-10 rounded-lg animate-pulse" style={{ backgroundColor: '#1a1a1a' }} />
+        )}
       </div>
 
       {/* ── Storico fatture ── */}

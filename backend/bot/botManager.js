@@ -155,6 +155,7 @@ const EVENTSUB_SUBS = [
   { type: 'channel.hype_train.begin',  ver: '1', cond: 'standard' },
   { type: 'channel.raid',              ver: '1', cond: 'raid'     },
   { type: 'stream.online',             ver: '1', cond: 'standard' },
+  { type: 'stream.offline',            ver: '1', cond: 'standard' },
 ];
 
 const EVENTSUB_PLAN_MAP = {
@@ -1142,7 +1143,7 @@ class BotManager {
     }
   }
 
-  // ── EventSub notifications (follow, hype_train, stream.online) ───────────
+  // ── EventSub notifications (follow, hype_train, stream.online/offline) ───
 
   async handleEventSubNotification(subscriptionType, event) {
     // Trova il broadcaster nell'event
@@ -1162,6 +1163,14 @@ class BotManager {
       const q = songQueues.get(streamer.streamer_id);
       if (q) { q.songs = []; q.srCounts = new Map(); }
       console.log(`[Bot] Stream online: #${streamer.twitch_username} — contatori resettati`);
+      return;
+    }
+
+    if (subscriptionType === 'stream.offline') {
+      resetSessionCount(streamer.streamer_id);
+      const q = songQueues.get(streamer.streamer_id);
+      if (q) { q.songs = []; q.srCounts = new Map(); }
+      console.log(`[Bot] Stream offline: #${streamer.twitch_username} — contatori sessione azzerati`);
       return;
     }
 

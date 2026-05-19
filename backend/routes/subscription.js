@@ -106,7 +106,16 @@ async function handleCheckout(req, res) {
   if (stripeRequired(res)) return;
   try {
     const plan = req.body.plan ?? req.body.planId;
+
+    // Diagnostica env al momento della chiamata
+    const sk = process.env.STRIPE_SECRET_KEY ?? '';
+    console.log('[Checkout] piano richiesto:', plan);
+    console.log('[Checkout] STRIPE_SECRET_KEY presente:', !!sk, '| modalità:', sk.startsWith('sk_live_') ? 'LIVE' : sk.startsWith('sk_test_') ? 'TEST' : 'SCONOSCIUTA');
+    console.log('[Checkout] PRICE_IDS:', JSON.stringify(PRICE_IDS));
+    console.log('[Checkout] streamer_id:', req.user?.streamer_id);
+
     if (!plan || !PRICE_IDS[plan]) {
+      console.error('[Checkout] BLOCCO: piano non valido o price ID mancante:', { plan, priceId: PRICE_IDS[plan] });
       return res.status(400).json({
         error: `Piano non valido o STRIPE_PRICE_${(plan ?? '').toUpperCase()} non configurato.`,
       });
@@ -142,6 +151,8 @@ async function handleCheckout(req, res) {
       if (refRows[0]) trialDays = 14;
     }
 
+    console.log('[Checkout] creazione sessione Stripe — customer:', customerId, '| price:', PRICE_IDS[plan], '| trialDays:', trialDays ?? 'nessuno');
+
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const session = await stripe.checkout.sessions.create({
       customer:             customerId,
@@ -157,9 +168,17 @@ async function handleCheckout(req, res) {
       },
     });
 
+    console.log('[Checkout] sessione creata OK:', session.id);
     res.json({ checkout_url: session.url });
   } catch (err) {
-    console.error(err);
+    console.error('[Checkout] ERRORE:', {
+      message: err.message,
+      type:    err.type,
+      code:    err.code,
+      param:   err.param,
+      statusCode: err.statusCode,
+      raw:     err.raw?.message,
+    });
     res.status(500).json({ error: 'Errore nella creazione del checkout' });
   }
 }

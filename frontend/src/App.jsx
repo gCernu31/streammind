@@ -23,6 +23,7 @@ import CookiePage from './pages/CookiePage.jsx';
 import ContattiPage from './pages/ContattiPage.jsx';
 import RefPage from './pages/RefPage.jsx';
 import StatusPage from './pages/StatusPage.jsx';
+import SuccessPage from './pages/SuccessPage.jsx';
 import Layout from './components/Layout.jsx';
 import { getToken, setToken, clearToken } from './utils/auth.js';
 
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="/cookie"    element={<CookiePage />} />
           <Route path="/contatti"  element={<ContattiPage />} />
           <Route path="/ref/:code" element={<RefPage />} />
+          <Route path="/success"   element={<SuccessPage user={auth.user} />} />
 
           {/* Rotte protette */}
           <Route path="/analisi"     element={<ProtectedRoute user={auth.user} loading={auth.loading}><Layout user={auth.user} onLogout={auth.logout}><DashboardAnalisiPage user={auth.user} /></Layout></ProtectedRoute>} />

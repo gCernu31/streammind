@@ -148,7 +148,7 @@ async function handleCheckout(req, res) {
       mode:                 'subscription',
       payment_method_types: ['card'],
       line_items:           [{ price: PRICE_IDS[plan], quantity: 1 }],
-      success_url:          `${frontendUrl}/subscription?session_id={CHECKOUT_SESSION_ID}`,
+      success_url:          `${frontendUrl}/success?plan=${plan}`,
       cancel_url:           `${frontendUrl}/subscription?cancelled=1`,
       metadata:          { streamer_id: String(req.user.streamer_id), plan },
       subscription_data: {

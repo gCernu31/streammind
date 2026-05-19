@@ -362,9 +362,22 @@ export default function LandingPage({ user, loading, onLogout }) {
           <div className="flex flex-col lg:flex-row items-center gap-16">
             {/* Testo */}
             <div className="flex-1 text-center lg:text-left">
+              {/* Launch Badge */}
+              <div
+                className="inline-flex items-center gap-2 border text-xs font-bold px-4 py-2 rounded-full mb-3"
+                style={{
+                  borderColor: 'rgba(139,92,246,0.6)',
+                  backgroundColor: 'rgba(139,92,246,0.14)',
+                  color: PURPLE,
+                  boxShadow: '0 0 18px rgba(139,92,246,0.25)',
+                }}
+              >
+                🎉 Beta Launch — Sii tra i primi. Trial gratuito 7 giorni.
+              </div>
+
               {/* Badge */}
               <div
-                className="inline-flex items-center gap-2 border text-xs font-medium px-3 py-1.5 rounded-full mb-8"
+                className="flex items-center gap-2 border text-xs font-medium px-3 py-1.5 rounded-full mb-8 w-fit"
                 style={{ borderColor: 'rgba(139,92,246,0.4)', backgroundColor: 'rgba(139,92,246,0.08)', color: PURPLE }}
               >
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: PURPLE }}></span>

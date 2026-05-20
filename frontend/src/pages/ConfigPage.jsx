@@ -502,9 +502,12 @@ export default function ConfigPage() {
               className="inline-block px-3 py-1.5 rounded-lg text-sm font-mono"
               style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#e9d5ff', border: '1px solid rgba(139,92,246,0.25)' }}
             >
-              /mod {config?.bot_name || 'NOMEBOT'}
+              /mod StreaMindAI
             </code>
           </div>
+          <p className="text-xs mt-2" style={{ color: '#6b6b6b' }}>
+            StreaMindAI è il nome dell'account Twitch del bot. Il nome che hai scelto è solo il suo nome in chat.
+          </p>
         </div>
       </div>
 

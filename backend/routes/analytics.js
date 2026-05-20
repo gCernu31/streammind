@@ -107,6 +107,8 @@ ${previous_analysis.substring(0, 1500)}${previous_analysis.length > 1500 ? '…'
 
 **REGOLA ASSOLUTA — ANNI DI ATTIVITÀ:** NON menzionare mai la data di apertura del canale, gli anni di attività, né fare confronti del tipo "X follower dopo Y anni". Molti streamer aprono il canale anni prima di iniziare davvero a streammare — questo dato non è un indicatore affidabile e non deve comparire in nessuna slide. Ignora completamente qualsiasi informazione sulla data di creazione del canale.
 
+**REGOLA ASSOLUTA — VISUALIZZAZIONI CANALE:** NON includere mai le visualizzazioni totali del canale in nessuna slide dell'analisi. Non è un dato recuperabile in modo affidabile tramite API e non aggiunge valore all'analisi. Rimuovilo dalla Fotografia Canale e da qualsiasi altra sezione in cui potrebbe comparire.
+
 ## DATI CANALE
 - Username: ${twitch_username || 'non specificato'}
 - Follower totali: ${total_followers || 0}

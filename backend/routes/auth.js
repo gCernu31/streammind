@@ -79,7 +79,7 @@ authRoutes.get('/twitch/callback', async (req, res) => {
         email           = COALESCE(EXCLUDED.email, streamers.email),
         avatar_url      = EXCLUDED.avatar_url,
         updated_at      = NOW()
-      RETURNING id, subscription_status, subscription_end,
+      RETURNING id, subscription_status, subscription_end, referral_code,
                 (xmax::text::bigint = 0) as is_new
     `;
 

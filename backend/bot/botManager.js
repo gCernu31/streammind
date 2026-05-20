@@ -744,7 +744,9 @@ class BotManager {
             }
             console.log(`[Bot] Unito a #${ch}`);
             if (s.twitch_id && process.env.TWITCH_CLIENT_ID && process.env.APP_URL) {
-              registerEventSub(s.twitch_id, s).catch(() => {});
+              registerEventSub(s.twitch_id, s).catch(e =>
+                console.warn(`[EventSub] sync @${ch}:`, e.message)
+              );
             }
           } catch (e) {
             console.warn(`[Bot] Join #${ch}:`, e.message);
@@ -782,7 +784,9 @@ class BotManager {
       }
       console.log(`[Bot] Unito a #${ch} (nuovo abbonamento)`);
       if (s.twitch_id && process.env.TWITCH_CLIENT_ID && process.env.APP_URL) {
-        registerEventSub(s.twitch_id, s).catch(() => {});
+        registerEventSub(s.twitch_id, s).catch(e =>
+          console.warn(`[EventSub] joinChannel @${ch}:`, e.message)
+        );
       }
     } catch (e) {
       console.error(`[Bot] joinChannel #${ch}:`, e.message);
@@ -818,7 +822,9 @@ class BotManager {
       }
       console.log(`[Bot] Bot riattivato per #${ch}`);
       if (s.twitch_id && process.env.TWITCH_CLIENT_ID && process.env.APP_URL) {
-        registerEventSub(s.twitch_id, s).catch(() => {});
+        registerEventSub(s.twitch_id, s).catch(e =>
+          console.warn(`[EventSub] enableBot @${ch}:`, e.message)
+        );
       }
     } catch (e) {
       console.error(`[Bot] enableBot #${ch}:`, e.message);
@@ -1069,7 +1075,9 @@ class BotManager {
         VALUES ('bot', $1, $2, NOW())
         ON CONFLICT (service) DO UPDATE SET status=$1, message=$2, updated_at=NOW()
       `, [status, message]);
-    } catch {}
+    } catch (e) {
+      console.warn('[Bot] _upsertServiceStatus:', e.message);
+    }
   }
 
   async _checkOfflineStatus() {

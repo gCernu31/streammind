@@ -126,12 +126,28 @@ ${previous_analysis.substring(0, 1500)}${previous_analysis.length > 1500 ? '…'
 - Principale debolezza percepita: ${main_weakness || 'non specificata'}${monthly_follower_growth ? `\n- Crescita follower mensile: ${monthly_follower_growth}` : ''}
 
 ## ISTRUZIONI
-Genera un'analisi strutturata con esattamente le seguenti sezioni in Markdown. Ogni sezione inizia con ### (tre hashtag). Non aggiungere testo prima della prima sezione né dopo l'ultima riga ---. Ogni paragrafo massimo 3-4 righe. Ogni affermazione deve includere almeno un dato numerico concreto.
+Genera un'analisi strutturata con esattamente le seguenti sezioni in Markdown. Ogni sezione inizia con ### (tre hashtag). Non aggiungere testo prima della prima sezione né dopo l'ultima riga ---. Ogni paragrafo massimo 3-4 righe.
+
+### 💬 Intro
+Struttura questa sezione con esattamente 3 bullet sintetici, senza paragrafi né muri di testo:
+- ✅ **Cosa funziona bene** — il punto di forza principale del canale in una frase (massimo 15 parole)
+- ⚠️ **Cosa frena la crescita** — il blocco principale in una frase (massimo 15 parole)
+- 🚀 **Cosa faremo** — l'obiettivo dell'analisi in una frase (massimo 15 parole)
 
 ### 📊 Fotografia del Canale
-Analisi oggettiva della situazione attuale. Calcola e commenta il viewer ratio (spettatori÷follower×100) — la media italiana è ~1-3%, buono >3%, ottimo >5%. Confronta ogni metrica con le medie Twitch italiane per la categoria. Identifica il dato più critico e il dato migliore con numeri precisi. **IMPORTANTE:** Se un dato non è disponibile tramite i dati forniti, NON lasciare il campo vuoto e NON scrivere "N/D". Scrivi invece una frase che spieghi perché quel dato non è rilevabile e come lo streamer può recuperarlo autonomamente (es. "Le visualizzazioni totali non sono state fornite — puoi trovarle nel tuo Twitch Studio nella sezione Statistiche canale").
+Struttura questa sezione come una dashboard visiva a schede, non come testo piatto. Usa questo formato esatto per ogni dato disponibile:
+
+**📌 Follower totali:** [valore]
+**🎯 Subscriber attivi:** [valore]
+**👁️ Spettatori medi per sessione:** [valore]
+**⏱️ Ore streaming settimanali:** [valore]
+**🕐 Orario principale:** [valore]
+**🎮 Giochi principali:** [valore]
+
+Non includere schede per dati non disponibili. Dopo le schede, aggiungi una riga con il viewer ratio calcolato (spettatori÷follower×100) e il confronto con la media italiana (~1-3%). Se un dato non è disponibile, omettilo completamente — non scrivere N/D né spiegazioni.
 
 ### 🎯 Score per Area
+Prima degli score per area, mostra il punteggio globale calcolato come media pesata di tutti i punteggi nel formato esatto: **Punteggio complessivo: X.X/10**. Poi elenca i dettagli:
 Valuta ogni area con punteggio su 10 e indicatore emoji (🟢 ≥7, 🟡 4-6, 🔴 ≤3). Una riga di motivazione concreta per ognuna:
 - **Community**: X/10 🟢/🟡/🔴 — [motivazione specifica con dato]
 - **Monetizzazione**: X/10 🟢/🟡/🔴 — [motivazione specifica con dato]
@@ -140,19 +156,24 @@ Valuta ogni area con punteggio su 10 e indicatore emoji (🟢 ≥7, 🟡 4-6, �
 - **Contenuto**: X/10 🟢/🟡/🔴 — [motivazione specifica con dato]
 
 ### 🔍 Analisi Competitor
-Cerca streamer italiani reali e verificabili su Twitch con caratteristiche simili allo streamer analizzato (stessi giochi o genere simile, fascia follower comparabile ±50%). Usa solo streamer che esistono con certezza su Twitch — non inventare nomi. Per ogni competitor indica: nome canale Twitch, follower approssimativi, giochi principali, punto di forza distintivo, e cosa lo streamer analizzato può imparare concretamente da loro. Se non riesci a identificare competitor italiani reali e verificati, cita competitor internazionali noti nello stesso genere invece di inventare nomi italiani.
+Cerca streamer italiani reali e verificabili su Twitch con caratteristiche simili allo streamer analizzato (stessi giochi o genere simile, fascia follower comparabile ±50%). Usa solo streamer che esistono con certezza su Twitch — non inventare nomi. Per ogni competitor indica: nome canale Twitch, follower approssimativi, giochi principali, punto di forza distintivo. Dopo la descrizione di ogni competitor, aggiungi obbligatoriamente questa riga nel formato esatto:
+**💡 Cosa puoi fare tu:** [una sola azione concreta di massimo 10 parole che lo streamer può replicare immediatamente]
+Se non riesci a identificare competitor italiani reali e verificati, cita competitor internazionali noti nello stesso genere invece di inventare nomi italiani.
 
 ### 💪 Asset Strategici
 Identifica 2-3 punti di forza reali di questo canale basati esclusivamente sui dati forniti. Per ognuno: cita il dato numerico che lo dimostra e spiega perché è un vantaggio competitivo concreto rispetto ai canali della stessa dimensione.
 
 ### ⚠️ Gap da Colmare
-Identifica 2-3 aree dove stai lasciando crescita sul tavolo. Per ognuna: quantifica il potenziale non sfruttato con un numero (es. "+X follower/mese se risolto"), identifica la causa principale, indica la soluzione diretta e implementabile.
+Identifica 2-3 aree dove stai lasciando crescita sul tavolo. Ogni gap deve iniziare con un'etichetta di priorità visiva nel formato esatto:
+- 🔴 **Urgente** se impatta direttamente la crescita nel breve termine
+- 🟡 **Medio termine** se importante ma non bloccante
+Metti la priorità prima del titolo del gap. Per ognuno: quantifica il potenziale non sfruttato con un numero (es. "+X follower/mese"), identifica la causa principale, indica la soluzione diretta e implementabile.
 
 ### ⚡ Quick Wins — 7 Giorni
 Esattamente 3 azioni ad alto impatto e basso sforzo, implementabili questa settimana. Per ognuna: cosa fare esattamente (non generico), quanto tempo richiede, risultato atteso quantificato.
 
 ### 🎮 Strategia Giochi
-Analizza i giochi attuali in termini di viewer/channel ratio su Twitch. Suggerisci 3-4 giochi strategici per questa dimensione di canale usando dati e trend aggiornati alla data corrente — non presentare giochi usciti più di 6 mesi fa come "novità del momento". Per ogni gioco suggerito specifica: nome, motivo per cui si adatta alla personalità e ai giochi abituali dello streamer, e stima del viewer/channel ratio attuale. Includi almeno un "hidden gem" con viewer/channel ratio elevato.
+Suggerisci 3-4 giochi strategici per questa dimensione di canale usando trend aggiornati alla data corrente — non presentare giochi usciti più di 6 mesi fa come "novità del momento". NON includere statistiche con numeri precisi di canali o spettatori (es. "500 canali, 10.000 spettatori") — questi dati diventano obsoleti rapidamente. Per ogni gioco descrivi: il nome, perché si adatta alla personalità e allo stile dello streamer, perché il suo pubblico potrebbe apprezzarlo, e usa termini qualitativi come "bassa saturazione", "community attiva", "favorisce l'interazione" al posto di numeri hardcodati. Includi almeno un "hidden gem" a bassa saturazione.
 
 ### 📅 Piano Editoriale — 4 Settimane
 Piano settimanale con focus tematico, tipo contenuto e obiettivo misurabile:
@@ -173,6 +194,12 @@ Piano con KPI specifici e azioni concrete:
 - **Scenario moderato** (implementi 50% consigli): +X follower in 90 giorni — [perché]
 - **Scenario ottimistico** (implementi tutto): +X follower in 90 giorni — [perché]
 ${prevSection}
+
+### 🎯 Inizia Adesso
+Scrivi esattamente questo testo personalizzato senza modifiche al formato:
+**${twitch_username || 'Streamer'}, inizia il tuo trial gratuito →**
+Prova gratis 7 giorni · Annulla quando vuoi
+
 ---
 Analisi generata da StreaMindAI · streamindai.com
 

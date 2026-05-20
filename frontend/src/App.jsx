@@ -1,31 +1,32 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import { ConfigDirtyProvider } from './contexts/ConfigDirtyCtx.jsx';
 import { BotStatusProvider } from './contexts/BotStatusCtx.jsx';
 import CookieBanner from './components/CookieBanner.jsx';
-import LandingPage from './pages/LandingPage.jsx';
-import LoginPage from './pages/LoginPage.jsx';
-import DashboardPage from './pages/DashboardPage.jsx';
-import ConfigPage from './pages/ConfigPage.jsx';
-import MemoryPage from './pages/MemoryPage.jsx';
-import SubscriptionPage from './pages/SubscriptionPage.jsx';
-import AnalisiPage from './pages/AnalisiPage.jsx';
-import SharedAnalisiPage from './pages/SharedAnalisiPage.jsx';
-import ProvaGratisPage from './pages/ProvaGratisPage.jsx';
-import DashboardAnalisiPage from './pages/DashboardAnalisiPage.jsx';
-import GuidePage from './pages/GuidePage.jsx';
-import ChangelogPage from './pages/ChangelogPage.jsx';
-import FaqPage from './pages/FaqPage.jsx';
-import PrivacyPage from './pages/PrivacyPage.jsx';
-import TerminiPage from './pages/TerminiPage.jsx';
-import CookiePage from './pages/CookiePage.jsx';
-import ContattiPage from './pages/ContattiPage.jsx';
-import RefPage from './pages/RefPage.jsx';
-import StatusPage from './pages/StatusPage.jsx';
-import SuccessPage from './pages/SuccessPage.jsx';
 import Layout from './components/Layout.jsx';
 import { getToken, setToken, clearToken } from './utils/auth.js';
+
+const LandingPage          = lazy(() => import('./pages/LandingPage.jsx'));
+const LoginPage            = lazy(() => import('./pages/LoginPage.jsx'));
+const DashboardPage        = lazy(() => import('./pages/DashboardPage.jsx'));
+const ConfigPage           = lazy(() => import('./pages/ConfigPage.jsx'));
+const MemoryPage           = lazy(() => import('./pages/MemoryPage.jsx'));
+const SubscriptionPage     = lazy(() => import('./pages/SubscriptionPage.jsx'));
+const AnalisiPage          = lazy(() => import('./pages/AnalisiPage.jsx'));
+const SharedAnalisiPage    = lazy(() => import('./pages/SharedAnalisiPage.jsx'));
+const ProvaGratisPage      = lazy(() => import('./pages/ProvaGratisPage.jsx'));
+const DashboardAnalisiPage = lazy(() => import('./pages/DashboardAnalisiPage.jsx'));
+const GuidePage            = lazy(() => import('./pages/GuidePage.jsx'));
+const ChangelogPage        = lazy(() => import('./pages/ChangelogPage.jsx'));
+const FaqPage              = lazy(() => import('./pages/FaqPage.jsx'));
+const PrivacyPage          = lazy(() => import('./pages/PrivacyPage.jsx'));
+const TerminiPage          = lazy(() => import('./pages/TerminiPage.jsx'));
+const CookiePage           = lazy(() => import('./pages/CookiePage.jsx'));
+const ContattiPage         = lazy(() => import('./pages/ContattiPage.jsx'));
+const RefPage              = lazy(() => import('./pages/RefPage.jsx'));
+const StatusPage           = lazy(() => import('./pages/StatusPage.jsx'));
+const SuccessPage          = lazy(() => import('./pages/SuccessPage.jsx'));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -80,6 +81,7 @@ export default function App() {
       <BrowserRouter>
         <ScrollToTop />
         <CookieBanner />
+        <Suspense fallback={<div className="min-h-screen bg-hally-bg" />}>
         <Routes>
           <Route path="/" element={<LandingPage user={auth.user} loading={auth.loading} onLogout={auth.logout} />} />
           <Route path="/login"     element={<LoginPage />} />
@@ -106,6 +108,7 @@ export default function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
       </ConfigDirtyProvider>
       </BotStatusProvider>

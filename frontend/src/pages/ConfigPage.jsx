@@ -233,6 +233,8 @@ const EMPTY = {
   spotify_client_secret: '',
   spotify_connected:     false,
   discord_bot_token:     '',
+  user_msg_nonsub:       null,
+  user_msg_subvip:       null,
 };
 
 let _mid = 1;
@@ -299,6 +301,8 @@ export default function ConfigPage() {
           spotify_client_secret: d.spotify_client_secret ?? '',
           spotify_connected:     d.spotify_connected     ?? false,
           discord_bot_token:     d.discord_bot_token     ?? '',
+          user_msg_nonsub:       d.user_msg_nonsub       ?? null,
+          user_msg_subvip:       d.user_msg_subvip       ?? null,
         });
       })
       .catch(() => setConfig({ ...EMPTY }));
@@ -554,6 +558,64 @@ export default function ConfigPage() {
           </div>
         </div>
 
+        {/* ── LIMITI MESSAGGI PER UTENTE ── */}
+        {(() => {
+          const PLAN_MSG_MAX = { starter: 10, creator: 50, elite: 100, signature: -1 };
+          const maxVal = PLAN_MSG_MAX[plan] ?? 10;
+          const maxLabel = maxVal === -1 ? 'illimitati' : maxVal;
+          const clamp = (v) => maxVal === -1 ? v : Math.min(Math.max(1, v), maxVal);
+          return (
+            <div className="card">
+              <SectionTitle>Limiti messaggi per utente</SectionTitle>
+              <p className="text-xs text-hally-text-muted mb-5">
+                Quanti messaggi può inviare al bot ogni utente per sessione di stream. Il bot smette di rispondere a quell'utente una volta raggiunto il limite.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5 text-hally-text">
+                    Follower / utente normale
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={maxVal === -1 ? undefined : maxVal}
+                    className="input w-full"
+                    value={config.user_msg_nonsub ?? ''}
+                    onChange={e => {
+                      const v = e.target.value === '' ? null : clamp(parseInt(e.target.value, 10) || 1);
+                      set('user_msg_nonsub', v);
+                    }}
+                    placeholder={plan === 'starter' ? '3' : plan === 'creator' ? '3' : plan === 'elite' ? '5' : '10'}
+                  />
+                  <p className="text-xs mt-1.5 text-hally-text-muted">
+                    {maxVal === -1 ? 'Nessun limite massimo sul tuo piano' : `Massimo consentito dal tuo piano: ${maxLabel}`}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5 text-hally-text">
+                    Subscriber / VIP / Mod
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={maxVal === -1 ? undefined : maxVal}
+                    className="input w-full"
+                    value={config.user_msg_subvip ?? ''}
+                    onChange={e => {
+                      const v = e.target.value === '' ? null : clamp(parseInt(e.target.value, 10) || 1);
+                      set('user_msg_subvip', v);
+                    }}
+                    placeholder={plan === 'starter' ? '10' : plan === 'creator' ? '20' : plan === 'elite' ? '30' : '50'}
+                  />
+                  <p className="text-xs mt-1.5 text-hally-text-muted">
+                    {maxVal === -1 ? 'Nessun limite massimo sul tuo piano' : `Massimo consentito dal tuo piano: ${maxLabel}`}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ── CANALE ── */}
         <div className="card">
           <SectionTitle>Canale</SectionTitle>
@@ -707,36 +769,20 @@ export default function ConfigPage() {
         </div>
 
         {/* ── MESSAGGI EVENTI ── */}
-        <div className="card relative overflow-hidden">
+        <div className="card">
           <SectionTitle>Messaggi eventi</SectionTitle>
 
-          {/* Lock overlay per piani inferiori a elite */}
-          {plan !== null && plan !== 'elite' && plan !== 'signature' && (
+          {plan === 'starter' && (
             <div
-              className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl"
-              style={{ backgroundColor: 'rgba(13,13,13,0.88)', backdropFilter: 'blur(4px)' }}
+              className="flex items-start gap-3 rounded-lg px-4 py-3 mb-5"
+              style={{ backgroundColor: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.2)' }}
             >
-              <div
-                className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-4"
-                style={{ backgroundColor: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.3)' }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-6 h-6" style={{ color: '#8B5CF6' }}>
-                  <path d="M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2ZM7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-              </div>
-              <p className="font-semibold mb-1">Disponibile dal piano Elite</p>
-              <p className="text-xs text-center max-w-xs mb-4" style={{ color: '#6b6b6b' }}>
-                Personalizza i messaggi per ogni evento Twitch — follow, sub, cheer, raid e altro.
+              <svg className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#a78bfa' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+              </svg>
+              <p className="text-xs" style={{ color: '#a0a0a0' }}>
+                Testo personalizzabile per tutti gli eventi. Le variabili avanzate (es. contatori, statistiche) sono disponibili dal piano <strong style={{ color: '#c4b5fd' }}>Creator</strong>.
               </p>
-              <a
-                href="/subscription"
-                className="text-sm font-semibold px-5 py-2.5 rounded-lg text-white transition-colors duration-150"
-                style={{ backgroundColor: '#8B5CF6' }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#7C3AED'}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#8B5CF6'}
-              >
-                Aggiorna piano →
-              </a>
             </div>
           )}
 
@@ -759,7 +805,6 @@ export default function ConfigPage() {
                     event_messages: { ...p.event_messages, [key]: e.target.value },
                   }))}
                   placeholder={meta.placeholder}
-                  disabled={plan !== null && plan !== 'elite' && plan !== 'signature'}
                 />
               </div>
             ))}

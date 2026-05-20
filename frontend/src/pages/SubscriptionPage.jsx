@@ -11,7 +11,8 @@ const PLANS = [
     features: [
       'Bot AI base con personalità configurabile',
       'Max 5 membri configurabili',
-      'Risposte automatiche: follow e sub',
+      'Messaggi automatici per tutti gli eventi (follow, sub, gift, cheer, raid)',
+      'Limiti messaggi per utente configurabili',
       'Max 200 messaggi/sera sul canale',
       '4.000 messaggi/mese',
       'Trial 7 giorni con carta',

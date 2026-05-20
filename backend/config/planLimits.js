@@ -26,12 +26,12 @@ export const PLAN_LIMITS = {
     trial:               7, // giorni
 
     // Risposte automatiche eventi Twitch
-    events: ['follow', 'subscribe'],
+    events: ['follow', 'subscribe', 'gift_sub', 'cheer', 'hype_train', 'raid'],
 
     // Range configurabile dallo streamer (default usato se non personalizzato)
     userLimits: {
       nonSub:     { default: 3,  max: 10 },
-      subVip:     { default: 10, max: 20 },
+      subVip:     { default: 10, max: 10 },
       songNonSub: null,
       songSubVip: null,
     },

@@ -1222,6 +1222,14 @@ class BotManager {
       const q = songQueues.get(streamer.streamer_id);
       if (q) { q.songs = []; q.srCounts = new Map(); }
       console.log(`[Bot] Stream online: #${streamer.twitch_username} — contatori resettati`);
+      if (streamer.twitch_id && process.env.TWITCH_CLIENT_ID) {
+        fetchCurrentGame(streamer.streamer_id, streamer.twitch_id)
+          .then(() => {
+            const game = currentGames.get(streamer.streamer_id);
+            console.log(`[Category][${streamer.twitch_username}] Categoria al go-live: ${game ?? '(nessuna)'}`);
+          })
+          .catch(e => console.warn(`[Category] stream.online @${streamer.twitch_username}:`, e.message));
+      }
       return;
     }
 

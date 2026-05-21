@@ -57,6 +57,9 @@ const songQueues = new Map();
 // Anti-spam eventi: `${streamerId}:${type}:${username}` → timestamp
 const eventCooldowns = new Map();
 
+// Categoria/gioco attivo per canale: streamerId → string|null
+const currentGames = new Map();
+
 // Twitch app token (per EventSub)
 let _appToken = null, _appTokenExp = 0, _botUserId = null;
 
@@ -145,6 +148,25 @@ async function getBotUserId() {
   }
 }
 
+// ─── Categoria attiva ─────────────────────────────────────────────────────────
+
+async function fetchCurrentGame(streamerId, twitchId) {
+  const token = await getAppToken();
+  const cid   = process.env.TWITCH_CLIENT_ID;
+  if (!token || !cid || !twitchId) return;
+  try {
+    const r = await axios.get(
+      `https://api.twitch.tv/helix/channels?broadcaster_id=${encodeURIComponent(twitchId)}`,
+      { headers: { 'Client-ID': cid, Authorization: `Bearer ${token}` } }
+    );
+    const game = r.data?.data?.[0]?.game_name?.trim() || null;
+    currentGames.set(streamerId, game);
+    console.log(`[Category] streamer_id=${streamerId} → ${game ?? '(nessuna)'}`);
+  } catch (e) {
+    console.error('[Category] fetch:', e.response?.data?.error ?? e.message);
+  }
+}
+
 // ─── EventSub ─────────────────────────────────────────────────────────────────
 
 const EVENTSUB_SUBS = [
@@ -156,6 +178,7 @@ const EVENTSUB_SUBS = [
   { type: 'channel.raid',              ver: '1', cond: 'raid'     },
   { type: 'stream.online',             ver: '1', cond: 'standard' },
   { type: 'stream.offline',            ver: '1', cond: 'standard' },
+  { type: 'channel.update',            ver: '1', cond: 'standard' },
 ];
 
 const EVENTSUB_PLAN_MAP = {
@@ -715,6 +738,17 @@ class BotManager {
       }
     }
 
+    // Recupera categoria attiva per ogni canale all'avvio
+    if (process.env.TWITCH_CLIENT_ID) {
+      for (const s of streamers) {
+        if (s.twitch_id) {
+          fetchCurrentGame(s.streamer_id, s.twitch_id).catch(e =>
+            console.warn(`[Category] init @${s.twitch_username}:`, e.message)
+          );
+        }
+      }
+    }
+
     setInterval(() => this._syncChannels(), 5 * 60_000);
     this._startMonitor();
     scheduleMonthlyCleanup();
@@ -753,6 +787,11 @@ class BotManager {
             if (s.twitch_id && process.env.TWITCH_CLIENT_ID && process.env.APP_URL) {
               registerEventSub(s.twitch_id, s).catch(e =>
                 console.warn(`[EventSub] sync @${ch}:`, e.message)
+              );
+            }
+            if (s.twitch_id && process.env.TWITCH_CLIENT_ID) {
+              fetchCurrentGame(s.streamer_id, s.twitch_id).catch(e =>
+                console.warn(`[Category] sync @${ch}:`, e.message)
               );
             }
           } catch (e) {
@@ -933,6 +972,11 @@ class BotManager {
     let systemPrompt;
     try { systemPrompt = await generateBotPrompt(streamer.streamer_id); }
     catch (e) { console.error('[Bot] prompt:', e.message); return; }
+
+    const currentGame = currentGames.get(streamer.streamer_id) ?? null;
+    if (currentGame) {
+      systemPrompt += `\n\n## SESSIONE ATTUALE\nIl canale sta trasmettendo in questo momento: ${currentGame}. Puoi fare riferimento al gioco se pertinente alle domande degli utenti.`;
+    }
 
     const reply = truncate(await gemini(systemPrompt, question));
     if (!reply) return;
@@ -1185,7 +1229,15 @@ class BotManager {
       resetSessionCount(streamer.streamer_id);
       const q = songQueues.get(streamer.streamer_id);
       if (q) { q.songs = []; q.srCounts = new Map(); }
+      currentGames.set(streamer.streamer_id, null);
       console.log(`[Bot] Stream offline: #${streamer.twitch_username} — contatori sessione azzerati`);
+      return;
+    }
+
+    if (subscriptionType === 'channel.update') {
+      const game = event.category_name?.trim() || null;
+      currentGames.set(streamer.streamer_id, game);
+      console.log(`[Category] @${streamer.twitch_username} → ${game ?? '(nessuna)'}`);
       return;
     }
 

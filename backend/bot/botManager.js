@@ -183,8 +183,11 @@ async function registerEventSub(broadcasterId, streamer) {
 
     let condition;
     if (sub.cond === 'follow') {
-      if (!bid) continue;
-      condition = { broadcaster_user_id: broadcasterId, moderator_user_id: bid };
+      // channel.follow v2 richiede moderator_user_id; se il bot user ID non è ancora
+      // risolto, usa broadcasterId (il broadcaster può monitorare i propri follow)
+      const modId = bid ?? broadcasterId;
+      if (!modId) continue;
+      condition = { broadcaster_user_id: broadcasterId, moderator_user_id: modId };
     } else if (sub.cond === 'raid') {
       condition = { to_broadcaster_user_id: broadcasterId };
     } else {
@@ -481,16 +484,17 @@ function scheduleMonthlyCleanup() {
 async function buildEventMessage(streamer, eventType, data) {
   const limits = getLimits(streamer.subscription_plan);
 
+  const fallback = {
+    follow:    `@${data.username} è appena entrato nella community! Benvenuto 👋`,
+    subscribe: `Grazie per la sub @${data.username}! ❤️` + (data.months > 1 ? ` ${data.months} mesi consecutivi, leggendario!` : ''),
+    gift_sub:  `@${data.gifter} ha regalato ${data.total ?? 1} sub alla community! 🎁`,
+    cheer:     `@${data.username} ha donato ${data.bits} bit! 💎 Grazie mille!`,
+    hype_train:`🚂 Hype Train in partenza! Andiamo alla grande!`,
+    raid:      `@${data.from} ha raidato con ${data.viewers} viewer! Benvenuti tutti 🎉`,
+  };
+
   if (!limits.customEventMessages) {
-    const msgs = {
-      follow:    `@${data.username} è appena entrato nella community! Benvenuto 👋`,
-      subscribe: `Grazie per la sub @${data.username}! ❤️` + (data.months > 1 ? ` ${data.months} mesi consecutivi, leggendario!` : ''),
-      gift_sub:  `@${data.gifter} ha regalato ${data.total ?? 1} sub alla community! 🎁`,
-      cheer:     `@${data.username} ha donato ${data.bits} bit! 💎 Grazie mille!`,
-      hype_train:`🚂 Hype Train in partenza! Andiamo alla grande!`,
-      raid:      `@${data.from} ha raidato con ${data.viewers} viewer! Benvenuti tutti 🎉`,
-    };
-    return msgs[eventType] ?? null;
+    return fallback[eventType] ?? null;
   }
 
   const descriptions = {
@@ -502,7 +506,7 @@ async function buildEventMessage(streamer, eventType, data) {
     raid:      `@${data.from} ha raidato con ${data.viewers} viewer`,
   };
   const desc = descriptions[eventType];
-  if (!desc) return null;
+  if (!desc) return fallback[eventType] ?? null;
 
   const system = `Sei ${streamer.bot_name || 'StreamBot'}, il bot del canale Twitch di ${streamer.creator_name || streamer.twitch_username}.
 ${streamer.bot_personality || ''}
@@ -510,7 +514,7 @@ Scrivi un messaggio breve (max 200 caratteri) in italiano per questo evento: ${d
 Rispondi SOLO con il messaggio.`;
 
   const raw = await gemini(system, desc, 256, 128);
-  return truncate(raw, 200);
+  return truncate(raw, 200) ?? fallback[eventType] ?? null;
 }
 
 // ─── DB helpers ───────────────────────────────────────────────────────────────
@@ -659,7 +663,10 @@ class BotManager {
     // ── tmi.js events ───────────────────────────────────────────────────────
 
     this.client.on('subscription', (channel, username, method, msg, tags) => {
-      this._handleTmiEvent(channel, 'subscribe', { username, months: method?.prime ? 1 : 1 });
+      // communitypaysub / communitygesub = gift sub attivata dal ricevente → già coperta da gift_sub
+      const msgId = tags?.['msg-id'] ?? '';
+      if (msgId === 'communitypaysub' || msgId === 'communitygesub') return;
+      this._handleTmiEvent(channel, 'subscribe', { username, months: 1 });
     });
 
     this.client.on('resub', (channel, username, months, msg, tags) => {
@@ -1197,7 +1204,12 @@ class BotManager {
     // Costruisci data per buildEventMessage
     let data = {};
     if (planEvent === 'follow')    data = { username: event.user_name };
-    if (planEvent === 'subscribe') data = { username: event.user_name, months: event.cumulative_months ?? 1 };
+    if (planEvent === 'subscribe') {
+      // channel.subscribe arriva anche per chi RICEVE una gift sub (is_gift: true).
+      // Quei casi sono già coperti dall'evento gift_sub → ignoriamo i riceventi.
+      if (event.is_gift) return;
+      data = { username: event.user_name, months: event.cumulative_months ?? 1 };
+    }
     if (planEvent === 'gift_sub')  data = { gifter: event.user_name, total: event.total ?? 1 };
     if (planEvent === 'cheer')     data = { username: event.user_name, bits: event.bits };
     if (planEvent === 'hype_train')data = {};
